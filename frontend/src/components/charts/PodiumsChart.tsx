@@ -37,6 +37,7 @@ const PodiumsChart: React.FC<PodiumsChartProps> = ({ drivers }) => {
           <XAxis dataKey="name" stroke="#9B9BAD" fontSize={12} />
           <YAxis stroke="#9B9BAD" fontSize={12} allowDecimals={false} />
           <Tooltip
+            itemStyle={{ color: '#F5F5F5' }}
             contentStyle={{
               backgroundColor: '#1E1E2E',
               border: '1px solid rgba(255,255,255,0.1)',
