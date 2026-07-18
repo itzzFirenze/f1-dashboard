@@ -1,5 +1,6 @@
 package com.f1dashboard.entity;
 
+import com.f1dashboard.enums.SessionType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,6 +25,11 @@ public class RaceResult {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "driver_id", nullable = false)
     private Driver driver;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private SessionType sessionType = SessionType.RACE;
 
     /** Finishing position (1-20, or null if DNF) */
     private Integer position;

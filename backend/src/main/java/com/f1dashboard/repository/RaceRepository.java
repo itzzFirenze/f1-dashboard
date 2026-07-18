@@ -18,8 +18,8 @@ public interface RaceRepository extends JpaRepository<Race, Long> {
     /** Find races by status */
     List<Race> findBySeasonAndStatusOrderByRoundAsc(Integer season, RaceStatus status);
 
-    /** Find the next upcoming race */
-    @Query("SELECT r FROM Race r WHERE r.status = 'UPCOMING' ORDER BY r.raceDate ASC LIMIT 1")
+    /** Find the next upcoming race (date-based: first race on or after today) */
+    @Query("SELECT r FROM Race r WHERE r.raceDate >= CURRENT_DATE ORDER BY r.raceDate ASC LIMIT 1")
     Race findNextUpcomingRace();
 
     /** Count completed races in a season */

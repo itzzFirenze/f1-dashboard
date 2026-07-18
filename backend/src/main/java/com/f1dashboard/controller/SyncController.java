@@ -20,10 +20,14 @@ public class SyncController {
     @Operation(summary = "Manually trigger 2026 season data sync", description = "Fetches latest driver standings, constructor standings, and race results from external APIs.")
     public ResponseEntity<ApiResponse<String>> triggerSync() {
         try {
+            dataSyncService.syncRaceCalendar();
             dataSyncService.syncDriverStandings();
             dataSyncService.syncConstructorStandings();
             dataSyncService.syncRaceResults();
-            return ResponseEntity.ok(ApiResponse.success("Synchronization successful! Live 2026 standings and results updated."));
+            dataSyncService.syncSprintResults();
+            dataSyncService.syncQualifyingResults();
+            dataSyncService.updateRaceStatusesByDate();
+            return ResponseEntity.ok(ApiResponse.success("Synchronization successful! Live 2026 standings, calendar, and results updated."));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(ApiResponse.error("Failed to sync data: " + e.getMessage()));
         }

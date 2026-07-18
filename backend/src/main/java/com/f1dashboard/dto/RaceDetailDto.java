@@ -19,5 +19,7 @@ public record RaceDetailDto(
     Boolean sprintWeekend,
     List<RaceSessionDto> sessions,
     List<RaceResultDto> results,
+    List<RaceResultDto> sprintResults,
+    List<RaceResultDto> qualifyingResults,
     WeatherDto weather
 ) {}

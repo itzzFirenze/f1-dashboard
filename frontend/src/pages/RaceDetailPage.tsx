@@ -4,17 +4,26 @@ import { ArrowLeft, Clock, MapPin, Ruler, CornerDownRight, Timer, Zap, Trophy } 
 import { raceService } from '../services/raceService';
 import WeatherCard from '../components/ui/WeatherCard';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
-import type { RaceDetail } from '../types';
+import type { RaceDetail, RaceResult } from '../types';
+
+type ResultTab = 'race' | 'qualifying' | 'sprint';
 
 const RaceDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [race, setRace] = useState<RaceDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<ResultTab>('race');
 
   useEffect(() => {
     if (id) {
       raceService.getById(Number(id))
-        .then(setRace)
+        .then((data) => {
+          setRace(data);
+          // Auto-select a tab that has data
+          if (data.results.length > 0) setActiveTab('race');
+          else if (data.qualifyingResults.length > 0) setActiveTab('qualifying');
+          else if (data.sprintResults.length > 0) setActiveTab('sprint');
+        })
         .catch(console.error)
         .finally(() => setLoading(false));
     }
@@ -27,6 +36,33 @@ const RaceDetailPage: React.FC = () => {
     new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
   const formatTime = (time: string) => time?.substring(0, 5) || '';
+
+  const hasRace = race.results.length > 0;
+  const hasSprint = race.sprintResults.length > 0;
+  const hasQuali = race.qualifyingResults.length > 0;
+  const hasAnyResults = hasRace || hasSprint || hasQuali;
+
+  const getActiveResults = (): RaceResult[] => {
+    switch (activeTab) {
+      case 'race': return race.results;
+      case 'sprint': return race.sprintResults;
+      case 'qualifying': return race.qualifyingResults;
+      default: return [];
+    }
+  };
+
+  const getTabLabel = (tab: ResultTab): string => {
+    switch (tab) {
+      case 'race': return 'Race';
+      case 'sprint': return 'Sprint';
+      case 'qualifying': return 'Qualifying';
+    }
+  };
+
+  const tabs: ResultTab[] = [];
+  if (hasRace) tabs.push('race');
+  if (hasQuali) tabs.push('qualifying');
+  if (hasSprint) tabs.push('sprint');
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -87,15 +123,31 @@ const RaceDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Race Results */}
-          {race.results.length > 0 && (
+          {/* Results with Tabs */}
+          {hasAnyResults && (
             <div className="glass-card p-6">
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-amber-400" />
-                Race Results
-              </h2>
+              {/* Tab Bar */}
+              <div className="flex items-center gap-1 mb-5 border-b border-f1-mid-gray/50 pb-3">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      activeTab === tab
+                        ? 'bg-f1-red text-white shadow-lg shadow-f1-red/20'
+                        : 'text-f1-silver hover:text-f1-white hover:bg-f1-mid-gray/40'
+                    }`}
+                  >
+                    {tab === 'race' && <Trophy className="w-4 h-4 inline mr-1.5 -mt-0.5" />}
+                    {tab === 'sprint' && <Zap className="w-4 h-4 inline mr-1.5 -mt-0.5" />}
+                    {getTabLabel(tab)}
+                  </button>
+                ))}
+              </div>
+
+              {/* Results List */}
               <div className="space-y-1">
-                {race.results.map((result) => (
+                {getActiveResults().map((result) => (
                   <div key={result.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-f1-mid-gray/30 transition-colors">
                     <div className="flex items-center gap-3">
                       <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${

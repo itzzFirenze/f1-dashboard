@@ -65,7 +65,19 @@ public class RaceService {
                 .toList();
 
         List<RaceResultDto> results = resultRepository
-                .findByRaceIdOrderByPositionAsc(id)
+                .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.RACE)
+                .stream()
+                .map(this::toResultDto)
+                .toList();
+
+        List<RaceResultDto> sprintResults = resultRepository
+                .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.SPRINT)
+                .stream()
+                .map(this::toResultDto)
+                .toList();
+
+        List<RaceResultDto> qualifyingResults = resultRepository
+                .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.QUALIFYING)
                 .stream()
                 .map(this::toResultDto)
                 .toList();
@@ -79,7 +91,7 @@ public class RaceService {
             toCircuitDto(race),
             race.getRaceDate(), race.getRaceTime(),
             race.getStatus().name(), race.getSprintWeekend(),
-            sessions, results, weather
+            sessions, results, sprintResults, qualifyingResults, weather
         );
     }
 

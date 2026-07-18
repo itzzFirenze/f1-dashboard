@@ -114,7 +114,11 @@ const DashboardPage: React.FC = () => {
               <p className="text-f1-silver mb-6">
                 {data.nextRaceCircuit} — {data.nextRaceCountry}
               </p>
-              <CountdownTimer targetDate={data.nextRaceDate || ''} />
+              <CountdownTimer targetDate={
+                data.nextRaceTime
+                  ? `${data.nextRaceDate}T${data.nextRaceTime}Z`
+                  : data.nextRaceDate || ''
+              } />
             </div>
           </Link>
         )}

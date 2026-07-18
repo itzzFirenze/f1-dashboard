@@ -78,6 +78,8 @@ export interface RaceDetail {
   sprintWeekend: boolean;
   sessions: RaceSession[];
   results: RaceResult[];
+  sprintResults: RaceResult[];
+  qualifyingResults: RaceResult[];
   weather: Weather | null;
 }
 

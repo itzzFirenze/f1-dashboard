@@ -23,7 +23,10 @@ public class DataInitializer implements CommandLineRunner {
             dataSyncService.syncRaceCalendar(); // Pull race calendar
             dataSyncService.syncConstructorStandings(); // Pull constructor standings
             dataSyncService.syncDriverStandings(); // Pull driver standings
-            dataSyncService.syncRaceResults(); // Pull race results
+            dataSyncService.syncRaceResults(); // Pull race results (also updates podiums)
+            dataSyncService.syncSprintResults(); // Pull sprint results
+            dataSyncService.syncQualifyingResults(); // Pull qualifying results
+            dataSyncService.updateRaceStatusesByDate(); // Reconcile statuses
             log.info("Initial sync completed successfully. All data is dynamically loaded.");
         } catch (Exception e) {
             log.error("Failed to run initial sync: {}", e.getMessage(), e);

@@ -11,4 +11,6 @@ public interface RaceSessionRepository extends JpaRepository<RaceSession, Long> 
 
     /** Find all sessions for a specific race, ordered by date and time */
     List<RaceSession> findByRaceIdOrderBySessionDateAscSessionTimeAsc(Long raceId);
+
+    void deleteByRaceId(Long raceId);
 }
