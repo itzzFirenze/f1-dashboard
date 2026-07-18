@@ -145,6 +145,9 @@ export interface DashboardData {
   nextRaceCircuit: string | null;
   nextRaceDate: string | null;
   nextRaceTime: string | null;
+  nextSessionName: string | null;
+  nextSessionDate: string | null;
+  nextSessionTime: string | null;
   driverChampionshipLeader: Driver | null;
   constructorChampionshipLeader: Constructor | null;
   nextRaceWeather: Weather | null;

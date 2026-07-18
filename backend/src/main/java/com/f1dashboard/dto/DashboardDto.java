@@ -21,6 +21,11 @@ public record DashboardDto(
     LocalDate nextRaceDate,
     LocalTime nextRaceTime,
 
+    // Next session info (e.g. FP1, Qualifying, Race)
+    String nextSessionName,
+    LocalDate nextSessionDate,
+    LocalTime nextSessionTime,
+
     // Championship leaders
     DriverDto driverChampionshipLeader,
     ConstructorDto constructorChampionshipLeader,

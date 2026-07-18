@@ -95,7 +95,7 @@ const DashboardPage: React.FC = () => {
 
       {/* Next Race + Weather */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Next Race Countdown */}
+        {/* Next Race / Session Countdown */}
         {data.nextRaceName && (
           <Link to={`/races/${data.nextRaceId}`} className="lg:col-span-2">
             <div className="glass-card-red p-6 sm:p-8 h-full group cursor-pointer">
@@ -103,7 +103,7 @@ const DashboardPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Timer className="w-5 h-5 text-f1-red" />
                   <span className="text-sm font-semibold text-f1-red-light uppercase tracking-wider">
-                    Next Race
+                    Next: {data.nextSessionName || 'Race'}
                   </span>
                 </div>
                 <ChevronRight className="w-5 h-5 text-f1-silver group-hover:text-f1-red transition-colors" />
@@ -115,9 +115,9 @@ const DashboardPage: React.FC = () => {
                 {data.nextRaceCircuit} — {data.nextRaceCountry}
               </p>
               <CountdownTimer targetDate={
-                data.nextRaceTime
-                  ? `${data.nextRaceDate}T${data.nextRaceTime}Z`
-                  : data.nextRaceDate || ''
+                data.nextSessionTime
+                  ? `${data.nextSessionDate}T${data.nextSessionTime}Z`
+                  : data.nextSessionDate || ''
               } />
             </div>
           </Link>

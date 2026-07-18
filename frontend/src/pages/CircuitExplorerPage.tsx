@@ -22,6 +22,12 @@ const CircuitExplorerPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
+  useEffect(() => {
+    if (selected) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [selected]);
+
   if (loading) return <PageSkeleton />;
 
   return (

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.f1dashboard.entity.*;
 import com.f1dashboard.enums.RaceStatus;
 import com.f1dashboard.repository.*;
+import com.f1dashboard.util.CircuitDataSeeder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,8 +16,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -87,10 +90,18 @@ public class DataSyncService {
                     double lat = locNode.path("lat").asDouble();
                     double lon = locNode.path("long").asDouble();
 
+                    CircuitDataSeeder.CircuitStats stats = CircuitDataSeeder.getStats(circuitId);
+
                     Optional<Circuit> circuitOpt = circuitRepository.findByCircuitRef(circuitId);
                     Circuit circuit;
                     if (circuitOpt.isPresent()) {
                         circuit = circuitOpt.get();
+                        // Always update with real data in case it was previously set to defaults
+                        circuit.setLengthKm(stats.getLengthKm());
+                        circuit.setCorners(stats.getCorners());
+                        circuit.setLapRecord(stats.getLapRecord());
+                        circuit.setLapRecordHolder(stats.getLapRecordHolder());
+                        circuit = circuitRepository.save(circuit);
                     } else {
                         circuit = Circuit.builder()
                                 .circuitRef(circuitId)
@@ -99,8 +110,10 @@ public class DataSyncService {
                                 .location(locality)
                                 .latitude(lat)
                                 .longitude(lon)
-                                .lengthKm(5.0)
-                                .corners(15)
+                                .lengthKm(stats.getLengthKm())
+                                .corners(stats.getCorners())
+                                .lapRecord(stats.getLapRecord())
+                                .lapRecordHolder(stats.getLapRecordHolder())
                                 .build();
                         circuit = circuitRepository.save(circuit);
                     }
@@ -332,6 +345,7 @@ public class DataSyncService {
         int offset = 0;
         int limit = 100;
         boolean hasMoreData = true;
+        Set<Long> clearedRaceIds = new HashSet<>();
 
         while (hasMoreData) {
             try {
@@ -367,14 +381,12 @@ public class DataSyncService {
                                 }
                                 raceRepository.save(race);
 
-                                // We delete previous race session results if doing a fresh sync for this race.
-                                // However, since we are paginating, we might process the SAME race across two pages
-                                // (if a race's results straddle the 100 boundary).
-                                // Therefore, it's dangerous to deleteAll existing results indiscriminately inside the loop without checking if we already cleared them for THIS run.
-                                // Actually, let's just clear if position == 1 to avoid clearing in the middle of a straddled race? No, let's just not clear here.
-                                // Since we wipe the DB on boot, it's fine. If we run it periodically, we should save directly or check if exists.
-                                // Let's use a simple approach: if it's already in the DB, delete it before adding.
-                                
+                                // Clear existing RACE results only once per race across all pages
+                                if (!clearedRaceIds.contains(race.getId())) {
+                                    raceResultRepository.deleteByRaceIdAndSessionType(race.getId(), com.f1dashboard.enums.SessionType.RACE);
+                                    clearedRaceIds.add(race.getId());
+                                }
+
                                 JsonNode resultsNode = raceNode.path("Results");
                                 if (resultsNode.isArray()) {
                                     for (JsonNode resNode : resultsNode) {
@@ -444,6 +456,7 @@ public class DataSyncService {
         int offset = 0;
         int limit = 100;
         boolean hasMoreData = true;
+        Set<Long> clearedRaceIds = new HashSet<>();
 
         while (hasMoreData) {
             try {
@@ -464,6 +477,13 @@ public class DataSyncService {
                             
                             if (raceOpt.isPresent()) {
                                 Race race = raceOpt.get();
+
+                                // Clear existing SPRINT results only once per race
+                                if (!clearedRaceIds.contains(race.getId())) {
+                                    raceResultRepository.deleteByRaceIdAndSessionType(race.getId(), com.f1dashboard.enums.SessionType.SPRINT);
+                                    clearedRaceIds.add(race.getId());
+                                }
+
                                 JsonNode sprintResultsNode = raceNode.path("SprintResults");
                                 if (sprintResultsNode.isArray()) {
                                     for (JsonNode resNode : sprintResultsNode) {
@@ -519,6 +539,7 @@ public class DataSyncService {
         int offset = 0;
         int limit = 100;
         boolean hasMoreData = true;
+        Set<Long> clearedRaceIds = new HashSet<>();
 
         while (hasMoreData) {
             try {
@@ -539,6 +560,13 @@ public class DataSyncService {
                             
                             if (raceOpt.isPresent()) {
                                 Race race = raceOpt.get();
+
+                                // Clear existing QUALIFYING results only once per race
+                                if (!clearedRaceIds.contains(race.getId())) {
+                                    raceResultRepository.deleteByRaceIdAndSessionType(race.getId(), com.f1dashboard.enums.SessionType.QUALIFYING);
+                                    clearedRaceIds.add(race.getId());
+                                }
+
                                 JsonNode qualiResultsNode = raceNode.path("QualifyingResults");
                                 if (qualiResultsNode.isArray()) {
                                     for (JsonNode resNode : qualiResultsNode) {

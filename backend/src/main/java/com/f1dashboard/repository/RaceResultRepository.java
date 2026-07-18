@@ -21,4 +21,7 @@ public interface RaceResultRepository extends JpaRepository<RaceResult, Long> {
     
     /** Delete all results for a specific race */
     void deleteByRaceId(Long raceId);
+
+    /** Delete results for a specific race and session type */
+    void deleteByRaceIdAndSessionType(Long raceId, SessionType sessionType);
 }
