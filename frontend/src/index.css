@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   F1 Dashboard — Global Styles
+   ======================================== */
+
+@layer base {
+  body {
+    @apply bg-f1-black text-f1-white;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-f1-black;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-f1-light-gray rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-f1-silver;
+  }
+}
+
+@layer components {
+  /* Glassmorphism card */
+  .glass-card {
+    @apply bg-f1-dark-gray/80 backdrop-blur-md border border-white/5
+           rounded-2xl shadow-lg transition-all duration-300;
+  }
+  .glass-card:hover {
+    @apply border-white/10 shadow-xl;
+    transform: translateY(-2px);
+  }
+
+  /* Red-accented glass card */
+  .glass-card-red {
+    @apply glass-card border-f1-red/20;
+  }
+  .glass-card-red:hover {
+    @apply border-f1-red/40;
+    box-shadow: 0 0 30px rgba(225, 6, 0, 0.1);
+  }
+
+  /* Skeleton loading animation */
+  .skeleton {
+    @apply bg-f1-mid-gray rounded animate-pulse;
+  }
+
+  /* Shimmer effect for loading */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  /* Badge styles */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-completed {
+    @apply badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+  }
+  .badge-upcoming {
+    @apply badge bg-f1-red/20 text-f1-red-light border border-f1-red/30;
+  }
+  .badge-live {
+    @apply badge bg-f1-red text-white;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-f1-red to-orange-500;
+  }
+
+  /* Stat card */
+  .stat-value {
+    @apply text-3xl font-bold font-display tracking-tight;
+  }
+  .stat-label {
+    @apply text-sm text-f1-silver uppercase tracking-wider;
+  }
+
+  /* Navigation link */
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-f1-silver
+           transition-all duration-200 hover:bg-f1-mid-gray hover:text-f1-white;
+  }
+  .nav-link.active {
+    @apply bg-f1-red/10 text-f1-red-light border-l-2 border-f1-red;
+  }
+
+  /* Search input */
+  .search-input {
+    @apply w-full bg-f1-mid-gray/50 border border-white/5 rounded-xl
+           px-4 py-2.5 pl-10 text-f1-white placeholder-f1-silver/50
+           focus:outline-none focus:border-f1-red/50 focus:ring-1 focus:ring-f1-red/30
+           transition-all duration-200;
+  }
+}
+
+@layer utilities {
+  /* Delay animation utilities */
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+}

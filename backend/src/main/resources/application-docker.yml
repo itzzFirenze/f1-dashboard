@@ -1,0 +1,25 @@
+# ============================================
+# F1 Dashboard - Docker Profile (PostgreSQL)
+# ============================================
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:f1dashboard}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME:f1admin}
+    password: ${DB_PASSWORD:f1password}
+
+  h2:
+    console:
+      enabled: false
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Override CORS for Docker
+app:
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:80

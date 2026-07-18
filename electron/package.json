@@ -1,0 +1,41 @@
+{
+  "name": "f1-dashboard-desktop",
+  "version": "1.0.0",
+  "description": "F1 Race Weekend Dashboard — Desktop Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "build:all": "electron-builder --win --mac --linux"
+  },
+  "build": {
+    "appId": "com.f1dashboard.app",
+    "productName": "F1 Dashboard",
+    "directories": {
+      "output": "../installers"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "${productName} Setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName} Portable.${ext}"
+    },
+    "extraResources": [
+      {
+        "from": "../backend/target/f1-dashboard-backend-1.0.0.jar",
+        "to": "backend/f1-dashboard-backend-1.0.0.jar"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^43.1.1",
+    "electron-builder": "^26.15.3"
+  }
+}
