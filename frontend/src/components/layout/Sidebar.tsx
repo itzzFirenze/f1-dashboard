@@ -22,13 +22,20 @@ const navItems: NavItem[] = [
       { path: '/timeline', label: 'Timeline' },
     ]
   },
-  { path: '/races', label: 'Races', icon: Calendar },
+  {
+    label: 'Races', icon: Calendar,
+    subItems: [
+      { path: '/races', label: 'Schedule' },
+      { path: '/weather', label: 'Weather Forecast' },
+    ]
+  },
   { path: '/circuits', label: 'Circuits', icon: Map },
   {
     label: 'Analytics', icon: Activity,
     subItems: [
       { path: '/momentum', label: 'Momentum Tracker' },
       { path: '/analytics/consistency', label: 'Consistency' },
+      { path: '/records', label: 'Historical Records' },
       { path: '/statistics', label: 'Statistics' },
     ]
   },
@@ -40,7 +47,6 @@ const navItems: NavItem[] = [
     ]
   },
   { path: '/predictor', label: 'Predictor', icon: Wand2 },
-  { path: '/records', label: 'Records', icon: Award },
 ];
 
 const Sidebar: React.FC = () => {

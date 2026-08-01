@@ -296,3 +296,39 @@ export interface TimelineData {
   gapEvolution: GapDataPoint[];
 }
 
+/** Records types */
+export interface DriverRecord {
+  driverCode: string;
+  driverName: string;
+  constructorName: string;
+  constructorColor: string;
+  value: number;
+  displayValue: string;
+}
+
+export interface ConstructorRecord {
+  constructorName: string;
+  constructorColor: string;
+  value: number;
+  displayValue: string;
+}
+
+export interface RecordsData {
+  mostWinsDriver: DriverRecord[];
+  mostPodiumsDriver: DriverRecord[];
+  mostPointsDriver: DriverRecord[];
+  highestWinRateDriver: DriverRecord[];
+  mostWinsConstructor: ConstructorRecord[];
+  mostPodiumsConstructor: ConstructorRecord[];
+  mostPointsConstructor: ConstructorRecord[];
+}
+
+/** Circuit characteristics types */
+export interface CircuitCharacteristics {
+  downforceLevel: number;
+  brakeWear: number;
+  tyreWear: number;
+  topSpeed: number;
+  overtakingDifficulty: number;
+  streetCircuit: boolean;
+}

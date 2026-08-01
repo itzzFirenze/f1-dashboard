@@ -23,4 +23,11 @@ public class WeatherController {
         WeatherDto weather = weatherService.getWeatherForRace(raceId);
         return ResponseEntity.ok(ApiResponse.success(weather));
     }
+
+    @GetMapping("/forecasts")
+    @Operation(summary = "Get weekend forecast for upcoming races")
+    public ResponseEntity<ApiResponse<java.util.List<com.f1dashboard.dto.WeekendWeatherDto>>> getUpcomingForecasts(
+            @RequestParam(defaultValue = "2026") Integer season) {
+        return ResponseEntity.ok(ApiResponse.success(weatherService.getUpcomingWeekendForecasts(season)));
+    }
 }

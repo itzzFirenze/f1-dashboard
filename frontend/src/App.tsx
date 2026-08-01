@@ -18,6 +18,8 @@ import ConsistencyPage from './pages/ConsistencyPage';
 import ConstructorComparisonPage from './pages/ConstructorComparisonPage';
 import ChampionshipPredictorPage from './pages/ChampionshipPredictorPage';
 import SeasonTimelinePage from './pages/SeasonTimelinePage';
+import RecordsPage from './pages/RecordsPage';
+import WeatherForecastPage from './pages/WeatherForecastPage';
 
 const App: React.FC = () => {
   return (
@@ -40,6 +42,8 @@ const App: React.FC = () => {
             <Route path="/compare/constructors" element={<ConstructorComparisonPage />} />
             <Route path="/predictor" element={<ChampionshipPredictorPage />} />
             <Route path="/timeline" element={<SeasonTimelinePage />} />
+            <Route path="/records" element={<RecordsPage />} />
+            <Route path="/weather" element={<WeatherForecastPage />} />
           </Route>
         </Routes>
       </FavoritesProvider>
