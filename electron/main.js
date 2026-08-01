@@ -1,13 +1,37 @@
 const { app, BrowserWindow, dialog } = require('electron');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const path = require('path');
 const http = require('http');
+const net = require('net');
 const fs = require('fs');
 
 let mainWindow;
 let splashWindow;
 let backendProcess;
 let backendExited = false;
+
+/**
+ * Check if the backend port is already in use and attempt to free it.
+ * On Windows, finds the PID using the port and kills it.
+ */
+function killProcessOnPort(port) {
+   try {
+      const result = execSync(`netstat -ano | findstr :${port} | findstr LISTENING`, { encoding: 'utf-8', timeout: 5000 });
+      const lines = result.trim().split('\n');
+      const pids = new Set();
+      for (const line of lines) {
+         const parts = line.trim().split(/\s+/);
+         const pid = parts[parts.length - 1];
+         if (pid && pid !== '0') pids.add(pid);
+      }
+      for (const pid of pids) {
+         logMsg(`Killing stale process on port ${port} (PID: ${pid})`);
+         try { execSync(`taskkill /F /PID ${pid}`, { timeout: 5000 }); } catch (e) { /* ignore */ }
+      }
+   } catch (e) {
+      // No process on port — this is fine
+   }
+}
 
 // Path to the Spring Boot JAR
 // - In production (packaged app): bundled under resourcesPath/backend
@@ -49,6 +73,10 @@ function getJavaExecutable() {
  * - The server port is enforced via a command-line argument.
  */
 function startBackend() {
+   // Kill any stale backend process from a previous run
+   killProcessOnPort(BACKEND_PORT);
+   backendExited = false;
+
    logMsg(`Resolved JAR_PATH: ${JAR_PATH}`);
    logMsg(`app.isPackaged: ${app.isPackaged}`);
    logMsg(`process.resourcesPath: ${process.resourcesPath}`);
