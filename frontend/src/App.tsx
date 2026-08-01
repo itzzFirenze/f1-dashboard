@@ -12,6 +12,9 @@ import RaceSchedulePage from './pages/RaceSchedulePage';
 import RaceDetailPage from './pages/RaceDetailPage';
 import CircuitExplorerPage from './pages/CircuitExplorerPage';
 import StatisticsPage from './pages/StatisticsPage';
+import DriverComparisonPage from './pages/DriverComparisonPage';
+import MomentumTrackerPage from './pages/MomentumTrackerPage';
+import ConsistencyPage from './pages/ConsistencyPage';
 
 const App: React.FC = () => {
   return (
@@ -28,6 +31,9 @@ const App: React.FC = () => {
             <Route path="/races/:id" element={<RaceDetailPage />} />
             <Route path="/circuits" element={<CircuitExplorerPage />} />
             <Route path="/statistics" element={<StatisticsPage />} />
+            <Route path="/compare/drivers" element={<DriverComparisonPage />} />
+            <Route path="/momentum" element={<MomentumTrackerPage />} />
+            <Route path="/analytics/consistency" element={<ConsistencyPage />} />
           </Route>
         </Routes>
       </FavoritesProvider>
@@ -36,3 +42,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

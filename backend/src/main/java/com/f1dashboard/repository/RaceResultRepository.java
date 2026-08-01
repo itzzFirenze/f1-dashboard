@@ -24,4 +24,10 @@ public interface RaceResultRepository extends JpaRepository<RaceResult, Long> {
 
     /** Delete results for a specific race and session type */
     void deleteByRaceIdAndSessionType(Long raceId, SessionType sessionType);
+    
+    /** Find all results for a season and session type */
+    List<RaceResult> findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(Integer season, SessionType sessionType);
+    
+    /** Find results for a driver in a season and session type */
+    List<RaceResult> findByDriverIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(Long driverId, Integer season, SessionType sessionType);
 }

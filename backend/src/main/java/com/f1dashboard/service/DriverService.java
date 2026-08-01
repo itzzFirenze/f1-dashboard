@@ -61,7 +61,7 @@ public class DriverService {
 
     // ---- Mapping methods ----
 
-    private DriverDto toDto(Driver d) {
+    public DriverDto toDto(Driver d) {
         return new DriverDto(
             d.getId(),
             d.getCode(),

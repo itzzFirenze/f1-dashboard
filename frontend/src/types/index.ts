@@ -161,3 +161,73 @@ export interface CountdownTime {
   seconds: number;
   total: number;
 }
+
+/** Driver comparison stats */
+export interface ComparisonStats {
+  points: number;
+  wins: number;
+  podiums: number;
+  avgGrid: number;
+  avgFinish: number;
+  dnfs: number;
+}
+
+export interface RaceComparison {
+  raceName: string;
+  round: number;
+  posA: number | null;
+  posB: number | null;
+  cumulativePointsA: number;
+  cumulativePointsB: number;
+}
+
+export interface DriverComparisonData {
+  driverA: Driver;
+  driverB: Driver;
+  statsA: ComparisonStats;
+  statsB: ComparisonStats;
+  headToHeadQualiA: number;
+  headToHeadQualiB: number;
+  headToHeadRaceA: number;
+  headToHeadRaceB: number;
+  races: RaceComparison[];
+}
+
+/** Momentum tracker types */
+export interface RaceMomentum {
+  raceName: string;
+  round: number;
+  gridPosition: number;
+  finishPosition: number;
+  positionDelta: number;
+  points: number;
+  rollingAvgFinish: number;
+  rollingAvgPoints: number;
+}
+
+export interface LeaderboardEntry {
+  driver: Driver;
+  score: number;
+}
+
+export interface MomentumData {
+  driver: Driver;
+  score: number;
+  formTrend: string;
+  recentRaces: RaceMomentum[];
+  leaderboard: LeaderboardEntry[];
+}
+
+/** Consistency analytics types */
+export interface DriverConsistency {
+  driver: Driver;
+  pointsFinishRate: number;
+  avgFinishPosition: number;
+  stdDevPosition: number;
+  resultsByRace: Record<string, string>;
+}
+
+export interface ConsistencyData {
+  races: string[];
+  drivers: DriverConsistency[];
+}
