@@ -62,7 +62,7 @@ public class ConstructorService {
         return leader != null ? toDto(leader) : null;
     }
 
-    private ConstructorDto toDto(Constructor c) {
+    public ConstructorDto toDto(Constructor c) {
         return new ConstructorDto(
             c.getId(), c.getName(), c.getNationality(),
             c.getLogoUrl(), c.getColor(), c.getPoints(),

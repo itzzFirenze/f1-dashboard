@@ -15,6 +15,9 @@ import StatisticsPage from './pages/StatisticsPage';
 import DriverComparisonPage from './pages/DriverComparisonPage';
 import MomentumTrackerPage from './pages/MomentumTrackerPage';
 import ConsistencyPage from './pages/ConsistencyPage';
+import ConstructorComparisonPage from './pages/ConstructorComparisonPage';
+import ChampionshipPredictorPage from './pages/ChampionshipPredictorPage';
+import SeasonTimelinePage from './pages/SeasonTimelinePage';
 
 const App: React.FC = () => {
   return (
@@ -34,6 +37,9 @@ const App: React.FC = () => {
             <Route path="/compare/drivers" element={<DriverComparisonPage />} />
             <Route path="/momentum" element={<MomentumTrackerPage />} />
             <Route path="/analytics/consistency" element={<ConsistencyPage />} />
+            <Route path="/compare/constructors" element={<ConstructorComparisonPage />} />
+            <Route path="/predictor" element={<ChampionshipPredictorPage />} />
+            <Route path="/timeline" element={<SeasonTimelinePage />} />
           </Route>
         </Routes>
       </FavoritesProvider>

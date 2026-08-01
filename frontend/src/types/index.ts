@@ -231,3 +231,68 @@ export interface ConsistencyData {
   races: string[];
   drivers: DriverConsistency[];
 }
+
+/** Constructor Comparison Types */
+export interface DriverPointSplit {
+  driver: Driver;
+  points: number;
+  percentage: number;
+  avgQuali: number;
+  avgRace: number;
+}
+
+export interface ConstructorDriverPoints {
+  driverCode: string;
+  points: number;
+}
+
+export interface ConstructorRoundComparison {
+  raceName: string;
+  round: number;
+  pointsA: number;
+  pointsB: number;
+  cumulativePointsA: number;
+  cumulativePointsB: number;
+  gap: number;
+  driverPointsA: ConstructorDriverPoints[];
+  driverPointsB: ConstructorDriverPoints[];
+}
+
+export interface ConstructorComparisonData {
+  teamA: Constructor;
+  teamB: Constructor;
+  driverSplitA: DriverPointSplit[];
+  driverSplitB: DriverPointSplit[];
+  rounds: ConstructorRoundComparison[];
+}
+
+/** Timeline types */
+export interface TimelineEvent {
+  round: number;
+  raceName: string;
+  country: string;
+  date: string;
+  status: string;
+  winner: string | null;
+  winnerCode: string | null;
+  winnerConstructor: string | null;
+  winnerConstructorColor: string | null;
+  championshipLeader: string | null;
+  championshipLeaderCode: string | null;
+  leaderPoints: number;
+  gapToSecond: number;
+  leadChanged: boolean;
+  keyEvents: string[];
+}
+
+export interface GapDataPoint {
+  round: number;
+  raceName: string;
+  gap: number;
+}
+
+export interface TimelineData {
+  events: TimelineEvent[];
+  gapEvolution: GapDataPoint[];
+}
+

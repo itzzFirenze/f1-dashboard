@@ -3,7 +3,9 @@ package com.f1dashboard.controller;
 import com.f1dashboard.dto.ApiResponse;
 import com.f1dashboard.dto.ConsistencyDto;
 import com.f1dashboard.dto.DriverComparisonDto;
+import com.f1dashboard.dto.ConstructorComparisonDto;
 import com.f1dashboard.dto.MomentumDto;
+import com.f1dashboard.dto.TimelineDto;
 import com.f1dashboard.service.AnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -39,5 +41,19 @@ public class AnalyticsController {
     public ResponseEntity<ApiResponse<ConsistencyDto>> getConsistency(
             @RequestParam(defaultValue = "2026") Integer season) {
         return ResponseEntity.ok(ApiResponse.success(analyticsService.getConsistencyAnalytics(season)));
+    }
+
+    @GetMapping("/compare/constructors")
+    public ResponseEntity<ApiResponse<ConstructorComparisonDto>> compareConstructors(
+            @RequestParam Long teamA,
+            @RequestParam Long teamB,
+            @RequestParam(defaultValue = "2026") Integer season) {
+        return ResponseEntity.ok(ApiResponse.success(analyticsService.getConstructorComparison(teamA, teamB, season)));
+    }
+
+    @GetMapping("/timeline")
+    public ResponseEntity<ApiResponse<TimelineDto>> getTimeline(
+            @RequestParam(defaultValue = "2026") Integer season) {
+        return ResponseEntity.ok(ApiResponse.success(analyticsService.getSeasonTimeline(season)));
     }
 }

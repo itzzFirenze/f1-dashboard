@@ -2,16 +2,21 @@ package com.f1dashboard.service;
 
 import com.f1dashboard.dto.ConsistencyDto;
 import com.f1dashboard.dto.DriverComparisonDto;
+import com.f1dashboard.dto.ConstructorComparisonDto;
 import com.f1dashboard.dto.DriverDto;
 import com.f1dashboard.dto.MomentumDto;
+import com.f1dashboard.dto.TimelineDto;
+import com.f1dashboard.enums.RaceStatus;
 import com.f1dashboard.entity.Driver;
 import com.f1dashboard.entity.Race;
 import com.f1dashboard.entity.RaceResult;
+import com.f1dashboard.entity.Constructor;
 import com.f1dashboard.enums.SessionType;
 import com.f1dashboard.exception.ResourceNotFoundException;
 import com.f1dashboard.repository.DriverRepository;
 import com.f1dashboard.repository.RaceRepository;
 import com.f1dashboard.repository.RaceResultRepository;
+import com.f1dashboard.repository.ConstructorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +32,9 @@ public class AnalyticsService {
     private final DriverRepository driverRepository;
     private final RaceRepository raceRepository;
     private final RaceResultRepository raceResultRepository;
+    private final ConstructorRepository constructorRepository;
     private final DriverService driverService;
+    private final ConstructorService constructorService;
 
     public DriverComparisonDto compareDrivers(Long driverAId, Long driverBId, Integer season) {
         Driver driverA = driverRepository.findById(driverAId)
@@ -246,6 +253,216 @@ public class AnalyticsService {
         dto.setRaces(raceNames);
         dto.setDrivers(driverConsistencies);
         
+        return dto;
+    }
+
+    public ConstructorComparisonDto getConstructorComparison(Long teamAId, Long teamBId, Integer season) {
+        Constructor teamA = constructorRepository.findById(teamAId)
+                .orElseThrow(() -> new ResourceNotFoundException("Constructor", "id", teamAId));
+        Constructor teamB = constructorRepository.findById(teamBId)
+                .orElseThrow(() -> new ResourceNotFoundException("Constructor", "id", teamBId));
+
+        ConstructorComparisonDto dto = new ConstructorComparisonDto();
+        dto.setTeamA(constructorService.toDto(teamA));
+        dto.setTeamB(constructorService.toDto(teamB));
+
+        // Get drivers for team A and B in this season
+        List<Driver> driversA = driverRepository.findByConstructorIdOrderByChampionshipPositionAsc(teamAId);
+        List<Driver> driversB = driverRepository.findByConstructorIdOrderByChampionshipPositionAsc(teamBId);
+
+        // Fetch all race results for both teams in the given season
+        List<RaceResult> resultsA = raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season, SessionType.RACE)
+                .stream().filter(r -> r.getDriver().getConstructor().getId().equals(teamAId)).toList();
+        List<RaceResult> resultsB = raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season, SessionType.RACE)
+                .stream().filter(r -> r.getDriver().getConstructor().getId().equals(teamBId)).toList();
+        List<RaceResult> qualiA = raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season, SessionType.QUALIFYING)
+                .stream().filter(r -> r.getDriver().getConstructor().getId().equals(teamAId)).toList();
+        List<RaceResult> qualiB = raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season, SessionType.QUALIFYING)
+                .stream().filter(r -> r.getDriver().getConstructor().getId().equals(teamBId)).toList();
+
+        dto.setDriverSplitA(computeDriverSplits(driversA, resultsA, qualiA, teamA.getPoints()));
+        dto.setDriverSplitB(computeDriverSplits(driversB, resultsB, qualiB, teamB.getPoints()));
+
+        List<Race> races = raceRepository.findBySeasonOrderByRoundAsc(season);
+        List<ConstructorComparisonDto.RoundComparison> rounds = new ArrayList<>();
+
+        double cumPointsA = 0;
+        double cumPointsB = 0;
+
+        for (Race race : races) {
+            ConstructorComparisonDto.RoundComparison rc = new ConstructorComparisonDto.RoundComparison();
+            rc.setRaceName(race.getName());
+            rc.setRound(race.getRound());
+
+            double roundPtsA = 0;
+            List<ConstructorComparisonDto.DriverPoints> dpA = new ArrayList<>();
+            for (Driver d : driversA) {
+                double pts = resultsA.stream()
+                        .filter(r -> r.getRace().getId().equals(race.getId()) && r.getDriver().getId().equals(d.getId()))
+                        .mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0.0).sum();
+                roundPtsA += pts;
+                dpA.add(new ConstructorComparisonDto.DriverPoints(d.getCode(), pts));
+            }
+            rc.setPointsA(roundPtsA);
+            rc.setDriverPointsA(dpA);
+            cumPointsA += roundPtsA;
+            rc.setCumulativePointsA(cumPointsA);
+
+            double roundPtsB = 0;
+            List<ConstructorComparisonDto.DriverPoints> dpB = new ArrayList<>();
+            for (Driver d : driversB) {
+                double pts = resultsB.stream()
+                        .filter(r -> r.getRace().getId().equals(race.getId()) && r.getDriver().getId().equals(d.getId()))
+                        .mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0.0).sum();
+                roundPtsB += pts;
+                dpB.add(new ConstructorComparisonDto.DriverPoints(d.getCode(), pts));
+            }
+            rc.setPointsB(roundPtsB);
+            rc.setDriverPointsB(dpB);
+            cumPointsB += roundPtsB;
+            rc.setCumulativePointsB(cumPointsB);
+
+            rc.setGap(cumPointsA - cumPointsB);
+            rounds.add(rc);
+        }
+        
+        dto.setRounds(rounds);
+        return dto;
+    }
+
+    private List<ConstructorComparisonDto.DriverPointSplit> computeDriverSplits(List<Driver> drivers, List<RaceResult> raceResults, List<RaceResult> qualiResults, Double totalTeamPts) {
+        List<ConstructorComparisonDto.DriverPointSplit> splits = new ArrayList<>();
+        double safeTotal = totalTeamPts != null && totalTeamPts > 0 ? totalTeamPts : 1;
+        
+        for (Driver d : drivers) {
+            ConstructorComparisonDto.DriverPointSplit split = new ConstructorComparisonDto.DriverPointSplit();
+            split.setDriver(driverService.toDto(d));
+            
+            double dPts = raceResults.stream().filter(r -> r.getDriver().getId().equals(d.getId())).mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0.0).sum();
+            split.setPoints(dPts);
+            split.setPercentage((dPts / safeTotal) * 100);
+            
+            double avgQ = qualiResults.stream().filter(r -> r.getDriver().getId().equals(d.getId()) && r.getPosition() != null && r.getPosition() > 0)
+                    .mapToInt(RaceResult::getPosition).average().orElse(0);
+            split.setAvgQuali(avgQ);
+            
+            double avgR = raceResults.stream().filter(r -> r.getDriver().getId().equals(d.getId()) && r.getPosition() != null && r.getPosition() > 0)
+                    .mapToInt(RaceResult::getPosition).average().orElse(0);
+            split.setAvgRace(avgR);
+            
+            splits.add(split);
+        }
+        return splits;
+    }
+
+    public TimelineDto getSeasonTimeline(Integer season) {
+        List<Race> races = raceRepository.findBySeasonOrderByRoundAsc(season);
+        List<RaceResult> allRaceResults = raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season, SessionType.RACE);
+        
+        // Group race results by race id
+        Map<Long, List<RaceResult>> resultsByRace = allRaceResults.stream()
+                .collect(Collectors.groupingBy(r -> r.getRace().getId()));
+
+        List<TimelineDto.TimelineEvent> events = new ArrayList<>();
+        List<TimelineDto.GapDataPoint> gapEvolution = new ArrayList<>();
+
+        // Track cumulative points across rounds
+        Map<Long, Double> cumulativePoints = new LinkedHashMap<>();
+        String prevLeaderCode = null;
+
+        for (Race race : races) {
+            TimelineDto.TimelineEvent event = new TimelineDto.TimelineEvent();
+            event.setRound(race.getRound());
+            event.setRaceName(race.getName());
+            event.setCountry(race.getCircuit().getCountry());
+            event.setDate(race.getRaceDate());
+            event.setStatus(race.getStatus().name());
+
+            List<RaceResult> raceResults = resultsByRace.getOrDefault(race.getId(), Collections.emptyList());
+            List<String> keyEvents = new ArrayList<>();
+
+            if (race.getStatus() == RaceStatus.COMPLETED && !raceResults.isEmpty()) {
+                // Find winner (position 1)
+                RaceResult winner = raceResults.stream()
+                        .filter(r -> r.getPosition() != null && r.getPosition() == 1)
+                        .findFirst().orElse(null);
+
+                if (winner != null) {
+                    event.setWinner(winner.getDriver().getFirstName() + " " + winner.getDriver().getLastName());
+                    event.setWinnerCode(winner.getDriver().getCode());
+                    event.setWinnerConstructor(winner.getDriver().getConstructor().getName());
+                    event.setWinnerConstructorColor(winner.getDriver().getConstructor().getColor());
+                }
+
+                // Update cumulative points
+                for (RaceResult rr : raceResults) {
+                    Long dId = rr.getDriver().getId();
+                    double pts = rr.getPoints() != null ? rr.getPoints() : 0;
+                    cumulativePoints.merge(dId, pts, Double::sum);
+                }
+
+                // Find DNFs
+                long dnfCount = raceResults.stream()
+                        .filter(r -> "DNF".equalsIgnoreCase(r.getStatus()) || "Retired".equalsIgnoreCase(r.getStatus()))
+                        .count();
+                if (dnfCount > 0) {
+                    keyEvents.add(dnfCount + " retirement" + (dnfCount > 1 ? "s" : ""));
+                }
+
+                // Biggest mover (most positions gained)
+                raceResults.stream()
+                        .filter(r -> r.getGridPosition() != null && r.getPosition() != null && r.getGridPosition() > 0 && r.getPosition() > 0)
+                        .max(Comparator.comparingInt(r -> r.getGridPosition() - r.getPosition()))
+                        .ifPresent(r -> {
+                            int gain = r.getGridPosition() - r.getPosition();
+                            if (gain >= 5) {
+                                keyEvents.add(r.getDriver().getCode() + " gained " + gain + " places");
+                            }
+                        });
+
+                // Championship leader after this round
+                if (!cumulativePoints.isEmpty()) {
+                    Map.Entry<Long, Double> leaderEntry = cumulativePoints.entrySet().stream()
+                            .max(Map.Entry.comparingByValue()).orElse(null);
+
+                    if (leaderEntry != null) {
+                        Driver leader = driverRepository.findById(leaderEntry.getKey()).orElse(null);
+                        if (leader != null) {
+                            event.setChampionshipLeader(leader.getFirstName() + " " + leader.getLastName());
+                            event.setChampionshipLeaderCode(leader.getCode());
+                            event.setLeaderPoints(leaderEntry.getValue());
+
+                            // Check lead change
+                            if (prevLeaderCode != null && !leader.getCode().equals(prevLeaderCode)) {
+                                event.setLeadChanged(true);
+                                keyEvents.add("Championship lead changes to " + leader.getCode());
+                            }
+                            prevLeaderCode = leader.getCode();
+
+                            // Gap to second
+                            double secondPoints = cumulativePoints.values().stream()
+                                    .sorted(Comparator.reverseOrder())
+                                    .skip(1).findFirst().orElse(0.0);
+                            event.setGapToSecond(leaderEntry.getValue() - secondPoints);
+
+                            // Gap evolution data
+                            TimelineDto.GapDataPoint gap = new TimelineDto.GapDataPoint();
+                            gap.setRound(race.getRound());
+                            gap.setRaceName(race.getName());
+                            gap.setGap(leaderEntry.getValue() - secondPoints);
+                            gapEvolution.add(gap);
+                        }
+                    }
+                }
+            }
+
+            event.setKeyEvents(keyEvents);
+            events.add(event);
+        }
+
+        TimelineDto dto = new TimelineDto();
+        dto.setEvents(events);
+        dto.setGapEvolution(gapEvolution);
         return dto;
     }
 }
