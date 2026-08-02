@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Trophy, Medal, Hash, Globe, Calendar } from 'lucide-react';
 import { driverService } from '../services/driverService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import { resolveTheme, getDriverImage } from '../config/teamThemes';
 import type { DriverDetail } from '../types';
 
 const DriverDetailPage: React.FC = () => {
@@ -22,6 +23,9 @@ const DriverDetailPage: React.FC = () => {
   if (loading) return <PageSkeleton />;
   if (!driver) return null;
 
+  const theme = resolveTheme(driver.constructorName);
+  const driverImgUrl = driver.imageUrl ?? getDriverImage(theme, driver.firstName, driver.lastName);
+
   const stats = [
     { label: 'Championship', value: `P${driver.championshipPosition}`, icon: Trophy, color: 'text-amber-400', bg: 'bg-amber-500/10' },
     { label: 'Points', value: driver.points, icon: Hash, color: 'text-f1-red-light', bg: 'bg-f1-red/10' },
@@ -36,26 +40,44 @@ const DriverDetailPage: React.FC = () => {
         <span className="text-sm">Back to Standings</span>
       </Link>
 
-      {/* Driver Header */}
+      {/* Driver Hero Card */}
       <div className="glass-card overflow-hidden">
+        {/* Two-tone gradient hero background */}
         <div
-          className="h-2 w-full"
-          style={{ backgroundColor: driver.constructorColor }}
-        />
-        <div className="p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            <div
-              className="w-20 h-20 rounded-2xl flex items-center justify-center font-display font-black text-2xl text-white shadow-lg"
-              style={{ backgroundColor: driver.constructorColor }}
-            >
-              {driver.number}
-            </div>
-            <div className="flex-1">
-              <p className="text-f1-silver text-sm font-medium uppercase tracking-wider mb-1">{driver.constructorName}</p>
-              <h1 className="text-3xl sm:text-4xl font-display font-black tracking-tight">
-                {driver.firstName} <span className="gradient-text">{driver.lastName}</span>
+          className="relative overflow-hidden"
+          style={{
+            background: `linear-gradient(to right, ${theme.bgFrom} 0%, ${theme.bgFrom} 40%, ${theme.bgTo} 100%)`,
+            minHeight: '220px',
+          }}
+        >
+          {/* Dot-grid texture overlay (matches reference image) */}
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage: `radial-gradient(circle, ${theme.bgTo} 1px, transparent 1px)`,
+              backgroundSize: '18px 18px',
+            }}
+          />
+          {/* Right-side radial glow */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(ellipse at 80% 50%, ${theme.bgTo}55 0%, transparent 65%)`,
+            }}
+          />
+
+          <div className="relative flex items-end justify-between h-full px-6 pt-6 pb-0">
+            {/* Driver info */}
+            <div className="pb-6 z-10">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] mb-1" style={{ color: theme.bgTo }}>
+                #{driver.number} · {driver.constructorName}
+              </p>
+              <h1 className="text-3xl sm:text-4xl font-display font-black tracking-tight text-white drop-shadow-lg">
+                {driver.firstName}
+                <br />
+                <span className="text-4xl sm:text-5xl">{driver.lastName.toUpperCase()}</span>
               </h1>
-              <div className="flex items-center gap-4 mt-2 text-f1-silver text-sm">
+              <div className="flex items-center gap-3 mt-3 text-white/60 text-sm">
                 <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" />{driver.nationality}</span>
                 {driver.dateOfBirth && (
                   <span className="flex items-center gap-1">
@@ -65,10 +87,35 @@ const DriverDetailPage: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="text-right">
-              <span className="text-6xl font-display font-black text-f1-light-gray/30">#{driver.code}</span>
-            </div>
+
+            {/* Driver image */}
+            {driverImgUrl ? (
+              <img
+                src={driverImgUrl}
+                alt={`${driver.firstName} ${driver.lastName}`}
+                className="h-52 sm:h-64 object-contain object-bottom relative z-10 drop-shadow-2xl select-none"
+                style={{ maxWidth: '220px' }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+            ) : (
+              <div
+                className="h-52 sm:h-64 w-36 rounded-t-2xl flex items-end justify-center pb-4 relative z-10"
+                style={{ backgroundColor: `${theme.bgTo}22` }}
+              >
+                <span className="text-6xl font-display font-black text-white/20">{driver.code}</span>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Meta bar */}
+        <div className="px-6 py-3 flex items-center gap-4 border-t border-white/5">
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ backgroundColor: theme.primary }}
+          />
+          <span className="text-f1-silver text-sm">{driver.constructorName}</span>
+          <span className="ml-auto text-3xl font-display font-black text-f1-light-gray/20">#{driver.code}</span>
         </div>
       </div>
 
@@ -111,3 +158,4 @@ const DriverDetailPage: React.FC = () => {
 };
 
 export default DriverDetailPage;
+
