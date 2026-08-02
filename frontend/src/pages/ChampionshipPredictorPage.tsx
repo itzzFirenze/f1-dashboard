@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Trophy, RotateCcw, Zap, TrendingUp } from 'lucide-react';
+import { BrainCircuit, Sparkles, Trophy, RotateCcw, TrendingUp } from 'lucide-react';
 import { ResponsiveBar } from '@nivo/bar';
 import { driverService } from '../services/driverService';
 import { raceService } from '../services/raceService';
+import { analyticsService } from '../services/analyticsService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
-import type { Driver, Race } from '../types';
+import type { ConsistencyData, Driver, Race } from '../types';
 
 // F1 points system
 const POINTS_SYSTEM: Record<number, number> = {
@@ -23,18 +24,38 @@ interface Prediction {
   sprintPositions: Record<number, number>;
 }
 
+interface DriverModel {
+  driver: Driver;
+  paceScore: number;
+  formScore: number;
+  reliabilityScore: number;
+}
+
+const parseResultPosition = (value: string | undefined) => {
+  if (!value || value === 'DNF') return 21;
+  return parseInt(value, 10) || 21;
+};
+
+const seededNoise = (driverId: number, raceId: number) => {
+  const raw = Math.sin(driverId * 12.9898 + raceId * 78.233) * 43758.5453;
+  return (raw - Math.floor(raw)) * 2 - 1;
+};
+
 const ChampionshipPredictorPage: React.FC = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [races, setRaces] = useState<Race[]>([]);
+  const [consistency, setConsistency] = useState<ConsistencyData | null>(null);
   const [predictions, setPredictions] = useState<Map<number, Prediction>>(new Map());
   const [loading, setLoading] = useState(true);
   const [expandedRace, setExpandedRace] = useState<number | null>(null);
+  const [hasGeneratedInitialForecast, setHasGeneratedInitialForecast] = useState(false);
 
   useEffect(() => {
-    Promise.all([driverService.getAll(), raceService.getAll()])
-      .then(([d, r]) => {
+    Promise.all([driverService.getAll(), raceService.getAll(), analyticsService.getConsistency()])
+      .then(([d, r, c]) => {
         setDrivers(d);
         setRaces(r);
+        setConsistency(c);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -45,10 +66,41 @@ const ChampionshipPredictorPage: React.FC = () => {
 
   const sortedDrivers = useMemo(() => [...drivers].sort((a, b) => (a.championshipPosition || 99) - (b.championshipPosition || 99)), [drivers]);
 
+  const driverModels = useMemo<DriverModel[]>(() => {
+    const completedCount = Math.max(1, completedRaces.length);
+    const maxPoints = Math.max(1, ...drivers.map(d => d.points || 0));
+    const maxPodiums = Math.max(1, ...drivers.map(d => d.podiums || 0));
+    const maxWins = Math.max(1, ...drivers.map(d => d.wins || 0));
+    const consistencyByCode = new Map(consistency?.drivers.map(d => [d.driver.code, d]) || []);
+
+    return sortedDrivers.map(driver => {
+      const stats = consistencyByCode.get(driver.code);
+      const recentResults = stats
+        ? Object.values(stats.resultsByRace).slice(-3).map(parseResultPosition)
+        : [];
+      const recentAvgFinish = recentResults.length
+        ? recentResults.reduce((sum, pos) => sum + pos, 0) / recentResults.length
+        : driver.championshipPosition || 20;
+
+      const pointsRate = (driver.points || 0) / completedCount;
+      const championshipScore = 1 - ((driver.championshipPosition || 20) - 1) / Math.max(1, sortedDrivers.length - 1);
+      const paceScore =
+        ((driver.points || 0) / maxPoints) * 0.35 +
+        ((driver.wins || 0) / maxWins) * 0.2 +
+        ((driver.podiums || 0) / maxPodiums) * 0.15 +
+        Math.min(1, pointsRate / 25) * 0.2 +
+        championshipScore * 0.1;
+      const formScore = Math.max(0, (21 - recentAvgFinish) / 20);
+      const reliabilityScore = stats ? Math.max(0, stats.pointsFinishRate / 100) : championshipScore;
+
+      return { driver, paceScore, formScore, reliabilityScore };
+    });
+  }, [completedRaces.length, consistency, drivers, sortedDrivers]);
+
   const maxTheoreticalPoints = useMemo(() => {
-    const remainingRaces = upcomingRaces.length;
-    const maxPerRace = 25 + FASTEST_LAP_BONUS; // race win + fastest lap
-    return remainingRaces * maxPerRace;
+    const remainingRacePoints = upcomingRaces.length * (25 + FASTEST_LAP_BONUS);
+    const remainingSprintPoints = upcomingRaces.filter(r => r.sprintWeekend).length * 8;
+    return remainingRacePoints + remainingSprintPoints;
   }, [upcomingRaces]);
 
   const projectedStandings = useMemo(() => {
@@ -131,21 +183,66 @@ const ChampionshipPredictorPage: React.FC = () => {
     });
   }, []);
 
+  const forecastRace = useCallback((race: Race, sprint: boolean = false) => {
+    return [...driverModels]
+      .map(model => {
+        const driver = model.driver;
+        const constructorStrength = sortedDrivers
+          .filter(d => d.constructorName === driver.constructorName)
+          .reduce((sum, teammate) => sum + Math.max(0, 21 - (teammate.championshipPosition || 20)), 0) / 40;
+        const raceVariance = seededNoise(driver.id, race.id + (sprint ? 101 : 0));
+        const sprintBias = sprint ? model.formScore * 0.08 : model.reliabilityScore * 0.08;
+
+        return {
+          driver,
+          score:
+            model.paceScore * 0.52 +
+            model.formScore * 0.22 +
+            model.reliabilityScore * 0.12 +
+            constructorStrength * 0.09 +
+            sprintBias +
+            raceVariance * 0.045,
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [driverModels, sortedDrivers]);
+
   const autoFill = useCallback(() => {
     const next = new Map<number, Prediction>();
     upcomingRaces.forEach(race => {
-      const pred: Prediction = { raceId: race.id, positions: {}, fastestLap: sortedDrivers[0]?.id, hasSprint: false, sprintPositions: {} };
-      sortedDrivers.slice(0, 20).forEach((d, i) => {
-        pred.positions[d.id] = i + 1;
+      const raceForecast = forecastRace(race);
+      const sprintForecast = race.sprintWeekend ? forecastRace(race, true) : [];
+      const pred: Prediction = {
+        raceId: race.id,
+        positions: {},
+        fastestLap: raceForecast
+          .slice(0, 5)
+          .sort((a, b) => seededNoise(b.driver.id, race.id + 202) - seededNoise(a.driver.id, race.id + 202))[0]?.driver.id,
+        hasSprint: race.sprintWeekend,
+        sprintPositions: {},
+      };
+
+      raceForecast.slice(0, 20).forEach((entry, i) => {
+        pred.positions[entry.driver.id] = i + 1;
+      });
+      sprintForecast.slice(0, 8).forEach((entry, i) => {
+        pred.sprintPositions[entry.driver.id] = i + 1;
       });
       next.set(race.id, pred);
     });
     setPredictions(next);
-  }, [upcomingRaces, sortedDrivers]);
+  }, [forecastRace, upcomingRaces]);
 
   const resetAll = useCallback(() => {
     setPredictions(new Map());
   }, []);
+
+  useEffect(() => {
+    if (!loading && !hasGeneratedInitialForecast && upcomingRaces.length > 0 && driverModels.length > 0) {
+      autoFill();
+      setHasGeneratedInitialForecast(true);
+    }
+  }, [autoFill, driverModels.length, hasGeneratedInitialForecast, loading, upcomingRaces.length]);
 
   // Bar chart data for projected standings
   const barChartData = useMemo(() => {
@@ -179,7 +276,7 @@ const ChampionshipPredictorPage: React.FC = () => {
           <Trophy className="w-8 h-8 text-yellow-400" />
           Championship Predictor
         </h1>
-        <p className="text-f1-silver mt-1">Simulate remaining races and project championship outcomes</p>
+        <p className="text-f1-silver mt-1">Model remaining races from pace, form, consistency, and team strength</p>
       </div>
 
       {/* Action Buttons */}
@@ -188,8 +285,8 @@ const ChampionshipPredictorPage: React.FC = () => {
           onClick={autoFill}
           className="glass-card px-4 py-2.5 flex items-center gap-2 hover:bg-f1-red/20 transition-colors text-sm font-semibold"
         >
-          <Zap className="w-4 h-4 text-yellow-400" />
-          Auto-fill (Current Form)
+          <BrainCircuit className="w-4 h-4 text-yellow-400" />
+          Generate AI Forecast
         </button>
         <button
           onClick={resetAll}
@@ -199,9 +296,19 @@ const ChampionshipPredictorPage: React.FC = () => {
           Reset All
         </button>
         <div className="ml-auto glass-card px-4 py-2.5 text-sm text-f1-silver">
-          {upcomingRaces.length} races remaining · Max {maxTheoreticalPoints} pts available
+          {upcomingRaces.length} races remaining · {upcomingRaces.filter(r => r.sprintWeekend).length} sprint weekends · Max {maxTheoreticalPoints} pts available
         </div>
       </div>
+
+      {predictions.size > 0 && (
+        <div className="glass-card p-4 flex items-center gap-3 border-emerald-500/20">
+          <Sparkles className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-white">Forecast generated for {predictions.size} races</p>
+            <p className="text-xs text-f1-silver">Manual race overrides still update the projected championship table instantly.</p>
+          </div>
+        </div>
+      )}
 
       {/* Current vs Projected Standings Bar Chart */}
       <div className="glass-card p-6">
@@ -303,10 +410,10 @@ const ChampionshipPredictorPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Race-by-Race Simulator */}
+      {/* Race-by-Race Forecasts */}
       <div className="glass-card p-6">
-        <h2 className="text-xl font-display font-semibold mb-4">Race Simulator</h2>
-        <p className="text-f1-silver text-sm mb-6">Click a race to expand and set predicted finishing positions for the top 10</p>
+        <h2 className="text-xl font-display font-semibold mb-4">Race Forecasts</h2>
+        <p className="text-f1-silver text-sm mb-6">Click a race to inspect or override the model's predicted finishing positions</p>
         <div className="space-y-3">
           {upcomingRaces.map(race => {
             const isExpanded = expandedRace === race.id;
@@ -326,7 +433,12 @@ const ChampionshipPredictorPage: React.FC = () => {
                   <div className="flex items-center gap-3">
                     {filledPositions > 0 && (
                       <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">
-                        {filledPositions}/10 set
+                        {filledPositions}/20 forecast
+                      </span>
+                    )}
+                    {pred?.hasSprint && (
+                      <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">
+                        Sprint
                       </span>
                     )}
                     <span className="text-f1-silver text-sm">{isExpanded ? '▲' : '▼'}</span>
@@ -374,6 +486,28 @@ const ChampionshipPredictorPage: React.FC = () => {
                         </div>
                       );
                     })}
+                    {pred?.hasSprint && Object.keys(pred.sprintPositions).length > 0 && (
+                      <div className="mt-5 pt-4 border-t border-f1-mid-gray/30">
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-purple-300 mb-3">Sprint Forecast</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                          {Object.entries(pred.sprintPositions)
+                            .sort(([, a], [, b]) => a - b)
+                            .map(([driverId, position]) => {
+                              const driver = sortedDrivers.find(d => d.id === Number(driverId));
+                              if (!driver) return null;
+                              return (
+                                <div key={driverId} className="bg-f1-dark-gray/70 rounded-lg px-3 py-2 flex items-center justify-between">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className="text-xs font-bold text-purple-300 w-6">P{position}</span>
+                                    <span className="font-semibold text-sm truncate">{driver.code}</span>
+                                  </div>
+                                  <span className="text-xs text-f1-silver">+{SPRINT_POINTS[position] || 0}</span>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
