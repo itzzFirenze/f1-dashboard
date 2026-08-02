@@ -6,6 +6,14 @@ import { analyticsService } from '../services/analyticsService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import type { ConsistencyData } from '../types';
 
+const getFinishColor = (value: number | null) => {
+  if (value === null || value === undefined || value >= 21) return '#dc2626';
+  if (value <= 3) return '#16a34a';
+  if (value <= 10) return '#84cc16';
+  if (value <= 15) return '#facc15';
+  return '#f97316';
+};
+
 const ConsistencyPage: React.FC = () => {
   const [data, setData] = useState<ConsistencyData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,13 +92,7 @@ const ConsistencyPage: React.FC = () => {
                   tickSize: 0,
                   tickPadding: 8,
                 }}
-                colors={{
-                  type: 'diverging',
-                  scheme: 'red_yellow_green',
-                  divergeAt: 0.5,
-                  minValue: 1,
-                  maxValue: 21,
-                }}
+                colors={(cell) => getFinishColor(cell.value)}
                 emptyColor="#333"
                 borderWidth={1}
                 borderColor="#1a1a2e"

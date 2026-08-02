@@ -4,6 +4,7 @@ import com.f1dashboard.dto.RecordsDto;
 import com.f1dashboard.entity.Constructor;
 import com.f1dashboard.entity.Driver;
 import com.f1dashboard.entity.RaceResult;
+import com.f1dashboard.enums.SessionType;
 import com.f1dashboard.repository.ConstructorRepository;
 import com.f1dashboard.repository.DriverRepository;
 import com.f1dashboard.repository.RaceResultRepository;
@@ -29,7 +30,9 @@ public class RecordsService {
         
         List<Driver> drivers = driverRepository.findAll();
         List<Constructor> constructors = constructorRepository.findAll();
-        List<RaceResult> results = raceResultRepository.findAll();
+        List<RaceResult> results = raceResultRepository.findAll().stream()
+                .filter(r -> r.getSessionType() == SessionType.RACE)
+                .toList();
 
         // 1. Most Wins (Driver)
         dto.setMostWinsDriver(drivers.stream()

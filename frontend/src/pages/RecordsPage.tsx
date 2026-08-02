@@ -67,7 +67,7 @@ const RecordsPage: React.FC = () => {
           <Award className="w-8 h-8 text-yellow-400" />
           Historical Records Vault
         </h1>
-        <p className="text-f1-silver mt-1">Season records and all-time bests from the database</p>
+        <p className="text-f1-silver mt-1">Grand Prix race records from the seasons currently synced in the database</p>
       </div>
 
       {/* Group Tabs: Drivers / Constructors */}
