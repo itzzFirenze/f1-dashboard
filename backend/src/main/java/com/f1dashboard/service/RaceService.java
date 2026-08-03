@@ -24,130 +24,125 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class RaceService {
 
-    private final RaceRepository raceRepository;
-    private final RaceSessionRepository sessionRepository;
-    private final RaceResultRepository resultRepository;
-    private final WeatherDataRepository weatherRepository;
+   private final RaceRepository raceRepository;
+   private final RaceSessionRepository sessionRepository;
+   private final RaceResultRepository resultRepository;
+   private final WeatherDataRepository weatherRepository;
 
-    /** Get all races for a season */
-    public List<RaceDto> getRacesBySeason(Integer season) {
-        return raceRepository.findBySeasonOrderByRoundAsc(season)
-                .stream()
-                .map(this::toDto)
-                .toList();
-    }
+   /** Get all races for a season */
+   public List<RaceDto> getRacesBySeason(Integer season) {
+      return raceRepository.findBySeasonOrderByRoundAsc(season)
+            .stream()
+            .map(this::toDto)
+            .toList();
+   }
 
-    /** Get races filtered by status */
-    public List<RaceDto> getRacesByStatus(Integer season, RaceStatus status) {
-        return raceRepository.findBySeasonAndStatusOrderByRoundAsc(season, status)
-                .stream()
-                .map(this::toDto)
-                .toList();
-    }
+   /** Get races filtered by status */
+   public List<RaceDto> getRacesByStatus(Integer season, RaceStatus status) {
+      return raceRepository.findBySeasonAndStatusOrderByRoundAsc(season, status)
+            .stream()
+            .map(this::toDto)
+            .toList();
+   }
 
-    /** Search races by name or country */
-    public List<RaceDto> searchRaces(Integer season, String query) {
-        return raceRepository.searchRaces(season, query)
-                .stream()
-                .map(this::toDto)
-                .toList();
-    }
+   /** Search races by name or country */
+   public List<RaceDto> searchRaces(Integer season, String query) {
+      return raceRepository.searchRaces(season, query)
+            .stream()
+            .map(this::toDto)
+            .toList();
+   }
 
-    /** Get detailed race info with sessions, results, and weather */
-    public RaceDetailDto getRaceById(Long id) {
-        Race race = raceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Race", "id", id));
+   /** Get detailed race info with sessions, results, and weather */
+   public RaceDetailDto getRaceById(Long id) {
+      Race race = raceRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Race", "id", id));
 
-        List<RaceSessionDto> sessions = sessionRepository
-                .findByRaceIdOrderBySessionDateAscSessionTimeAsc(id)
-                .stream()
-                .map(this::toSessionDto)
-                .toList();
+      List<RaceSessionDto> sessions = sessionRepository
+            .findByRaceIdOrderBySessionDateAscSessionTimeAsc(id)
+            .stream()
+            .map(this::toSessionDto)
+            .toList();
 
-        List<RaceResultDto> results = resultRepository
-                .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.RACE)
-                .stream()
-                .map(this::toResultDto)
-                .toList();
+      List<RaceResultDto> results = resultRepository
+            .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.RACE)
+            .stream()
+            .map(this::toResultDto)
+            .toList();
 
-        List<RaceResultDto> sprintResults = resultRepository
-                .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.SPRINT)
-                .stream()
-                .map(this::toResultDto)
-                .toList();
+      List<RaceResultDto> sprintResults = resultRepository
+            .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.SPRINT)
+            .stream()
+            .map(this::toResultDto)
+            .toList();
 
-        List<RaceResultDto> qualifyingResults = resultRepository
-                .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.QUALIFYING)
-                .stream()
-                .map(this::toResultDto)
-                .toList();
+      List<RaceResultDto> qualifyingResults = resultRepository
+            .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.QUALIFYING)
+            .stream()
+            .map(this::toResultDto)
+            .toList();
 
-        WeatherDto weather = weatherRepository.findByRaceId(id)
-                .map(this::toWeatherDto)
-                .orElse(null);
+      WeatherDto weather = weatherRepository.findByRaceId(id)
+            .map(this::toWeatherDto)
+            .orElse(null);
 
-        return new RaceDetailDto(
+      return new RaceDetailDto(
             race.getId(), race.getSeason(), race.getRound(), race.getName(),
             toCircuitDto(race),
             race.getRaceDate(), race.getRaceTime(),
             race.getStatus().name(), race.getSprintWeekend(),
-            sessions, results, sprintResults, qualifyingResults, weather
-        );
-    }
+            sessions, results, sprintResults, qualifyingResults, weather);
+   }
 
-    /** Get the next upcoming race */
-    public Race getNextRace() {
-        return raceRepository.findNextUpcomingRace();
-    }
+   /** Get the next upcoming race */
+   public Race getNextRace() {
+      return raceRepository.findNextUpcomingRace();
+   }
 
-    // ---- Mapping methods ----
+   // ---- Mapping methods ----
 
-    private RaceDto toDto(Race r) {
-        return new RaceDto(
+   private RaceDto toDto(Race r) {
+      return new RaceDto(
             r.getId(), r.getSeason(), r.getRound(), r.getName(),
             r.getCircuit().getName(),
             r.getCircuit().getCountry(),
             r.getCircuit().getLocation(),
             r.getRaceDate(), r.getRaceTime(),
-            r.getStatus().name(), r.getSprintWeekend()
-        );
-    }
+            r.getStatus().name(), r.getSprintWeekend());
+   }
 
-    private CircuitDto toCircuitDto(Race r) {
-        var c = r.getCircuit();
-        return new CircuitDto(
+   private CircuitDto toCircuitDto(Race r) {
+      var c = r.getCircuit();
+      return new CircuitDto(
             c.getId(), c.getName(), c.getCountry(), c.getLocation(),
             c.getLengthKm(), c.getCorners(), c.getLapRecord(),
             c.getLapRecordHolder(), c.getImageUrl(),
-            c.getLatitude(), c.getLongitude()
-        );
-    }
+            c.getLatitude(), c.getLongitude());
+   }
 
-    private RaceSessionDto toSessionDto(RaceSession s) {
-        return new RaceSessionDto(
+   private RaceSessionDto toSessionDto(RaceSession s) {
+      return new RaceSessionDto(
             s.getId(), s.getSessionType().name(),
             s.getSessionType().getDisplayName(),
             s.getSessionDate(), s.getSessionTime(),
-            s.getStatus().name()
-        );
-    }
+            s.getStatus().name());
+   }
 
-    private RaceResultDto toResultDto(RaceResult r) {
-        return new RaceResultDto(
+   private RaceResultDto toResultDto(RaceResult r) {
+      return new RaceResultDto(
             r.getId(), r.getPosition(),
             r.getDriver().getCode(),
             r.getDriver().getFirstName(),
             r.getDriver().getLastName(),
             r.getDriver().getConstructor() != null ? r.getDriver().getConstructor().getName() : null,
             r.getDriver().getConstructor() != null ? r.getDriver().getConstructor().getColor() : null,
-            r.getPoints(), r.getStatus(), r.getFastestLap(), r.getGridPosition()
-        );
-    }
+            r.getPoints(), r.getStatus(), r.getFastestLap(), r.getGridPosition(),
+            r.getQ1Time(), r.getQ2Time(), r.getQ3Time());
+   }
 
-    private WeatherDto toWeatherDto(WeatherData w) {
-        return new WeatherDto(
+   private WeatherDto toWeatherDto(WeatherData w) {
+      return new WeatherDto(
             w.getTemperature(), w.getRainProbability(), w.getWindSpeed(),
-            w.getWeatherCondition(), w.getHumidity(), w.getLastUpdated()
-        );
-    }
+            w.getWeatherCondition(), w.getHumidity(), w.getLastUpdated());
+   }
 }
