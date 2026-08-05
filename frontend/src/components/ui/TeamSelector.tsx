@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, ChevronDown, X } from 'lucide-react';
-import type { Driver } from '../../types';
+import type { Constructor } from '../../types';
+import { resolveTheme } from '../../config/teamThemes';
 
-interface DriverSelectorProps {
-   drivers: Driver[];
-   selected: Driver | null;
-   onSelect: (driver: Driver | null) => void;
+interface TeamSelectorProps {
+   teams: Constructor[];
+   selected: Constructor | null;
+   onSelect: (team: Constructor | null) => void;
    label: string;
-   accentColor?: string;
 }
 
-const DriverSelector: React.FC<DriverSelectorProps> = ({
-   drivers, selected, onSelect, label, accentColor = '#e10600'
-}) => {
+const TeamSelector: React.FC<TeamSelectorProps> = ({ teams, selected, onSelect, label }) => {
    const [open, setOpen] = useState(false);
    const [search, setSearch] = useState('');
    const ref = useRef<HTMLDivElement>(null);
@@ -25,9 +23,7 @@ const DriverSelector: React.FC<DriverSelectorProps> = ({
       return () => document.removeEventListener('mousedown', handler);
    }, []);
 
-   const filtered = drivers.filter(d =>
-      `${d.firstName} ${d.lastName} ${d.code}`.toLowerCase().includes(search.toLowerCase())
-   );
+   const filtered = teams.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
 
    return (
       <div ref={ref} className="relative w-full">
@@ -37,19 +33,23 @@ const DriverSelector: React.FC<DriverSelectorProps> = ({
          <button
             onClick={() => setOpen(!open)}
             className="w-full glass-card p-4 flex items-center gap-3 text-left transition-all"
-            style={{ borderColor: selected ? selected.constructorColor : 'rgba(255,255,255,0.05)' }}
+            style={{ borderColor: selected ? (selected.color || '#666') : 'rgba(255,255,255,0.05)' }}
          >
             {selected ? (
                <>
                   <div
-                     className="w-10 h-10 rounded-xl flex items-center justify-center font-display font-bold text-white text-sm"
-                     style={{ backgroundColor: selected.constructorColor }}
+                     className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-f1-mid-gray"
+                     style={{ borderColor: selected.color || '#666' }}
                   >
-                     {selected.code}
+                     <img
+                        src={resolveTheme(selected.name).teamLogoUrl}
+                        alt={selected.name}
+                        className="w-7 h-7 object-contain"
+                     />
                   </div>
                   <div className="flex-1">
-                     <p className="font-semibold">{selected.firstName} {selected.lastName}</p>
-                     <p className="text-xs text-f1-silver">{selected.constructorName}</p>
+                     <p className="font-semibold">{selected.name}</p>
+                     <p className="text-xs text-f1-silver">{selected.points} pts</p>
                   </div>
                   <X
                      className="w-4 h-4 text-f1-silver hover:text-white cursor-pointer"
@@ -61,7 +61,7 @@ const DriverSelector: React.FC<DriverSelectorProps> = ({
                   <div className="w-10 h-10 rounded-xl bg-f1-mid-gray flex items-center justify-center">
                      <Search className="w-4 h-4 text-f1-silver" />
                   </div>
-                  <span className="text-f1-silver">Select a driver...</span>
+                  <span className="text-f1-silver">Select a team...</span>
                   <ChevronDown className="w-4 h-4 text-f1-silver ml-auto" />
                </>
             )}
@@ -76,34 +76,34 @@ const DriverSelector: React.FC<DriverSelectorProps> = ({
                         autoFocus
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search drivers..."
+                        placeholder="Search teams..."
                         className="w-full bg-f1-mid-gray/50 border border-white/5 rounded-xl px-4 py-2.5 pl-10 text-sm text-f1-white placeholder-f1-silver/50 focus:outline-none focus:border-f1-red/50"
                      />
                   </div>
                </div>
                <div className="overflow-y-auto max-h-60">
-                  {filtered.map((d) => (
+                  {filtered.map((t) => (
                      <button
-                        key={d.id}
-                        onClick={() => { onSelect(d); setOpen(false); setSearch(''); }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 ${selected?.id === d.id ? 'bg-white/5' : ''
+                        key={t.id}
+                        onClick={() => { onSelect(t); setOpen(false); setSearch(''); }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all hover:bg-white/5 ${selected?.id === t.id ? 'bg-white/5' : ''
                            }`}
                      >
-                        <div
-                           className="w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold text-white text-xs"
-                           style={{ backgroundColor: d.constructorColor }}
-                        >
-                           {d.code}
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-f1-mid-gray">
+                           <img
+                              src={resolveTheme(t.name).teamLogoUrl}
+                              alt={t.name}
+                              className="w-6 h-6 object-contain"
+                           />
                         </div>
                         <div className="flex-1">
-                           <p className="text-sm font-medium">{d.firstName} {d.lastName}</p>
-                           <p className="text-xs text-f1-silver">{d.constructorName} · P{d.championshipPosition}</p>
+                           <p className="text-sm font-medium">{t.name}</p>
                         </div>
-                        <span className="text-xs text-f1-silver">{d.points} pts</span>
+                        <span className="text-xs text-f1-silver">{t.points} pts</span>
                      </button>
                   ))}
                   {filtered.length === 0 && (
-                     <p className="px-4 py-6 text-center text-sm text-f1-silver">No drivers found</p>
+                     <p className="px-4 py-6 text-center text-sm text-f1-silver">No teams found</p>
                   )}
                </div>
             </div>
@@ -112,4 +112,4 @@ const DriverSelector: React.FC<DriverSelectorProps> = ({
    );
 };
 
-export default DriverSelector;
+export default TeamSelector;
