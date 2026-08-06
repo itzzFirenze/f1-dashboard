@@ -132,8 +132,8 @@ const RaceDetailPage: React.FC = () => {
                               key={tab}
                               onClick={() => setActiveTab(tab)}
                               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tab
-                                    ? 'bg-f1-red text-white shadow-lg shadow-f1-red/20'
-                                    : 'text-f1-silver hover:text-f1-white hover:bg-f1-mid-gray/40'
+                                 ? 'bg-f1-red text-white shadow-lg shadow-f1-red/20'
+                                 : 'text-f1-silver hover:text-f1-white hover:bg-f1-mid-gray/40'
                                  }`}
                            >
                               {tab === 'race' && <Trophy className="w-4 h-4 inline mr-1.5 -mt-0.5" />}
@@ -158,9 +158,9 @@ const RaceDetailPage: React.FC = () => {
                            <div key={result.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-f1-mid-gray/30 transition-colors">
                               <div className="flex items-center gap-3">
                                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${result.position === 1 ? 'bg-amber-500/20 text-amber-400' :
-                                       result.position === 2 ? 'bg-gray-400/20 text-gray-300' :
-                                          result.position === 3 ? 'bg-orange-700/20 text-orange-400' :
-                                             'bg-f1-mid-gray text-f1-silver'
+                                    result.position === 2 ? 'bg-gray-400/20 text-gray-300' :
+                                       result.position === 3 ? 'bg-orange-700/20 text-orange-400' :
+                                          'bg-f1-mid-gray text-f1-silver'
                                     }`}>
                                     {result.position}
                                  </span>
@@ -213,7 +213,10 @@ const RaceDetailPage: React.FC = () => {
                         </div>
                      ))}
                      {race.circuit.lapRecordHolder && (
-                        <p className="text-xs text-f1-silver/60 mt-1">Record by {race.circuit.lapRecordHolder}</p>
+                        <p className="text-xs text-f1-silver/80 mt-1 flex items-center gap-1.5">
+                           <span className="text-f1-silver/50">Record by</span>
+                           <span className="font-semibold text-f1-white">{race.circuit.lapRecordHolder}</span>
+                        </p>
                      )}
                   </div>
                </div>
