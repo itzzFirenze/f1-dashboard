@@ -1,32 +1,145 @@
-import React, { useId, useMemo, useState, useEffect } from 'react';
+import React, { useId, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Info, Users, Compass } from 'lucide-react';
+import { MapPin, Compass } from 'lucide-react';
 import { useReplay } from '../../context/ReplayContext';
-import { CircuitData } from '../../data/circuits';
+import { CircuitData, CircuitCornerMarker } from '../../data/circuits';
+import { OpenF1Driver, OpenF1Lap } from '../../services/telemetryService';
 import CornerMarker from './CornerMarker';
 import ActiveAeroZone from './ActiveAeroZone';
 import SectorPath from './SectorPath';
+import SpeedTrapMarker from './SpeedTrapMarker';
+import { usePathPoint } from './usePathPoint';
 
 interface InteractiveReplayMapProps {
   circuit: CircuitData;
 }
 
+/** Small detection-point marker identical to the one in InteractiveCircuitMap */
+const DetectionPoint: React.FC<{ pathId: string; point: { id: string; label: string; positionPercent: number } }> = ({ pathId, point }) => {
+  const position = usePathPoint(pathId, point.positionPercent);
+  return (
+    <g transform={`translate(${position.x} ${position.y})`}>
+      <rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" fill="#f59e0b" stroke="#fde68a" strokeWidth="1" />
+      <text x="8" y="3" fontSize="7" fill="#fde68a">{point.label}</text>
+    </g>
+  );
+};
+
+/** Driver marker placed directly on the SVG track path using path percentage */
+const DriverMarkerOnTrack: React.FC<{
+  pathId: string;
+  driver: OpenF1Driver;
+  percent: number;
+  isSelected: boolean;
+  onSelect: () => void;
+  onHover: (driverNo: number | null) => void;
+}> = ({ pathId, driver, percent, isSelected, onHover, onSelect }) => {
+  const pos = usePathPoint(pathId, percent);
+  const teamColor = `#${driver.team_colour || 'ffffff'}`;
+
+  return (
+    <g
+      onClick={onSelect}
+      onMouseEnter={() => onHover(driver.driver_number)}
+      onMouseLeave={() => onHover(null)}
+      className="cursor-pointer group"
+    >
+      {isSelected && (
+        <circle
+          cx={pos.x}
+          cy={pos.y}
+          r="14"
+          fill="transparent"
+          stroke={teamColor}
+          strokeWidth="2"
+          className="animate-ping opacity-75"
+        />
+      )}
+
+      {/* Outer dot outline */}
+      <circle
+        cx={pos.x}
+        cy={pos.y}
+        r="9"
+        fill="#0f172a"
+        stroke={teamColor}
+        strokeWidth="2"
+        className="transition-all duration-300 group-hover:scale-125"
+      />
+
+      {/* Inner driver team color fill */}
+      <circle
+        cx={pos.x}
+        cy={pos.y}
+        r="5.5"
+        fill={teamColor}
+        className="transition-all duration-300 group-hover:scale-125"
+      />
+
+      {/* Mini Driver Label Text */}
+      <text
+        x={pos.x}
+        y={pos.y - 13}
+        textAnchor="middle"
+        fontSize="9"
+        fontWeight="800"
+        fill="#f8fafc"
+        className="select-none font-mono filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
+      >
+        {driver.name_acronym}
+      </text>
+    </g>
+  );
+};
+
+/** Calculates a driver's lap completion percentage for SVG track path positioning */
+const getDriverLapPercent = (
+  driverNumber: number,
+  index: number,
+  currentTime: Date | null,
+  laps: OpenF1Lap[]
+): number => {
+  if (!currentTime || !laps || laps.length === 0) {
+    return (100 - (index * 2.2)) % 100;
+  }
+
+  const nowMs = currentTime.getTime();
+  const driverLaps = laps.filter(
+    (l) => l.driver_number === driverNumber && l.date_start && new Date(l.date_start).getTime() <= nowMs
+  );
+
+  if (driverLaps.length === 0) {
+    return (100 - (index * 2.2)) % 100;
+  }
+
+  // Active lap (most recent lap started)
+  const activeLap = driverLaps.reduce((latest, l) => {
+    return new Date(l.date_start!).getTime() > new Date(latest.date_start!).getTime() ? l : latest;
+  }, driverLaps[0]);
+
+  const lapStartMs = new Date(activeLap.date_start!).getTime();
+  const lapDurationSec = activeLap.lap_duration && activeLap.lap_duration > 0 ? activeLap.lap_duration : 90;
+  const elapsedSec = Math.max(0, (nowMs - lapStartMs) / 1000);
+
+  const percent = Math.min(99.5, Math.max(0, (elapsedSec / lapDurationSec) * 100));
+  return percent;
+};
+
 export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circuit }) => {
   const mapId = useId();
   const pathId = useMemo(() => `replay-track-${mapId.replace(/:/g, '')}`, [mapId]);
-  const { driverLocations, drivers, selectedDrivers, toggleDriverSelection, currentTime } = useReplay();
+  const { driverLocations, drivers, selectedDrivers, toggleDriverSelection, laps, currentTime } = useReplay();
 
   const [hoveredDriver, setHoveredDriver] = useState<number | null>(null);
+  const [selectedCorner, setSelectedCorner] = useState<CircuitCornerMarker | null>(null);
 
-  // Compute bounding box of active location samples to calibrate the projection matrix
+  // Compute bounding box of active location samples to calibrate projection matrix if telemetry location data exists
   const projection = useMemo(() => {
     const locations = Object.values(driverLocations);
     if (locations.length === 0) {
-      return { scaleX: 1, scaleY: 1, offsetX: 0, offsetY: 0, invertX: false, invertY: false };
+      return { scaleX: 1, scaleY: 1, offsetX: 0, offsetY: 0 };
     }
 
-    // Default circuit boundaries or computed dynamically
-    // OpenF1 coordinate bounds typically span thousands of meters. Let's calculate the bounding box.
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     locations.forEach((loc) => {
       if (loc.x < minX) minX = loc.x;
@@ -38,16 +151,9 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
     const rangeX = maxX - minX || 1;
     const rangeY = maxY - minY || 1;
 
-    // We want to map into SVG bounds (typically 40 to 460 in a 500x500 box to leave padding)
     const padding = 60;
-    const targetMinX = padding;
-    const targetMaxX = 500 - padding;
-    const targetMinY = padding;
-    const targetMaxY = 500 - padding;
-    const targetWidth = targetMaxX - targetMinX;
-    const targetHeight = targetMaxY - targetMinY;
-
-    // Fit aspect ratio
+    const targetWidth = 500 - padding * 2;
+    const targetHeight = 500 - padding * 2;
     const scale = Math.min(targetWidth / rangeX, targetHeight / rangeY);
 
     return {
@@ -59,12 +165,10 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
   }, [driverLocations]);
 
   // Project telemetry coordinates to SVG space
-  const project = (x: number, y: number) => {
-    return {
-      x: x * projection.scaleX + projection.offsetX,
-      y: y * projection.scaleY + projection.offsetY,
-    };
-  };
+  const project = (x: number, y: number) => ({
+    x: x * projection.scaleX + projection.offsetX,
+    y: y * projection.scaleY + projection.offsetY,
+  });
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-f1-dark-gray/60 p-4 shadow-2xl backdrop-blur-md">
@@ -77,17 +181,23 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
         </p>
       </div>
 
-      <div className="absolute right-4 top-4 z-10 flex gap-2">
+      {/* HUD Badges */}
+      <div className="absolute right-4 top-4 z-10 flex flex-wrap gap-1.5">
         <span className="rounded-md border border-white/10 bg-black/40 px-2 py-1 text-[10px] font-medium text-f1-silver flex items-center gap-1">
-          <Compass className="h-3 w-3" /> Telemetry Sync
+          <Compass className="h-3 w-3 text-f1-red" /> Live Driver Trackers ({drivers.length})
         </span>
+        <span className="rounded-md border border-red-400/30 bg-red-500/10 px-2 py-1 text-[10px] text-red-200">S1</span>
+        <span className="rounded-md border border-sky-400/30 bg-sky-500/10 px-2 py-1 text-[10px] text-sky-200">S2</span>
+        <span className="rounded-md border border-yellow-300/30 bg-yellow-400/10 px-2 py-1 text-[10px] text-yellow-100">S3</span>
+        <span className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 text-[10px] text-cyan-200">Active Aero</span>
+        <span className="rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] text-amber-200">Overtake</span>
       </div>
 
-      {/* SVG Circuit Visualizer */}
-      <svg viewBox="0 0 500 500" className="h-[480px] w-full sm:h-[580px]">
+      {/* SVG Circuit Visualizer — key on circuit.id forces re-mount when circuit changes */}
+      <svg viewBox="0 0 500 500" className="h-[480px] w-full sm:h-[580px]" key={circuit.id}>
         {/* Glow & Track Shadows */}
         <defs>
-          <filter id="track-glow">
+          <filter id={`${pathId}-glow`}>
             <feGaussianBlur stdDeviation="3" result="coloredBlur" />
             <feMerge>
               <feMergeNode in="coloredBlur" />
@@ -96,7 +206,10 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
           </filter>
         </defs>
 
-        {/* Track outline */}
+        {/* Hidden reference path for usePathPoint — needs an id so getElementById works */}
+        <path id={pathId} d={circuit.trackPath} fill="none" stroke="transparent" strokeWidth="1" />
+
+        {/* Track outline layers */}
         <path
           d={circuit.trackPath}
           fill="none"
@@ -112,7 +225,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
           strokeWidth="10"
           strokeLinecap="round"
           strokeLinejoin="round"
-          filter="url(#track-glow)"
+          filter={`url(#${pathId}-glow)`}
           opacity="0.2"
         />
         <path
@@ -124,75 +237,151 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
           strokeLinejoin="round"
         />
 
-        {/* Render Circuit DRS Zones */}
+        {/* Sector Highlights */}
+        {circuit.sectors.map((sector) => (
+          <SectorPath key={sector.id} path={circuit.trackPath} sector={sector} active={false} onHover={() => {}} />
+        ))}
+
+        {/* Active Aero / DRS Zones */}
         {circuit.drsZonesData.map((zone) => (
           <ActiveAeroZone key={zone.id} path={circuit.trackPath} zone={zone} active={false} onHover={() => {}} />
         ))}
 
-        {/* Render Driver Markers */}
-        {drivers.map((driver) => {
-          const loc = driverLocations[driver.driver_number];
-          if (!loc) return null;
+        {/* DRS Detection Points */}
+        {circuit.drsDetectionPoints.map((point) => (
+          <DetectionPoint key={point.id} pathId={pathId} point={point} />
+        ))}
 
-          const pos = project(loc.x, loc.y);
+        {/* Speed Trap Marker */}
+        <SpeedTrapMarker speedTrap={circuit.speedTrap} pathId={pathId} onHover={() => {}} />
+
+        {/* Corner Markers */}
+        {circuit.cornerMarkers.map((corner) => (
+          <CornerMarker
+            key={corner.number}
+            corner={corner}
+            pathId={pathId}
+            selected={selectedCorner?.number === corner.number}
+            onHover={() => {}}
+            onSelect={setSelectedCorner}
+          />
+        ))}
+
+        {/* Render Driver Markers */}
+        {drivers.map((driver, index) => {
+          const loc = driverLocations[driver.driver_number];
           const isSelected = selectedDrivers.includes(driver.driver_number);
           const teamColor = `#${driver.team_colour || 'ffffff'}`;
 
-          return (
-            <g
-              key={driver.driver_number}
-              onClick={() => toggleDriverSelection(driver.driver_number)}
-              onMouseEnter={() => setHoveredDriver(driver.driver_number)}
-              onMouseLeave={() => setHoveredDriver(null)}
-              className="cursor-pointer group"
-            >
-              {/* Dynamic pulse / selection glow */}
-              {isSelected && (
+          // 1. If raw telemetry GPS location is present, project it
+          if (loc && loc.x !== undefined && loc.y !== undefined && Object.keys(driverLocations).length > 0) {
+            const pos = project(loc.x, loc.y);
+            return (
+              <g
+                key={driver.driver_number}
+                onClick={() => toggleDriverSelection(driver.driver_number)}
+                onMouseEnter={() => setHoveredDriver(driver.driver_number)}
+                onMouseLeave={() => setHoveredDriver(null)}
+                className="cursor-pointer group"
+              >
+                {isSelected && (
+                  <circle
+                    cx={pos.x}
+                    cy={pos.y}
+                    r="14"
+                    fill="transparent"
+                    stroke={teamColor}
+                    strokeWidth="2"
+                    className="animate-ping opacity-75"
+                  />
+                )}
                 <circle
                   cx={pos.x}
                   cy={pos.y}
-                  r="14"
-                  fill="transparent"
+                  r="9"
+                  fill="#0f172a"
                   stroke={teamColor}
                   strokeWidth="2"
-                  className="animate-ping opacity-75"
+                  className="transition-all duration-300 group-hover:scale-125"
                 />
-              )}
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r="5.5"
+                  fill={teamColor}
+                  className="transition-all duration-300 group-hover:scale-125"
+                />
+                <text
+                  x={pos.x}
+                  y={pos.y - 13}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fontWeight="800"
+                  fill="#f8fafc"
+                  className="select-none font-mono filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
+                >
+                  {driver.name_acronym}
+                </text>
+              </g>
+            );
+          }
 
-              {/* Driver Dot Marker */}
-              <circle
-                cx={pos.x}
-                cy={pos.y}
-                r="8"
-                fill={teamColor}
-                stroke="#0f172a"
-                strokeWidth="2"
-                className="transition-all duration-300 group-hover:scale-125"
-              />
+          // 2. Fallback: Position driver along the SVG track path based on lap timing progress
+          const percent = getDriverLapPercent(driver.driver_number, index, currentTime, laps);
 
-              {/* Mini Driver Label Text */}
-              <text
-                x={pos.x}
-                y={pos.y - 12}
-                textAnchor="middle"
-                fontSize="9"
-                fontWeight="800"
-                fill="#f8fafc"
-                className="select-none bg-black/80 px-1 font-mono filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-              >
-                {driver.name_acronym}
-              </text>
-            </g>
+          return (
+            <DriverMarkerOnTrack
+              key={driver.driver_number}
+              pathId={pathId}
+              driver={driver}
+              percent={percent}
+              isSelected={isSelected}
+              onSelect={() => toggleDriverSelection(driver.driver_number)}
+              onHover={setHoveredDriver}
+            />
           );
         })}
       </svg>
 
-      {/* Interactive Tooltip Panel */}
+      {/* Selected Corner Info Badge */}
+      <AnimatePresence>
+        {selectedCorner && (
+          <motion.div
+            key={selectedCorner.number}
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 12 }}
+            className="pointer-events-none absolute right-4 bottom-4 z-20 w-56 rounded-xl border border-f1-red/30 bg-f1-black/95 p-3 shadow-2xl backdrop-blur-md"
+          >
+            <p className="text-[9px] uppercase tracking-[0.15em] text-f1-red-light">Turn {selectedCorner.number}</p>
+            <h4 className="mt-1 text-sm font-display font-bold text-f1-white">{selectedCorner.name}</h4>
+            <div className="mt-2 grid grid-cols-3 gap-1.5 text-center text-[10px]">
+              <div className="rounded bg-white/[0.04] py-1">
+                <p className="text-f1-silver">Type</p>
+                <p className="font-semibold text-f1-white">{selectedCorner.type}</p>
+              </div>
+              <div className="rounded bg-white/[0.04] py-1">
+                <p className="text-f1-silver">Speed</p>
+                <p className="font-semibold text-f1-white">{selectedCorner.averageSpeedKmh}</p>
+              </div>
+              <div className="rounded bg-white/[0.04] py-1">
+                <p className="text-f1-silver">Pass</p>
+                <p className="font-semibold text-f1-white">{selectedCorner.overtakingRating}/10</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Interactive Driver Tooltip Panel */}
       <AnimatePresence>
         {hoveredDriver && (() => {
           const driver = drivers.find((d) => d.driver_number === hoveredDriver);
           const loc = driverLocations[hoveredDriver];
-          if (!driver || !loc) return null;
+          const index = drivers.findIndex((d) => d.driver_number === hoveredDriver);
+          const percent = getDriverLapPercent(hoveredDriver, Math.max(0, index), currentTime, laps);
+
+          if (!driver) return null;
 
           return (
             <motion.div
@@ -218,16 +407,24 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                 </div>
                 <div className="flex justify-between">
                   <span>Number</span>
-                  <span className="font-mono text-f1-white">{driver.driver_number}</span>
+                  <span className="font-mono text-f1-white">#{driver.driver_number}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>X Coordinate</span>
-                  <span className="font-mono text-f1-white">{loc.x.toFixed(1)} m</span>
+                  <span>Track Lap Progress</span>
+                  <span className="font-mono text-f1-white">{percent.toFixed(1)}%</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Y Coordinate</span>
-                  <span className="font-mono text-f1-white">{loc.y.toFixed(1)} m</span>
-                </div>
+                {loc && (
+                  <>
+                    <div className="flex justify-between">
+                      <span>X Coordinate</span>
+                      <span className="font-mono text-f1-white">{loc.x.toFixed(1)} m</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Y Coordinate</span>
+                      <span className="font-mono text-f1-white">{loc.y.toFixed(1)} m</span>
+                    </div>
+                  </>
+                )}
               </div>
             </motion.div>
           );
@@ -236,3 +433,4 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
     </div>
   );
 };
+

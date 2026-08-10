@@ -6,6 +6,61 @@ import { ReplayFeeds } from '../components/circuit/ReplayFeeds';
 import { TelemetryTelemetryDashboard } from '../components/circuit/TelemetryTelemetryDashboard';
 import { Play, Pause, Square, SkipBack, SkipForward, Radio, Flag, Trophy, Loader2 } from 'lucide-react';
 
+/**
+ * Maps OpenF1 session location / circuit_short_name values to our local circuit IDs.
+ * Covers every 2024 F1 calendar venue with common aliases.
+ */
+const SESSION_LOCATION_TO_CIRCUIT_ID: Record<string, string> = {
+  // Bahrain
+  sakhir: 'bahrain', bahrain: 'bahrain',
+  // Saudi Arabia
+  jeddah: 'saudi-arabia', 'saudi arabia': 'saudi-arabia',
+  // Australia
+  melbourne: 'australia', 'albert park': 'australia', australia: 'australia',
+  // Japan
+  suzuka: 'japan', japan: 'japan',
+  // China
+  shanghai: 'china', china: 'china',
+  // Miami
+  miami: 'miami', 'miami gardens': 'miami',
+  // Imola
+  imola: 'imola',
+  // Monaco
+  monaco: 'monaco', 'monte carlo': 'monaco', 'monte-carlo': 'monaco',
+  // Canada
+  montreal: 'canada', montréal: 'canada', canada: 'canada',
+  // Spain
+  montmelo: 'spain', montmeló: 'spain', barcelona: 'spain', spain: 'spain',
+  // Austria
+  spielberg: 'austria', austria: 'austria',
+  // UK
+  silverstone: 'silverstone', 'great britain': 'silverstone',
+  // Belgium
+  stavelot: 'belgium', spa: 'belgium', 'spa-francorchamps': 'belgium', belgium: 'belgium',
+  // Hungary
+  budapest: 'hungary', hungary: 'hungary',
+  // Netherlands
+  zandvoort: 'netherlands', netherlands: 'netherlands',
+  // Italy — Monza
+  monza: 'monza',
+  // Azerbaijan
+  baku: 'azerbaijan', azerbaijan: 'azerbaijan',
+  // Singapore
+  'marina bay': 'singapore', singapore: 'singapore',
+  // USA — Austin
+  austin: 'austin',
+  // Mexico
+  'mexico city': 'mexico', mexico: 'mexico',
+  // Brazil
+  'sao paulo': 'brazil', 'são paulo': 'brazil', interlagos: 'brazil', brazil: 'brazil',
+  // Las Vegas
+  'las vegas': 'las-vegas',
+  // Qatar
+  lusail: 'qatar', qatar: 'qatar',
+  // Abu Dhabi
+  'abu dhabi': 'abu-dhabi', 'yas marina': 'abu-dhabi', 'yas island': 'abu-dhabi',
+};
+
 const RaceReplayCenterPage: React.FC = () => {
   const {
     activeSession,
@@ -34,15 +89,37 @@ const RaceReplayCenterPage: React.FC = () => {
     loadSessions(2024);
   }, []);
 
-  // Map active session's location to static circuit metadata
+  // Map active session's location to static circuit metadata using robust lookup
   const currentCircuit = React.useMemo(() => {
     if (!activeSession) return circuits[0];
-    const match = circuits.find(
-      (c) =>
-        c.id.toLowerCase().includes(activeSession.location.toLowerCase()) ||
-        activeSession.location.toLowerCase().includes(c.id.toLowerCase())
-    );
-    return match || circuits[0];
+
+    const sessionLoc = (activeSession.location ?? '').toLowerCase().trim();
+    const circuitShort = (activeSession.circuit_short_name ?? '').toLowerCase().trim();
+
+    // 1. Try direct lookup table match
+    const idFromLoc = SESSION_LOCATION_TO_CIRCUIT_ID[sessionLoc];
+    const idFromShort = SESSION_LOCATION_TO_CIRCUIT_ID[circuitShort];
+    if (idFromLoc) {
+      const found = circuits.find((c) => c.id === idFromLoc);
+      if (found) return found;
+    }
+    if (idFromShort) {
+      const found = circuits.find((c) => c.id === idFromShort);
+      if (found) return found;
+    }
+
+    // 2. Fuzzy fallback — match circuit id or location against session location
+    const fuzzy = circuits.find((c) => {
+      const cId = c.id.toLowerCase();
+      const cLoc = c.location.toLowerCase();
+      return (
+        cId === sessionLoc || cLoc === sessionLoc ||
+        cId === circuitShort || cLoc === circuitShort ||
+        sessionLoc.includes(cId) || cId.includes(sessionLoc) ||
+        circuitShort.includes(cId) || cId.includes(circuitShort)
+      );
+    });
+    return fuzzy || circuits[0];
   }, [activeSession]);
 
   return (
