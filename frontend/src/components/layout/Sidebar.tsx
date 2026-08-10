@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Trophy, Calendar, Map,
-  Menu, X, Flag, ChevronDown, ChevronRight, Activity, GitCompare, Award, Wand2
+  Menu, X, Flag, ChevronDown, ChevronRight, Activity, GitCompare, Award, Wand2, Tv
 } from 'lucide-react';
 
 interface NavItem {
@@ -14,6 +14,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/replay', label: 'Replay Center', icon: Tv },
   {
     label: 'Standings', icon: Trophy,
     subItems: [
