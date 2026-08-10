@@ -36,8 +36,8 @@ export const circuits = [
       trackPath: circuitSvgPaths.australia,
       cornerNames: Array.from({ length: 14 }, (_, i) => `Turn ${i + 1}`),
       cornerPositions: [15.1, 17.6, 29, 31.7, 35.9, 43.7, 45.5, 49.3, 71, 73.4, 86.3, 91.5, 96.1, 98.8],
-      activeAeroRanges: [[4, 16], [34, 45], [68, 79], [84, 97]], overtakeDetectionPercent: 80, speedTrapPercent: 92, speedTrapLocation: 'Main straight', topSpeedKmh: 330,
-   }),
+      activeAeroRanges: [[18.4, 27.9], [51.9, 70.3], [74.9, 85.1]], overtakeDetectionPercent: 96.8, speedTrapPercent: 12.3, speedTrapLocation: 'Main straight', topSpeedKmh: 330,
+      sector1StartPercent: 6.7, sector2StartPercent: 41.5, sector3StartPercent: 69.1, overtakeActivationPercent: 98}),
    buildCircuit({
       id: 'japan', name: 'Suzuka Circuit', country: 'Japan', location: 'Suzuka',
       lengthKm: 5.807, laps: 53, corners: 18, lapRecord: '1:30.983', lapRecordHolder: 'Lewis Hamilton',
@@ -124,7 +124,7 @@ export const circuits = [
       lengthKm: 4.381, laps: 70, corners: 14, lapRecord: '1:16.627', lapRecordHolder: 'Lewis Hamilton',
       trackPath: circuitSvgPaths.hungary,
       cornerNames: Array.from({ length: 14 }, (_, i) => `Turn ${i + 1}`),
-      cornerPositions: [0.8, 12.4, 16.8, 27.5, 33.5, 40.6, 41.7, 45.4, 48.6, 53.4, 57.1, 66.9, 73, 79.8],
+      cornerPositions: [0.7, 12.3, 16.8, 27.4, 33.3, 40.7, 41.6, 45.6, 48.7, 53.2, 57.2, 66.9, 73, 79.7],
       activeAeroRanges: [[5, 20], [84, 97]], overtakeDetectionPercent: 80, speedTrapPercent: 92, speedTrapLocation: 'Main straight', topSpeedKmh: 322,
    }),
    buildCircuit({
