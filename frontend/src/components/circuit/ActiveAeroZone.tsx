@@ -1,26 +1,43 @@
 import React from 'react';
-import type { CircuitDRSZone } from '../../data/circuits';
+
+import type { ActiveAeroZone as ActiveAeroZoneType } from '../../data/circuits';
+import { usePathLength } from './usePathLength';
 
 interface ActiveAeroZoneProps {
    path: string;
-   zone: CircuitDRSZone;
+   pathId: string;
+   zone: ActiveAeroZoneType;
    active: boolean;
-   onHover: (zone: CircuitDRSZone | null) => void;
+   onHover: (zone: ActiveAeroZoneType | null) => void;
 }
 
-const ActiveAeroZone: React.FC<ActiveAeroZoneProps> = ({ path, zone, active, onHover }) => {
+const ActiveAeroZone: React.FC<ActiveAeroZoneProps> = ({
+   path,
+   pathId,
+   zone,
+   active,
+   onHover,
+}) => {
+   const totalLength = usePathLength(pathId);
+
+   // Fall back to a no-op (invisible) dash until the real length is known,
+   // rather than rendering against a wrong guessed length.
+   if (!totalLength) return null;
+
    const span = zone.endPercent - zone.startPercent;
+   const onLen = (span / 100) * totalLength;
+   const offset = -(zone.startPercent / 100) * totalLength;
+
    return (
       <path
          d={path}
-         pathLength={100}
          fill="none"
          stroke="#22d3ee"
          strokeWidth={active ? 17 : 11}
          strokeLinecap="round"
          strokeLinejoin="round"
-         strokeDasharray={`${span} ${100 - span}`}
-         strokeDashoffset={-zone.startPercent}
+         strokeDasharray={`${onLen} ${totalLength - onLen}`}
+         strokeDashoffset={offset}
          opacity={active ? 0.85 : 0.3}
          className="transition-all duration-300 cursor-pointer"
          onMouseEnter={() => onHover(zone)}

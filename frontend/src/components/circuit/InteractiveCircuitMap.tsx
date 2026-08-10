@@ -1,12 +1,13 @@
 import React, { useId, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Flag, Gauge, Info, MapPin, Ruler, Timer, Wind, Zap } from 'lucide-react';
-import type { CircuitCornerMarker, CircuitDRSZone, CircuitData, Sector, SpeedTrap } from '../../data/circuits';
+import type { ActiveAeroZone as ActiveAeroZoneType, CircuitCornerMarker, CircuitData, Sector, SpeedTrap } from '../../data/circuits';
 import CornerMarker from './CornerMarker';
 import ActiveAeroZone from './ActiveAeroZone';
 import SectorPath from './SectorPath';
 import SpeedTrapMarker from './SpeedTrapMarker';
 import { usePathPoint } from './usePathPoint';
+import FinishLineMarker from './FinishLineMarker';
 
 interface InteractiveCircuitMapProps {
    circuit: CircuitData;
@@ -16,15 +17,29 @@ type Tooltip =
    | { kind: 'corner'; title: string; rows: Array<[string, string | number]> }
    | { kind: 'sector'; title: string; rows: Array<[string, string | number]> }
    | { kind: 'aero'; title: string; rows: Array<[string, string | number]> }
+   | { kind: 'overtake'; title: string; rows: Array<[string, string | number]> }
    | { kind: 'speed'; title: string; rows: Array<[string, string | number]> }
+   | { kind: 'finish'; title: string; rows: Array<[string, string | number]> }
    | null;
 
-const DetectionPoint: React.FC<{ pathId: string; point: { id: string; label: string; positionPercent: number } }> = ({ pathId, point }) => {
-   const position = usePathPoint(pathId, point.positionPercent);
+
+const OvertakePointMarker: React.FC<{
+   pathId: string;
+   positionPercent: number;
+   color: string;
+   label: string;
+   onHover: (hovered: boolean) => void;
+}> = ({ pathId, positionPercent, color, label, onHover }) => {
+   const position = usePathPoint(pathId, positionPercent);
    return (
-      <g transform={`translate(${position.x} ${position.y})`}>
-         <rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" fill="#f59e0b" stroke="#fde68a" strokeWidth="1" />
-         <text x="8" y="3" fontSize="7" fill="#fde68a">{point.label}</text>
+      <g
+         transform={`translate(${position.x} ${position.y})`}
+         className="cursor-pointer"
+         onMouseEnter={() => onHover(true)}
+         onMouseLeave={() => onHover(false)}
+      >
+         <rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" fill={color} stroke="#fde68a" strokeWidth="1" />
+         <text x="8" y="3" fontSize="7" fill="#fde68a">{label}</text>
       </g>
    );
 };
@@ -58,8 +73,20 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
    const pathId = useMemo(() => `track-${rawPathId.replace(/:/g, '')}`, [rawPathId]);
    const [selectedCorner, setSelectedCorner] = useState<CircuitCornerMarker | null>(circuit.cornerMarkers[0] ?? null);
    const [hoveredSector, setHoveredSector] = useState<Sector | null>(null);
-   const [hoveredZone, setHoveredZone] = useState<CircuitDRSZone | null>(null);
+   const [hoveredZone, setHoveredZone] = useState<ActiveAeroZoneType | null>(null);
    const [tooltip, setTooltip] = useState<Tooltip>(null);
+
+   const handleFinishLineHover = (hovered: boolean) => {
+      setTooltip(
+         hovered
+            ? {
+               kind: 'finish', // or 'speed' if you didn't add the new variant
+               title: 'Start / Finish Line',
+               rows: [['Lap counted', 'Here'], ['Grid formation', 'Cars line up on the grid ahead of this point']],
+            }
+            : null
+      );
+   };
 
    const handleCornerHover = (corner: CircuitCornerMarker | null) => {
       setTooltip(corner && {
@@ -78,13 +105,31 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
       });
    };
 
-   const handleZoneHover = (zone: CircuitDRSZone | null) => {
+   const handleZoneHover = (zone: ActiveAeroZoneType | null) => {
       setHoveredZone(zone);
       setTooltip(zone && {
          kind: 'aero',
          title: `Active Aero — ${zone.label}`,
-         rows: [['Start', `${zone.startPercent}% lap`], ['End', `${zone.endPercent}% lap`], ['Overtake detection', zone.detectionPointId]],
+         rows: [['Start', `${zone.startPercent}% lap`], ['End', `${zone.endPercent}% lap`], ['Mode', 'Straight Mode (available every lap, no gap required)']],
       });
+   };
+
+   const handleOvertakeHover = (kind: 'detection' | 'activation' | false) => {
+      setTooltip(
+         kind === 'detection'
+            ? {
+               kind: 'overtake',
+               title: 'Overtake Mode Detection Point',
+               rows: [['Trigger', 'Within 1s of car ahead here'], ['Deployment', 'All at once or spread across the lap']],
+            }
+            : kind === 'activation'
+               ? {
+                  kind: 'overtake',
+                  title: 'Overtake Mode Activation Point',
+                  rows: [['Effect', 'Driver may open Overtake Mode from here'], ['Note', 'Requires valid detection within 1s beforehand']],
+               }
+               : null
+      );
    };
 
    const handleSpeedTrapHover = (speedTrap: SpeedTrap | null) => {
@@ -135,16 +180,37 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                <path d={circuit.trackPath} fill="none" stroke="#111827" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
 
                {circuit.sectors.map((sector) => (
-                  <SectorPath key={sector.id} path={circuit.trackPath} sector={sector} active={hoveredSector?.id === sector.id} onHover={handleSectorHover} />
+                  <SectorPath key={sector.id} path={circuit.trackPath} pathId={pathId} sector={sector} active={hoveredSector?.id === sector.id} onHover={handleSectorHover} />
                ))}
-               {circuit.drsZonesData.map((zone) => (
-                  <ActiveAeroZone key={zone.id} path={circuit.trackPath} zone={zone} active={hoveredZone?.id === zone.id} onHover={handleZoneHover} />
+               {circuit.activeAeroZones.map((zone) => (
+                  <ActiveAeroZone key={zone.id} path={circuit.trackPath} pathId={pathId} zone={zone} active={hoveredZone?.id === zone.id} onHover={handleZoneHover} />
                ))}
-               {circuit.drsDetectionPoints.map((point) => <DetectionPoint key={point.id} pathId={pathId} point={point} />)}
+
+               <OvertakePointMarker
+                  pathId={pathId}
+                  positionPercent={circuit.overtakeMode.detectionPointPercent}
+                  color="#f59e0b"
+                  label="Overtake Detection"
+                  onHover={(hovered) => handleOvertakeHover(hovered ? 'detection' : false)}
+               />
+               <OvertakePointMarker
+                  pathId={pathId}
+                  positionPercent={circuit.overtakeMode.activationPointPercent}
+                  color="#4ade80"
+                  label="Overtake Activation"
+                  onHover={(hovered) => handleOvertakeHover(hovered ? 'activation' : false)}
+               />
+
                <SpeedTrapMarker speedTrap={circuit.speedTrap} pathId={pathId} onHover={handleSpeedTrapHover} />
                {circuit.cornerMarkers.map((corner) => (
                   <CornerMarker key={corner.number} corner={corner} pathId={pathId} selected={selectedCorner?.number === corner.number} onHover={handleCornerHover} onSelect={setSelectedCorner} />
                ))}
+
+               <FinishLineMarker
+                  pathId={pathId}
+                  positionPercent={circuit.sectors[0].startPercent}
+                  onHover={handleFinishLineHover}
+               />
             </svg>
          </motion.div>
 
@@ -156,7 +222,7 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                   <Stat icon={<Flag className="h-4 w-4 text-emerald-300" />} label="Race" value={`${circuit.raceDistanceKm} km`} />
                   <Stat icon={<Activity className="h-4 w-4 text-sky-300" />} label="Laps" value={circuit.laps} />
                   <Stat icon={<Zap className="h-4 w-4 text-yellow-200" />} label="Corners" value={circuit.corners} />
-                  <Stat icon={<Wind className="h-4 w-4 text-cyan-300" />} label="Active Aero" value={circuit.drsZones} />
+                  <Stat icon={<Wind className="h-4 w-4 text-cyan-300" />} label="Active Aero" value={circuit.activeAeroZones.length} />
                   <Stat icon={<Timer className="h-4 w-4 text-purple-300" />} label="Record" value={circuit.lapRecord} />
                </div>
                <p className="mt-3 text-xs text-f1-silver">Lap record: {circuit.lapRecordHolder}</p>

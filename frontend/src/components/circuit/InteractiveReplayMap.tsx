@@ -239,18 +239,16 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
 
         {/* Sector Highlights */}
         {circuit.sectors.map((sector) => (
-          <SectorPath key={sector.id} path={circuit.trackPath} sector={sector} active={false} onHover={() => {}} />
+          <SectorPath key={sector.id} path={circuit.trackPath} pathId={pathId} sector={sector} active={false} onHover={() => {}} />
         ))}
 
         {/* Active Aero / DRS Zones */}
-        {circuit.drsZonesData.map((zone) => (
-          <ActiveAeroZone key={zone.id} path={circuit.trackPath} zone={zone} active={false} onHover={() => {}} />
+        {circuit.activeAeroZones.map((zone) => (
+          <ActiveAeroZone key={zone.id} path={circuit.trackPath} pathId={pathId} zone={zone} active={false} onHover={() => {}} />
         ))}
 
-        {/* DRS Detection Points */}
-        {circuit.drsDetectionPoints.map((point) => (
-          <DetectionPoint key={point.id} pathId={pathId} point={point} />
-        ))}
+        {/* Overtake Detection Point */}
+        <DetectionPoint key="detect1" pathId={pathId} point={{ id: 'detect1', label: 'Detect', positionPercent: circuit.overtakeMode.detectionPointPercent }} />
 
         {/* Speed Trap Marker */}
         <SpeedTrapMarker speedTrap={circuit.speedTrap} pathId={pathId} onHover={() => {}} />

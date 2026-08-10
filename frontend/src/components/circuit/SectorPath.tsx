@@ -1,39 +1,49 @@
 import React from 'react';
 import type { Sector } from '../../data/circuits';
+import { usePathLength } from './usePathLength';
 
 const colors: Record<Sector['id'], string> = {
-  1: '#ef4444',
-  2: '#38bdf8',
-  3: '#facc15',
+   1: '#ef4444',
+   2: '#38bdf8',
+   3: '#facc15',
 };
 
 interface SectorPathProps {
-  path: string;
-  sector: Sector;
-  active: boolean;
-  onHover: (sector: Sector | null) => void;
+   path: string;
+   pathId: string;
+   sector: Sector;
+   active: boolean;
+   onHover: (sector: Sector | null) => void;
 }
 
-const SectorPath: React.FC<SectorPathProps> = ({ path, sector, active, onHover }) => {
-  const span = sector.endPercent - sector.startPercent;
+const SectorPath: React.FC<SectorPathProps> = ({ path, pathId, sector, active, onHover }) => {
+   const totalLength = usePathLength(pathId);
+   if (!totalLength) return null;
 
-  return (
-    <path
-      d={path}
-      pathLength={100}
-      fill="none"
-      stroke={colors[sector.id]}
-      strokeWidth={active ? 18 : 10}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeDasharray={`${span} ${100 - span}`}
-      strokeDashoffset={-sector.startPercent}
-      opacity={active ? 0.95 : 0.42}
-      className="transition-all duration-300 cursor-crosshair"
-      onMouseEnter={() => onHover(sector)}
-      onMouseLeave={() => onHover(null)}
-    />
-  );
+   // When the sector's numbering runs "backwards" relative to the SVG's own
+   // path direction, the true forward-arc start is the sector's endPercent,
+   // not its startPercent.
+   const arcStartPercent = sector.isReversed ? sector.endPercent : sector.startPercent;
+
+   const onLen = (sector.lengthPercent / 100) * totalLength;
+   const offset = -(arcStartPercent / 100) * totalLength;
+
+   return (
+      <path
+         d={path}
+         fill="none"
+         stroke={colors[sector.id]}
+         strokeWidth={active ? 18 : 10}
+         strokeLinecap="round"
+         strokeLinejoin="round"
+         strokeDasharray={`${onLen} ${totalLength - onLen}`}
+         strokeDashoffset={offset}
+         opacity={active ? 0.95 : 0.42}
+         className="transition-all duration-300 cursor-crosshair"
+         onMouseEnter={() => onHover(sector)}
+         onMouseLeave={() => onHover(null)}
+      />
+   );
 };
 
 export default SectorPath;

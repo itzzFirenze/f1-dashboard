@@ -196,7 +196,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
    // re-fetching a chunk that recently 429'd until RETRY_COOLDOWN_MS passes.
    const fetchChunk = useCallback((chunkIndex: number, session: OpenF1Session, start: Date): Promise<void> => {
       if (locationCache.current[chunkIndex]) return Promise.resolve();
-      if (chunkPromises.current[chunkIndex]) return chunkPromises.current[chunkIndex];
+      if (chunkPromises.current[chunkIndex] !== undefined) return chunkPromises.current[chunkIndex] as Promise<void>;
 
       const failedAt = chunkFailedAt.current[chunkIndex];
       if (failedAt && Date.now() - failedAt < RETRY_COOLDOWN_MS) return Promise.resolve();
@@ -226,7 +226,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
    const fetchCarChunk = useCallback((driverNumber: number, chunkIndex: number, session: OpenF1Session, start: Date): Promise<void> => {
       const key = `${driverNumber}-${chunkIndex}`;
       if (carDataCache.current[key]) return Promise.resolve();
-      if (carChunkPromises.current[key]) return carChunkPromises.current[key];
+      if (carChunkPromises.current[key] !== undefined) return carChunkPromises.current[key] as Promise<void>;
 
       const failedAt = carChunkFailedAt.current[key];
       if (failedAt && Date.now() - failedAt < RETRY_COOLDOWN_MS) return Promise.resolve();
