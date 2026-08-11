@@ -127,7 +127,7 @@ const getDriverLapPercent = (
 export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circuit }) => {
    const mapId = useId();
    const pathId = useMemo(() => `replay-track-${mapId.replace(/:/g, '')}`, [mapId]);
-   const { drivers, selectedDrivers, toggleDriverSelection, laps, currentTime } = useReplay();
+   const { drivers, selectedDrivers, toggleDriverSelection, laps, currentTime, isDriverOutAt } = useReplay();
 
    const [hoveredDriver, setHoveredDriver] = useState<number | null>(null);
    const [selectedCorner, setSelectedCorner] = useState<CircuitCornerMarker | null>(null);
@@ -230,23 +230,23 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
             ))}
 
             {/* Render Driver Markers — always use SVG path-based positioning for stability */}
-            {drivers.map((driver, index) => {
-               const isSelected = selectedDrivers.includes(driver.driver_number);
-               const rawPercent = getDriverLapPercent(driver.driver_number, index, currentTime, laps);
-               const percent = circuit.isReversed ? 100 - rawPercent : rawPercent;   // flip for reversed tracks
-
-               return (
-                  <DriverMarkerOnTrack
-                     key={driver.driver_number}
-                     pathId={pathId}
-                     driver={driver}
-                     percent={percent}
-                     isSelected={isSelected}
-                     onSelect={() => toggleDriverSelection(driver.driver_number)}
-                     onHover={handleHover}
-                  />
-               );
-            })}
+            {drivers
+               .filter((driver) => !isDriverOutAt(driver.driver_number, currentTime))
+               .map((driver, index) => {
+                  const isSelected = selectedDrivers.includes(driver.driver_number);
+                  const percent = getDriverLapPercent(driver.driver_number, index, currentTime, laps);
+                  return (
+                     <DriverMarkerOnTrack
+                        key={driver.driver_number}
+                        pathId={pathId}
+                        driver={driver}
+                        percent={percent}
+                        isSelected={isSelected}
+                        onSelect={() => toggleDriverSelection(driver.driver_number)}
+                        onHover={handleHover}
+                     />
+                  );
+               })}
          </svg>
 
          {/* Selected Corner Info Badge */}

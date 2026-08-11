@@ -124,6 +124,7 @@ export interface OpenF1Pit {
 
 export interface OpenF1RaceControl {
    date: string;
+   driver_number: number | null;
    lap_number: number;
    category: string;
    flag: string | null;

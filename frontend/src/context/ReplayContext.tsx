@@ -41,6 +41,7 @@ interface ReplayContextProps {
    driverLocations: Record<number, OpenF1Location>;
    selectedDrivers: number[];
    telemetryData: Record<number, OpenF1CarData>;
+   isDriverOutAt: (driverNumber: number, time: Date | null) => boolean;
 
    play: () => void;
    pause: () => void;
@@ -113,6 +114,89 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const elapsed = currentTime.getTime() - sessionStart.getTime();
       return Math.min(100, Math.max(0, (elapsed / durationMs) * 100));
    }, [sessionStart, currentTime, durationMs]);
+
+   const retiredAtByDriver = useMemo(() => {
+      const map: Record<number, number> = {};
+      const RETIRE_PATTERN =
+         /\b(RETIRED|RETIRES|RETIREMENT|WILL NOT CONTINUE|DID NOT START|DOES NOT START|STOPPED ON TRACK|OUT OF THE RACE|PARKED|DNF|DNS)\b/i;
+      const CAR_NUMBER_PATTERN = /CAR\s+(\d+)/i;
+
+      for (const rc of raceControl) {
+         if (!rc.message || !RETIRE_PATTERN.test(rc.message)) continue;
+
+         // Use the API's own driver_number when present; only fall back to
+         // parsing it out of the message text if it's missing.
+         const driverNumber = rc.driver_number ?? Number(rc.message.match(CAR_NUMBER_PATTERN)?.[1]);
+         if (!driverNumber || Number.isNaN(driverNumber)) continue;
+
+         const timestamp = new Date(rc.date).getTime();
+         if (!Number.isFinite(timestamp)) continue;
+
+         if (map[driverNumber] === undefined || timestamp < map[driverNumber]) {
+            map[driverNumber] = timestamp;
+         }
+      }
+      return map;
+   }, [raceControl]);
+
+   // Last completed lap (and its estimated end time) per driver, and how far
+   // the session's data actually progresses overall — used as a fallback
+   // retirement signal when race control never sends an explicit message.
+   const lastLapInfoByDriver = useMemo(() => {
+      const map: Record<number, { lapNumber: number; endMs: number }> = {};
+
+      for (const lap of laps) {
+         if (!lap.date_start) continue;
+         const startMs = new Date(lap.date_start).getTime();
+         if (!Number.isFinite(startMs)) continue;
+
+         const durationMs = (lap.lap_duration && lap.lap_duration > 0 ? lap.lap_duration : 100) * 1000;
+         const endMs = startMs + durationMs;
+
+         const existing = map[lap.driver_number];
+         if (!existing || lap.lap_number > existing.lapNumber) {
+            map[lap.driver_number] = { lapNumber: lap.lap_number, endMs };
+         }
+      }
+
+      return map;
+   }, [laps]);
+
+   const latestLapEndAcrossField = useMemo(() => {
+      let max = 0;
+      for (const info of Object.values(lastLapInfoByDriver)) {
+         if (info.endMs > max) max = info.endMs;
+      }
+      return max;
+   }, [lastLapInfoByDriver]);
+
+   const isDriverOutAt = useCallback(
+      (driverNumber: number, time: Date | null): boolean => {
+         const hasAnyLap = laps.some((l) => l.driver_number === driverNumber);
+         if (!hasAnyLap) return true;
+
+         const retiredAt = retiredAtByDriver[driverNumber];
+         if (retiredAt !== undefined && (time?.getTime() ?? 0) >= retiredAt) return true;
+
+         // Fallback: no race-control retirement message exists for this driver,
+         // but the field has clearly kept racing well beyond when this driver's
+         // last lap ended — infer a retirement.
+         const lastLap = lastLapInfoByDriver[driverNumber];
+         const timeMs = time?.getTime() ?? 0;
+         const GRACE_MS = 150_000; // 2.5 min beyond own last lap's expected end
+
+         if (
+            lastLap &&
+            latestLapEndAcrossField - lastLap.endMs > GRACE_MS &&
+            timeMs >= lastLap.endMs + GRACE_MS
+         ) {
+            return true;
+         }
+
+         return false;
+      },
+      [laps, retiredAtByDriver, lastLapInfoByDriver, latestLapEndAcrossField]
+   );
 
    useEffect(() => {
       driversRef.current = drivers;
@@ -662,6 +746,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             driverLocations,
             selectedDrivers,
             telemetryData,
+            isDriverOutAt,
 
             play,
             pause,

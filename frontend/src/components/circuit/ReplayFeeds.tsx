@@ -17,6 +17,7 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
       currentTime,
       jumpToLap,
       laps,
+      isDriverOutAt,
    } = useReplay();
 
    const liveStandings = useMemo(() => {
@@ -34,16 +35,11 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
 
             const lapsCompleted = driverLaps.length;
 
-            // Active (currently in-progress) lap = most recently started lap.
             const activeLap = driverLaps.reduce<typeof driverLaps[0] | null>((latest, l) => {
                if (!latest) return l;
                return new Date(l.date_start!).getTime() > new Date(latest.date_start!).getTime() ? l : latest;
             }, null);
 
-            // Continuous progress (0-1) into the active lap — same approach
-            // the circuit map already uses for driver marker positions, so
-            // standings reflect actual on-track order instead of only
-            // flipping once a driver crosses the line.
             let lapProgress = 0;
             if (activeLap?.date_start) {
                const lapStartMs = new Date(activeLap.date_start).getTime();
@@ -52,9 +48,6 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                lapProgress = Math.min(0.995, elapsedSec / lapDurationSec);
             }
 
-            // lapsCompleted already counts the in-progress lap (its
-            // date_start is <= now), so subtract 1 before adding fractional
-            // progress to get true race distance.
             const raceDistance = Math.max(0, lapsCompleted - 1) + lapProgress;
 
             const driverStints = stints.filter((s) => s.driver_number === drv.driver_number);
@@ -62,16 +55,25 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                driverStints.find((s) => lapsCompleted >= s.lap_start && lapsCompleted <= s.lap_end) ||
                driverStints[driverStints.length - 1];
 
+            // NEW: is this driver retired/DNS at the current replay time?
+            const isOut = isDriverOutAt(drv.driver_number, currentTime);
+
             return {
                ...drv,
-               tyre: activeStint?.compound || 'UNKNOWN',
+               tyre: isOut ? 'DNF' : (activeStint?.compound || 'UNKNOWN'),
                stintAge: activeStint?.tyre_age_at_start || 0,
                lapsCompleted,
                raceDistance,
+               isOut,           // keep this around too, useful for sorting/styling below
             };
          })
-         .sort((a, b) => b.raceDistance - a.raceDistance);
-   }, [drivers, laps, stints, currentTime]);
+         .sort((a, b) => {
+            // Retired drivers sink to the bottom of the standings instead of
+            // freezing mid-pack at their last known race distance.
+            if (a.isOut !== b.isOut) return a.isOut ? 1 : -1;
+            return b.raceDistance - a.raceDistance;
+         });
+   }, [drivers, laps, stints, currentTime, isDriverOutAt]);
 
    const [playingUrl, setPlayingUrl] = useState<string | null>(null);
    const [playbackProgress, setPlaybackProgress] = useState(0);
@@ -158,18 +160,19 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                         <div className="flex items-center gap-2">
                            <span className="text-[10px] text-f1-silver font-mono">L{drv.lapsCompleted}</span>
                            {/* Tyre badge */}
-                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${drv.tyre === 'SOFT'
-                              ? 'bg-red-500/25 text-red-400'
-                              : drv.tyre === 'MEDIUM'
-                                 ? 'bg-yellow-500/25 text-yellow-400'
-                                 : drv.tyre === 'HARD'
-                                    ? 'bg-white/20 text-white'
-                                    : drv.tyre === 'INTERMEDIATE'
-                                       ? 'bg-green-500/25 text-green-400'
-                                       : 'bg-green-500/25 text-blue-400'
-                              }
-                              `}>
-                              {drv.tyre[0]}
+                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${drv.tyre === 'DNF'
+                              ? 'bg-red-500/25 text-red-500'
+                              : drv.tyre === 'SOFT'
+                                 ? 'bg-red-500/25 text-red-400'
+                                 : drv.tyre === 'MEDIUM'
+                                    ? 'bg-yellow-500/25 text-yellow-400'
+                                    : drv.tyre === 'HARD'
+                                       ? 'bg-white/20 text-white'
+                                       : drv.tyre === 'INTERMEDIATE'
+                                          ? 'bg-green-500/25 text-green-400'
+                                          : 'bg-green-500/25 text-blue-400'
+                              }`}>
+                              {drv.tyre === 'DNF' ? 'DNF' : drv.tyre[0]}
                            </span>
                         </div>
                      </div>
