@@ -83,11 +83,12 @@ const RaceReplayCenterPage: React.FC = () => {
    } = useReplay();
 
    const [activeTab, setActiveTab] = useState<'standings' | 'feeds' | 'radio'>('standings');
+   const RACE_YEARS = [2023, 2024, 2025] as const;
+   const [selectedYear, setSelectedYear] = useState<number>(2023);
 
-   // Load 2024 sessions on initial mount
    useEffect(() => {
-      loadSessions(2024);
-   }, []);
+      loadSessions(selectedYear);
+   }, [selectedYear, loadSessions]);
 
    // Map active session's location to static circuit metadata using robust lookup
    const currentCircuit = React.useMemo(() => {
@@ -131,8 +132,20 @@ const RaceReplayCenterPage: React.FC = () => {
                <h1 className="text-3xl font-display font-black text-f1-white mt-1">Race Replay Center</h1>
             </div>
 
-            {/* Session Selector */}
+            {/* Year / Session Selectors */}
             <div className="flex gap-2">
+               <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="bg-f1-mid-gray/50 border border-white/10 rounded-xl px-4 py-2 text-sm text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer"
+               >
+                  {RACE_YEARS.map((y) => (
+                     <option key={y} value={y} className="bg-f1-black">
+                        {y}
+                     </option>
+                  ))}
+               </select>
+
                {isLoading ? (
                   <div className="flex items-center gap-2 text-xs text-f1-silver bg-white/[0.02] border border-white/5 px-3 py-2 rounded-xl">
                      <Loader2 className="h-4 w-4 animate-spin text-f1-red" /> Syncing feeds...
@@ -144,11 +157,13 @@ const RaceReplayCenterPage: React.FC = () => {
                         const session = sessions.find((s) => s.session_key === Number(e.target.value));
                         if (session) selectSession(session);
                      }}
-                     className="bg-f1-mid-gray/50 border border-white/10 rounded-xl px-4 py-2 text-sm text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer"
+                     className="bg-f1-mid-gray/50 border border-white/10 rounded-xl px-4 py-2 text-sm text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer disabled:opacity-50"
+                     disabled={sessions.length === 0}
                   >
+                     {sessions.length === 0 && <option value="">No races found</option>}
                      {sessions.map((s) => (
                         <option key={s.session_key} value={s.session_key} className="bg-f1-black">
-                           {s.year} {s.location} - {s.session_name}
+                           {s.location} - {s.session_name}
                         </option>
                      ))}
                   </select>
@@ -240,8 +255,8 @@ const RaceReplayCenterPage: React.FC = () => {
                               key={spd}
                               onClick={() => setSpeed(spd)}
                               className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${playbackSpeed === spd
-                                    ? 'bg-f1-red text-white'
-                                    : 'text-f1-silver hover:text-f1-white'
+                                 ? 'bg-f1-red text-white'
+                                 : 'text-f1-silver hover:text-f1-white'
                                  }`}
                            >
                               {spd}x

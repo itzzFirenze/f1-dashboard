@@ -529,9 +529,16 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
    }, [selectedDrivers, sessionStart, syncLocations]);
 
-   // Auto-select first session.
+   // Auto-select first session — also re-fires when the active session
+   // isn't part of the current list anymore (e.g. after switching years).
    useEffect(() => {
-      if (sessions.length > 0 && !activeSession) {
+      if (sessions.length === 0) return;
+
+      const stillValid = activeSession
+         ? sessions.some((s) => s.session_key === activeSession.session_key)
+         : false;
+
+      if (!stillValid) {
          selectSession(sessions[0]);
       }
    }, [sessions, activeSession, selectSession]);

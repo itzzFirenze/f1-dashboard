@@ -14,7 +14,6 @@ interface InteractiveReplayMapProps {
    circuit: CircuitData;
 }
 
-/** Small detection-point marker identical to the one in InteractiveCircuitMap */
 const DetectionPoint: React.FC<{ pathId: string; point: { id: string; label: string; positionPercent: number } }> = ({ pathId, point }) => {
    const position = usePathPoint(pathId, point.positionPercent);
    return (

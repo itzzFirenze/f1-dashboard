@@ -101,7 +101,7 @@ export const buildCircuit = (
          lengthKm: sector1LengthKm,
          averageSpeedKmh: 226,
          fastestSectorHolder: '2026 live timing feed',
-         isReversed: isDecreasing, // NEW
+         isReversed: isDecreasing,
       },
       {
          id: 2,
@@ -112,7 +112,7 @@ export const buildCircuit = (
          lengthKm: sector2LengthKm,
          averageSpeedKmh: 218,
          fastestSectorHolder: '2026 live timing feed',
-         isReversed: isDecreasing, // NEW
+         isReversed: isDecreasing,
       },
       {
          id: 3,
@@ -123,7 +123,7 @@ export const buildCircuit = (
          lengthKm: sector3LengthKm,
          averageSpeedKmh: 205,
          fastestSectorHolder: '2026 live timing feed',
-         isReversed: isDecreasing, // NEW
+         isReversed: isDecreasing,
       },
    ];
 

@@ -158,10 +158,17 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                         <div className="flex items-center gap-2">
                            <span className="text-[10px] text-f1-silver font-mono">L{drv.lapsCompleted}</span>
                            {/* Tyre badge */}
-                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${drv.tyre === 'SOFT' ? 'bg-red-500/25 text-red-400' :
-                              drv.tyre === 'MEDIUM' ? 'bg-yellow-500/25 text-yellow-400' :
-                                 drv.tyre === 'HARD' ? 'bg-white/20 text-white' : 'bg-blue-500/25 text-blue-400'
-                              }`}>
+                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${drv.tyre === 'SOFT'
+                              ? 'bg-red-500/25 text-red-400'
+                              : drv.tyre === 'MEDIUM'
+                                 ? 'bg-yellow-500/25 text-yellow-400'
+                                 : drv.tyre === 'HARD'
+                                    ? 'bg-white/20 text-white'
+                                    : drv.tyre === 'INTERMEDIATE'
+                                       ? 'bg-green-500/25 text-green-400'
+                                       : 'bg-green-500/25 text-blue-400'
+                              }
+                              `}>
                               {drv.tyre[0]}
                            </span>
                         </div>

@@ -10,10 +10,10 @@ interface FinishLineMarkerProps {
 const FinishLineMarker: React.FC<FinishLineMarkerProps> = ({ pathId, positionPercent, onHover }) => {
    const point = usePathPoint(pathId, positionPercent);
    const patternId = `checker-${pathId}`;
-   const cell = 3; // px per square
+   const cell = 3;
    const cols = 4;
    const rows = 4;
-   const size = cell * cols; // 12
+   const size = cell * cols;
 
    return (
       <g
