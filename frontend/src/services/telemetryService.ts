@@ -36,15 +36,62 @@ export interface OpenF1Location {
 }
 
 export interface OpenF1CarData {
+   brake: number;
    date: string;
-   rpm: number;
-   n_gear: number;
    driver_number: number;
    drs: number;
-   throttle: number;
+   meeting_key: number;
+   n_gear: number;
+   rpm: number;
+   session_key: number;
    speed: number;
-   brake: number;
+   throttle: number;
 }
+
+const OPENF1_BASE_URL = 'https://api.openf1.org/v1';
+
+const getCarData = async (
+   sessionKey: number,
+   driverNumber: number,
+   startDate?: string,
+   endDate?: string
+): Promise<OpenF1CarData[]> => {
+   let url =
+      `${OPENF1_BASE_URL}/car_data` +
+      `?session_key=${sessionKey}` +
+      `&driver_number=${driverNumber}`;
+
+   if (startDate) {
+      url += `&date>=${encodeURIComponent(startDate)}`;
+   }
+
+   if (endDate) {
+      url += `&date<${encodeURIComponent(endDate)}`;
+   }
+
+   console.log('[OpenF1 car_data]', url);
+
+   const response = await fetch(url);
+
+   if (!response.ok) {
+      const message = await response.text();
+
+      throw new Error(
+         `OpenF1 car_data failed: ${response.status} ${message}`
+      );
+   }
+
+   const data: OpenF1CarData[] = await response.json();
+
+   console.log(
+      `[OpenF1 car_data] driver=${driverNumber}`,
+      'frames:',
+      data.length,
+      data[0]
+   );
+
+   return data;
+};
 
 export interface OpenF1Lap {
    driver_number: number;
@@ -164,12 +211,5 @@ export const telemetryService = {
       });
    },
 
-   getCarData: async (sessionKey: number, driverNumber: number, dateStart: string, dateEnd: string): Promise<OpenF1CarData[]> => {
-      return enqueue(async () => {
-         const { data } = await api.get<OpenF1CarData[]>('/telemetry/car_data', {
-            params: { session_key: sessionKey, driver_number: driverNumber, 'date>=': dateStart, 'date<=': dateEnd },
-         });
-         return data;
-      });
-   },
+   getCarData
 };
