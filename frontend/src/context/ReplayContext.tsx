@@ -110,7 +110,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
    const driversRef = useRef<OpenF1Driver[]>([]);
    const selectedDriversRef = useRef<number[]>([]);
 
-   // Keep refs in sync
    useEffect(() => { driversRef.current = drivers; }, [drivers]);
    useEffect(() => { selectedDriversRef.current = selectedDrivers; }, [selectedDrivers]);
 
@@ -119,7 +118,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
          setIsLoading(true);
          const data = await telemetryService.getSessions(year);
          setSessions(data);
-         // Don't auto-select here — let the page do it after state settles
       } catch (e) {
          console.error('Failed to load sessions:', e);
       } finally {
@@ -145,7 +143,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       try {
          setIsLoading(true);
-         // Load data sequentially to avoid triggering OpenF1 429 Too Many Requests rate limit
          const drvs = await telemetryService.getDrivers(session.session_key);
          setDrivers(drvs);
 
@@ -164,8 +161,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
          const tr = await telemetryService.getTeamRadio(session.session_key);
          setTeamRadios(tr);
 
-         // Fast-forward initial time to when the first lap starts, as OpenF1 location data
-         // often doesn't start streaming until minutes after session date_start.
          if (lps.length > 0) {
             const firstLap = lps.reduce((min, lap) => {
                if (!lap.date_start) return min;
@@ -377,6 +372,17 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
          syncLocations(currentTime);
       }
    }, [currentTime, isPlaying, sessionStart, syncLocations]);
+
+   // Sync telemetry immediately when driver selection changes (fixes "Awaiting telemetry frames")
+   const currentTimeRef = useRef<Date | null>(null);
+   currentTimeRef.current = currentTime;
+   useEffect(() => {
+      if (currentTimeRef.current && sessionStart) {
+         syncLocations(currentTimeRef.current);
+      }
+      // Only react to selectedDrivers changes — NOT currentTime to avoid infinite loops
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [selectedDrivers, sessionStart, syncLocations]);
 
    // Auto-select first session after sessions load
    useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useState } from 'react';
+import React, { useId, useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Compass } from 'lucide-react';
 import { useReplay } from '../../context/ReplayContext';
@@ -52,7 +52,7 @@ const DriverMarkerOnTrack: React.FC<{
                fill="transparent"
                stroke={teamColor}
                strokeWidth="2"
-               className="animate-ping opacity-75"
+               className="animate-ping opacity-75 [transform-box:fill-box] [transform-origin:center]"
             />
          )}
 
@@ -64,7 +64,7 @@ const DriverMarkerOnTrack: React.FC<{
             fill="#0f172a"
             stroke={teamColor}
             strokeWidth="2"
-            className="transition-all duration-300 group-hover:scale-125"
+            className="transition-transform duration-300 group-hover:scale-125 [transform-box:fill-box] [transform-origin:center]"
          />
 
          {/* Inner driver team color fill */}
@@ -73,7 +73,7 @@ const DriverMarkerOnTrack: React.FC<{
             cy={pos.y}
             r="5.5"
             fill={teamColor}
-            className="transition-all duration-300 group-hover:scale-125"
+            className="transition-transform duration-300 group-hover:scale-125 [transform-box:fill-box] [transform-origin:center]"
          />
 
          {/* Mini Driver Label Text */}
@@ -128,47 +128,12 @@ const getDriverLapPercent = (
 export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circuit }) => {
    const mapId = useId();
    const pathId = useMemo(() => `replay-track-${mapId.replace(/:/g, '')}`, [mapId]);
-   const { driverLocations, drivers, selectedDrivers, toggleDriverSelection, laps, currentTime } = useReplay();
+   const { drivers, selectedDrivers, toggleDriverSelection, laps, currentTime } = useReplay();
 
    const [hoveredDriver, setHoveredDriver] = useState<number | null>(null);
    const [selectedCorner, setSelectedCorner] = useState<CircuitCornerMarker | null>(null);
 
-   // Compute bounding box of active location samples to calibrate projection matrix if telemetry location data exists
-   const projection = useMemo(() => {
-      const locations = Object.values(driverLocations);
-      if (locations.length === 0) {
-         return { scaleX: 1, scaleY: 1, offsetX: 0, offsetY: 0 };
-      }
-
-      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-      locations.forEach((loc) => {
-         if (loc.x < minX) minX = loc.x;
-         if (loc.x > maxX) maxX = loc.x;
-         if (loc.y < minY) minY = loc.y;
-         if (loc.y > maxY) maxY = loc.y;
-      });
-
-      const rangeX = maxX - minX || 1;
-      const rangeY = maxY - minY || 1;
-
-      const padding = 60;
-      const targetWidth = 500 - padding * 2;
-      const targetHeight = 500 - padding * 2;
-      const scale = Math.min(targetWidth / rangeX, targetHeight / rangeY);
-
-      return {
-         scaleX: scale,
-         scaleY: -scale, // Invert Y as F1 telemetry coordinates typically have Y pointing up, SVGs have Y pointing down
-         offsetX: 250 - ((minX + maxX) / 2) * scale,
-         offsetY: 250 + ((minY + maxY) / 2) * scale,
-      };
-   }, [driverLocations]);
-
-   // Project telemetry coordinates to SVG space
-   const project = (x: number, y: number) => ({
-      x: x * projection.scaleX + projection.offsetX,
-      y: y * projection.scaleY + projection.offsetY,
-   });
+   const handleHover = useCallback((driverNo: number | null) => setHoveredDriver(driverNo), []);
 
    return (
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-f1-dark-gray/60 p-4 shadow-2xl backdrop-blur-md">
@@ -265,66 +230,9 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                />
             ))}
 
-            {/* Render Driver Markers */}
+            {/* Render Driver Markers — always use SVG path-based positioning for stability */}
             {drivers.map((driver, index) => {
-               const loc = driverLocations[driver.driver_number];
                const isSelected = selectedDrivers.includes(driver.driver_number);
-               const teamColor = `#${driver.team_colour || 'ffffff'}`;
-
-               // 1. If raw telemetry GPS location is present, project it
-               if (loc && loc.x !== undefined && loc.y !== undefined && Object.keys(driverLocations).length > 0) {
-                  const pos = project(loc.x, loc.y);
-                  return (
-                     <g
-                        key={driver.driver_number}
-                        onClick={() => toggleDriverSelection(driver.driver_number)}
-                        onMouseEnter={() => setHoveredDriver(driver.driver_number)}
-                        onMouseLeave={() => setHoveredDriver(null)}
-                        className="cursor-pointer group"
-                     >
-                        {isSelected && (
-                           <circle
-                              cx={pos.x}
-                              cy={pos.y}
-                              r="14"
-                              fill="transparent"
-                              stroke={teamColor}
-                              strokeWidth="2"
-                              className="animate-ping opacity-75"
-                           />
-                        )}
-                        <circle
-                           cx={pos.x}
-                           cy={pos.y}
-                           r="9"
-                           fill="#0f172a"
-                           stroke={teamColor}
-                           strokeWidth="2"
-                           className="transition-all duration-300 group-hover:scale-125"
-                        />
-                        <circle
-                           cx={pos.x}
-                           cy={pos.y}
-                           r="5.5"
-                           fill={teamColor}
-                           className="transition-all duration-300 group-hover:scale-125"
-                        />
-                        <text
-                           x={pos.x}
-                           y={pos.y - 13}
-                           textAnchor="middle"
-                           fontSize="9"
-                           fontWeight="800"
-                           fill="#f8fafc"
-                           className="select-none font-mono filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
-                        >
-                           {driver.name_acronym}
-                        </text>
-                     </g>
-                  );
-               }
-
-               // 2. Fallback: Position driver along the SVG track path based on lap timing progress
                const percent = getDriverLapPercent(driver.driver_number, index, currentTime, laps);
 
                return (
@@ -335,7 +243,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                      percent={percent}
                      isSelected={isSelected}
                      onSelect={() => toggleDriverSelection(driver.driver_number)}
-                     onHover={setHoveredDriver}
+                     onHover={handleHover}
                   />
                );
             })}
@@ -375,7 +283,6 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
          <AnimatePresence>
             {hoveredDriver && (() => {
                const driver = drivers.find((d) => d.driver_number === hoveredDriver);
-               const loc = driverLocations[hoveredDriver];
                const index = drivers.findIndex((d) => d.driver_number === hoveredDriver);
                const percent = getDriverLapPercent(hoveredDriver, Math.max(0, index), currentTime, laps);
 
@@ -411,18 +318,6 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                            <span>Track Lap Progress</span>
                            <span className="font-mono text-f1-white">{percent.toFixed(1)}%</span>
                         </div>
-                        {loc && (
-                           <>
-                              <div className="flex justify-between">
-                                 <span>X Coordinate</span>
-                                 <span className="font-mono text-f1-white">{loc.x.toFixed(1)} m</span>
-                              </div>
-                              <div className="flex justify-between">
-                                 <span>Y Coordinate</span>
-                                 <span className="font-mono text-f1-white">{loc.y.toFixed(1)} m</span>
-                              </div>
-                           </>
-                        )}
                      </div>
                   </motion.div>
                );

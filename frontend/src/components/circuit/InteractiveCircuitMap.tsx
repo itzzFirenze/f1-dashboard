@@ -80,7 +80,7 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
       setTooltip(
          hovered
             ? {
-               kind: 'finish', // or 'speed' if you didn't add the new variant
+               kind: 'finish',
                title: 'Start / Finish Line',
                rows: [['Lap counted', 'Here'], ['Grid formation', 'Cars line up on the grid ahead of this point']],
             }
