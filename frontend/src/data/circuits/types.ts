@@ -69,6 +69,7 @@ export interface CircuitData {
    lapRecord: string;
    lapRecordHolder: string;
    raceDistanceKm: number;
+   isReversed: boolean;
    viewBox: string;
    trackPath: string;
    sectors: Sector[];

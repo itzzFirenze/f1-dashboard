@@ -232,7 +232,8 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
             {/* Render Driver Markers — always use SVG path-based positioning for stability */}
             {drivers.map((driver, index) => {
                const isSelected = selectedDrivers.includes(driver.driver_number);
-               const percent = getDriverLapPercent(driver.driver_number, index, currentTime, laps);
+               const rawPercent = getDriverLapPercent(driver.driver_number, index, currentTime, laps);
+               const percent = circuit.isReversed ? 100 - rawPercent : rawPercent;   // flip for reversed tracks
 
                return (
                   <DriverMarkerOnTrack

@@ -253,22 +253,14 @@ export const buildCircuit = (
 
    return {
       id: definition.id,
-      name:
-         definition.name,
-      country:
-         definition.country,
-      location:
-         definition.location,
-      lengthKm:
-         definition.lengthKm,
-      laps:
-         definition.laps,
-      corners:
-         definition.corners,
-      lapRecord:
-         definition.lapRecord,
-      lapRecordHolder:
-         definition.lapRecordHolder,
+      name: definition.name,
+      country: definition.country,
+      location: definition.location,
+      lengthKm: definition.lengthKm,
+      laps: definition.laps,
+      corners: definition.corners,
+      lapRecord: definition.lapRecord,
+      lapRecordHolder: definition.lapRecordHolder,
       raceDistanceKm:
          Number(
             (
@@ -276,25 +268,19 @@ export const buildCircuit = (
                definition.laps
             ).toFixed(3)
          ),
-      viewBox:
-         '0 0 500 500',
-      trackPath:
-         definition.trackPath,
+      isReversed: isDecreasing,
+      viewBox: '0 0 500 500',
+      trackPath: definition.trackPath,
       sectors,
       cornerMarkers,
       activeAeroZones,
       overtakeMode,
       speedTrap: {
-         location:
-            definition.speedTrapLocation,
-         positionPercent:
-            definition.speedTrapPercent,
-         historicalTopSpeedKmh:
-            definition.topSpeedKmh,
-         fastestRecordedSpeedKmh:
-            definition.topSpeedKmh,
-         fastestRecordedBy:
-            'FIA speed trap benchmark',
+         location: definition.speedTrapLocation,
+         positionPercent: definition.speedTrapPercent,
+         historicalTopSpeedKmh: definition.topSpeedKmh,
+         fastestRecordedSpeedKmh: definition.topSpeedKmh,
+         fastestRecordedBy: 'FIA speed trap benchmark',
       },
       source:
          'Track geometry from F1DB SVG circuit assets. Calendar checked against Formula1.com 2026 calendar.',
