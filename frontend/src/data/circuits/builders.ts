@@ -65,11 +65,15 @@ export const buildCircuit = (
    const sector2Start = definition.sector2StartPercent ?? 33.4;
    const sector3Start = definition.sector3StartPercent ?? 66.7;
 
-   // Direction is inferred from sector1 -> sector2: if sector2Start is smaller,
-   // the sectors run in decreasing/wrapping order (like Bahrain's 90.7 -> 57.4 -> 18.6).
-   // Otherwise they run in increasing/wrapping order (the 0 -> 33.4 -> 66.7 default).
-   const isDecreasing = sector2Start < sector1Start;
-
+   const forwardStep = (from: number, to: number) => {
+      const diff = to - from;
+      return diff >= 0 ? diff : diff + 100;
+   };
+   const forwardWalkTotal =
+      forwardStep(sector1Start, sector2Start) +
+      forwardStep(sector2Start, sector3Start) +
+      forwardStep(sector3Start, sector1Start);
+   const isDecreasing = forwardWalkTotal > 150;
    const wrapLength = (from: number, to: number) => {
       if (isDecreasing) {
          return from >= to ? from - to : from + (100 - to);
