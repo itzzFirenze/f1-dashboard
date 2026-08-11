@@ -134,6 +134,18 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
 
    const handleHover = useCallback((driverNo: number | null) => setHoveredDriver(driverNo), []);
 
+   const currentLap = useMemo(() => {
+      if (!currentTime || laps.length === 0) return null;
+
+      const nowMs = currentTime.getTime();
+      const startedLaps = laps.filter((l) => l.date_start && new Date(l.date_start).getTime() <= nowMs);
+
+      if (startedLaps.length === 0) return null;
+
+      // The leader's lap number is the best signal for "what lap is the race on"
+      return startedLaps.reduce((max, l) => Math.max(max, l.lap_number), 0);
+   }, [laps, currentTime]);
+
    return (
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-f1-dark-gray/60 p-4 shadow-2xl backdrop-blur-md">
          {/* HUD Info */}
@@ -147,15 +159,18 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
 
          {/* HUD Badges */}
          <div className="absolute right-4 top-4 z-10 flex flex-wrap gap-1.5">
-            <span className="rounded-md border border-white/10 bg-black/40 px-2 py-1 text-[10px] font-medium text-f1-silver flex items-center gap-1">
-               <Compass className="h-3 w-3 text-f1-red" /> Live Driver Trackers ({drivers.length})
-            </span>
             <span className="rounded-md border border-red-400/30 bg-red-500/10 px-2 py-1 text-[10px] text-red-200">S1</span>
             <span className="rounded-md border border-sky-400/30 bg-sky-500/10 px-2 py-1 text-[10px] text-sky-200">S2</span>
             <span className="rounded-md border border-yellow-300/30 bg-yellow-400/10 px-2 py-1 text-[10px] text-yellow-100">S3</span>
             <span className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 text-[10px] text-cyan-200">Active Aero</span>
             <span className="rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] text-amber-200">Overtake</span>
          </div>
+         {currentLap !== null && (
+            <div className="absolute bottom-4 right-4 z-10 rounded-xl border border-white/10 bg-black/60 px-4 py-2 backdrop-blur-md">
+               <p className="text-[9px] uppercase text-center tracking-wider text-f1-silver">Lap</p>
+               <p className="text-2xl font-black text-f1-white font-mono leading-tight">{currentLap}</p>
+            </div>
+         )}
 
          {/* SVG Circuit Visualizer — key on circuit.id forces re-mount when circuit changes */}
          <svg viewBox="0 0 500 500" className="h-[480px] w-full sm:h-[580px]" key={circuit.id}>
