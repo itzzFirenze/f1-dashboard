@@ -19,11 +19,6 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
       laps,
    } = useReplay();
 
-   // 1. Live Standings computed state.
-   // OpenF1's location stream doesn't expose an official "position" field,
-   // so we approximate running order from laps completed as of currentTime
-   // (more laps completed = further along in the race), tie-broken by
-   // whoever crossed the line for their last completed lap earliest.
    const liveStandings = useMemo(() => {
       if (!currentTime) return [];
       const nowMs = currentTime.getTime();
@@ -39,10 +34,28 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
 
             const lapsCompleted = driverLaps.length;
 
-            const lastLap = driverLaps.reduce<typeof driverLaps[0] | null>((latest, l) => {
+            // Active (currently in-progress) lap = most recently started lap.
+            const activeLap = driverLaps.reduce<typeof driverLaps[0] | null>((latest, l) => {
                if (!latest) return l;
                return new Date(l.date_start!).getTime() > new Date(latest.date_start!).getTime() ? l : latest;
             }, null);
+
+            // Continuous progress (0-1) into the active lap — same approach
+            // the circuit map already uses for driver marker positions, so
+            // standings reflect actual on-track order instead of only
+            // flipping once a driver crosses the line.
+            let lapProgress = 0;
+            if (activeLap?.date_start) {
+               const lapStartMs = new Date(activeLap.date_start).getTime();
+               const lapDurationSec = activeLap.lap_duration && activeLap.lap_duration > 0 ? activeLap.lap_duration : 90;
+               const elapsedSec = Math.max(0, (nowMs - lapStartMs) / 1000);
+               lapProgress = Math.min(0.995, elapsedSec / lapDurationSec);
+            }
+
+            // lapsCompleted already counts the in-progress lap (its
+            // date_start is <= now), so subtract 1 before adding fractional
+            // progress to get true race distance.
+            const raceDistance = Math.max(0, lapsCompleted - 1) + lapProgress;
 
             const driverStints = stints.filter((s) => s.driver_number === drv.driver_number);
             const activeStint =
@@ -54,13 +67,10 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                tyre: activeStint?.compound || 'UNKNOWN',
                stintAge: activeStint?.tyre_age_at_start || 0,
                lapsCompleted,
-               lastLapTime: lastLap?.date_start ? new Date(lastLap.date_start).getTime() : 0,
+               raceDistance,
             };
          })
-         .sort((a, b) => {
-            if (b.lapsCompleted !== a.lapsCompleted) return b.lapsCompleted - a.lapsCompleted;
-            return a.lastLapTime - b.lastLapTime;
-         });
+         .sort((a, b) => b.raceDistance - a.raceDistance);
    }, [drivers, laps, stints, currentTime]);
 
    // 2. Active Race Control feeds up to currentTime
@@ -103,8 +113,8 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                            <span className="text-[10px] text-f1-silver font-mono">L{drv.lapsCompleted}</span>
                            {/* Tyre badge */}
                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${drv.tyre === 'SOFT' ? 'bg-red-500/25 text-red-400' :
-                                 drv.tyre === 'MEDIUM' ? 'bg-yellow-500/25 text-yellow-400' :
-                                    drv.tyre === 'HARD' ? 'bg-white/20 text-white' : 'bg-blue-500/25 text-blue-400'
+                              drv.tyre === 'MEDIUM' ? 'bg-yellow-500/25 text-yellow-400' :
+                                 drv.tyre === 'HARD' ? 'bg-white/20 text-white' : 'bg-blue-500/25 text-blue-400'
                               }`}>
                               {drv.tyre[0]}
                            </span>
