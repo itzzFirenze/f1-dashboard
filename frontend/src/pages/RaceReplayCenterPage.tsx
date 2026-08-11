@@ -6,10 +6,6 @@ import { ReplayFeeds } from '../components/circuit/ReplayFeeds';
 import { TelemetryDashboard } from '../components/circuit/TelemetryDashboard';
 import { Play, Pause, Square, SkipBack, SkipForward, Radio, Flag, Trophy, Loader2 } from 'lucide-react';
 
-/**
- * Maps OpenF1 session location / circuit_short_name values to our local circuit IDs.
- * Covers every 2024 F1 calendar venue with common aliases.
- */
 const SESSION_LOCATION_TO_CIRCUIT_ID: Record<string, string> = {
    // Bahrain
    sakhir: 'bahrain', bahrain: 'bahrain',
@@ -85,6 +81,11 @@ const RaceReplayCenterPage: React.FC = () => {
    const [activeTab, setActiveTab] = useState<'standings' | 'feeds' | 'radio'>('standings');
    const RACE_YEARS = [2023, 2024, 2025] as const;
    const [selectedYear, setSelectedYear] = useState<number>(2023);
+   const [selectedLap, setSelectedLap] = useState<string>('');
+
+   useEffect(() => {
+      setSelectedLap('');
+   }, [activeSession?.session_key]);
 
    useEffect(() => {
       loadSessions(selectedYear);
@@ -268,12 +269,17 @@ const RaceReplayCenterPage: React.FC = () => {
                      <div className="flex items-center gap-2">
                         <span className="text-xs text-f1-silver">Jump to Lap:</span>
                         <select
-                           onChange={(e) => jumpToLap(Number(e.target.value))}
+                           value={selectedLap}
+                           onChange={(e) => {
+                              setSelectedLap(e.target.value);
+                              jumpToLap(Number(e.target.value));
+                           }}
                            className="bg-f1-mid-gray/50 border border-white/10 rounded-lg px-2 py-1 text-xs text-f1-white focus:outline-none"
                         >
                            <option value="">Select...</option>
                            {laps
                               .filter((l, idx, self) => self.findIndex((t) => t.lap_number === l.lap_number) === idx)
+                              .sort((a, b) => a.lap_number - b.lap_number)
                               .map((l) => (
                                  <option key={l.lap_number} value={l.lap_number}>
                                     Lap {l.lap_number}
