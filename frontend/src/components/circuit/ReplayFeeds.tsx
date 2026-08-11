@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useReplay } from '../../context/ReplayContext';
-import { Flag, ShieldAlert, Radio, AlertTriangle, Play, HelpCircle } from 'lucide-react';
+import { Flag, ShieldAlert, Radio, AlertTriangle, Play, Pause, HelpCircle } from 'lucide-react';
 
 interface ReplayFeedsProps {
    activeTab: 'standings' | 'feeds' | 'radio';
@@ -72,6 +72,52 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
          })
          .sort((a, b) => b.raceDistance - a.raceDistance);
    }, [drivers, laps, stints, currentTime]);
+
+   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
+   const [playbackProgress, setPlaybackProgress] = useState(0);
+   const audioRef = React.useRef<HTMLAudioElement | null>(null);
+
+   const toggleRadio = (url: string) => {
+      // Clicking the currently-playing clip pauses it.
+      if (playingUrl === url) {
+         audioRef.current?.pause();
+         setPlayingUrl(null);
+         return;
+      }
+
+      // Switching clips — stop whatever's playing, then play the new one.
+      if (audioRef.current) {
+         audioRef.current.pause();
+      }
+
+      const audio = new Audio(url);
+
+      audio.ontimeupdate = () => {
+         if (audio.duration > 0) {
+            setPlaybackProgress((audio.currentTime / audio.duration) * 100);
+         }
+      };
+      audio.onended = () => {
+         setPlayingUrl(null);
+         setPlaybackProgress(0);
+      };
+      audio.onerror = () => {
+         setPlayingUrl(null);
+         setPlaybackProgress(0);
+      };
+
+      audioRef.current = audio;
+      setPlaybackProgress(0);
+      void audio.play();
+      setPlayingUrl(url);
+   };
+
+   // Stop playback if the user navigates away from the Radio tab or unmounts.
+   React.useEffect(() => {
+      return () => {
+         audioRef.current?.pause();
+      };
+   }, []);
 
    // 2. Active Race Control feeds up to currentTime
    const activeControlMessages = useMemo(() => {
@@ -175,27 +221,41 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                   return (
                      <div
                         key={i}
-                        className="rounded-lg bg-white/[0.02] border border-white/5 p-3 flex justify-between items-center hover:bg-white/[0.05] transition-all"
+                        className="rounded-lg bg-white/[0.02] border border-white/5 p-3 hover:bg-white/[0.05] transition-all"
                      >
-                        <div className="flex gap-3 items-center">
-                           <Radio className="h-4 w-4 text-f1-red shrink-0" />
-                           <div>
-                              <span className="text-xs font-bold text-f1-white">
-                                 {driver?.broadcast_name || `Driver ${radio.driver_number}`}
-                              </span>
-                              <span className="block text-[9px] text-f1-silver font-mono">
-                                 {new Date(radio.date).toLocaleTimeString()}
-                              </span>
+                        <div className="flex justify-between items-center">
+                           <div className="flex gap-3 items-center">
+                              <Radio className="h-4 w-4 text-f1-red shrink-0" />
+                              <div>
+                                 <span className="text-xs font-bold text-f1-white">
+                                    {driver?.broadcast_name || `Driver ${radio.driver_number}`}
+                                 </span>
+                                 <span className="block text-[9px] text-f1-silver font-mono">
+                                    {new Date(radio.date).toLocaleTimeString()}
+                                 </span>
+                              </div>
                            </div>
+                           <button
+                              onClick={() => toggleRadio(radio.recording_url)}
+                              className="rounded bg-f1-red/10 border border-f1-red/30 p-1.5 hover:bg-f1-red/20 transition-all text-f1-red-light"
+                           >
+                              {playingUrl === radio.recording_url ? (
+                                 <Pause className="h-3 w-3 fill-current" />
+                              ) : (
+                                 <Play className="h-3 w-3 fill-current" />
+                              )}
+                           </button>
                         </div>
-                        <a
-                           href={radio.recording_url}
-                           target="_blank"
-                           rel="noreferrer"
-                           className="rounded bg-f1-red/10 border border-f1-red/30 p-1.5 hover:bg-f1-red/20 transition-all text-f1-red-light"
-                        >
-                           <Play className="h-3 w-3 fill-current" />
-                        </a>
+
+                        {/* Playback timeline — only shown for the active clip */}
+                        {playingUrl === radio.recording_url && (
+                           <div className="mt-2 h-1 w-full bg-white/[0.08] rounded-full overflow-hidden">
+                              <div
+                                 className="h-full bg-f1-red rounded-full transition-all duration-150"
+                                 style={{ width: `${playbackProgress}%` }}
+                              />
+                           </div>
+                        )}
                      </div>
                   );
                })}
