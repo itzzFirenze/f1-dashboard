@@ -1,104 +1,59 @@
 import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useReplay } from '../context/ReplayContext';
 import { circuits } from '../data/circuits';
 import { InteractiveReplayMap } from '../components/circuit/InteractiveReplayMap';
 import { ReplayFeeds } from '../components/circuit/ReplayFeeds';
 import { TelemetryDashboard } from '../components/circuit/TelemetryDashboard';
-import { Play, Pause, Square, SkipBack, SkipForward, Radio, Flag, Trophy, Loader2 } from 'lucide-react';
+import { Radio, Flag, Trophy, Gauge, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
 const SESSION_LOCATION_TO_CIRCUIT_ID: Record<string, string> = {
-   // Bahrain
    sakhir: 'bahrain', bahrain: 'bahrain',
-   // Saudi Arabia
    jeddah: 'saudi-arabia', 'saudi arabia': 'saudi-arabia',
-   // Australia
    melbourne: 'australia', 'albert park': 'australia', australia: 'australia',
-   // Japan
    suzuka: 'japan', japan: 'japan',
-   // China
    shanghai: 'china', china: 'china',
-   // Miami
    miami: 'miami', 'miami gardens': 'miami',
-   // Imola
    imola: 'imola',
-   // Monaco
    monaco: 'monaco', 'monte carlo': 'monaco', 'monte-carlo': 'monaco',
-   // Canada
    montreal: 'canada', montréal: 'canada', canada: 'canada',
-   // Spain
    montmelo: 'spain', montmeló: 'spain', barcelona: 'spain', spain: 'spain',
-   // Austria
    spielberg: 'austria', austria: 'austria',
-   // UK
    silverstone: 'silverstone', 'great britain': 'silverstone',
-   // Belgium
    stavelot: 'belgium', spa: 'belgium', 'spa-francorchamps': 'belgium', belgium: 'belgium',
-   // Hungary
    budapest: 'hungary', hungary: 'hungary',
-   // Netherlands
    zandvoort: 'netherlands', netherlands: 'netherlands',
-   // Italy — Monza
    monza: 'monza',
-   // Azerbaijan
    baku: 'azerbaijan', azerbaijan: 'azerbaijan',
-   // Singapore
    'marina bay': 'singapore', singapore: 'singapore',
-   // USA — Austin
    austin: 'austin',
-   // Mexico
    'mexico city': 'mexico', mexico: 'mexico',
-   // Brazil
    'sao paulo': 'brazil', 'são paulo': 'brazil', interlagos: 'brazil', brazil: 'brazil',
-   // Las Vegas
    'las vegas': 'las-vegas',
-   // Qatar
    lusail: 'qatar', qatar: 'qatar',
-   // Abu Dhabi
    'abu dhabi': 'abu-dhabi', 'yas marina': 'abu-dhabi', 'yas island': 'abu-dhabi',
 };
 
+const PANEL_TRANSITION = { type: 'tween' as const, duration: 0.32, ease: [0.4, 0, 0.2, 1] as const };
+
 const RaceReplayCenterPage: React.FC = () => {
-   const {
-      activeSession,
-      sessions,
-      loadSessions,
-      selectSession,
-      isLoading,
-      isPlaying,
-      playbackSpeed,
-      currentTime,
-      progressPercent,
-      play,
-      pause,
-      stop,
-      skip,
-      setSpeed,
-      scrubToPercent,
-      jumpToLap,
-      laps,
-   } = useReplay();
+   const { activeSession, sessions, loadSessions, selectSession, isLoading } = useReplay();
 
    const [activeTab, setActiveTab] = useState<'standings' | 'feeds' | 'radio'>('standings');
+   const [expandedPanel, setExpandedPanel] = useState<'standings' | 'telemetry'>('standings');
    const RACE_YEARS = [2023, 2024, 2025] as const;
    const [selectedYear, setSelectedYear] = useState<number>(2023);
-   const [selectedLap, setSelectedLap] = useState<string>('');
-
-   useEffect(() => {
-      setSelectedLap('');
-   }, [activeSession?.session_key]);
 
    useEffect(() => {
       loadSessions(selectedYear);
    }, [selectedYear, loadSessions]);
 
-   // Map active session's location to static circuit metadata using robust lookup
    const currentCircuit = React.useMemo(() => {
       if (!activeSession) return circuits[0];
 
       const sessionLoc = (activeSession.location ?? '').toLowerCase().trim();
       const circuitShort = (activeSession.circuit_short_name ?? '').toLowerCase().trim();
 
-      // 1. Try direct lookup table match
       const idFromLoc = SESSION_LOCATION_TO_CIRCUIT_ID[sessionLoc];
       const idFromShort = SESSION_LOCATION_TO_CIRCUIT_ID[circuitShort];
       if (idFromLoc) {
@@ -110,7 +65,6 @@ const RaceReplayCenterPage: React.FC = () => {
          if (found) return found;
       }
 
-      // 2. Fuzzy fallback — match circuit id or location against session location
       const fuzzy = circuits.find((c) => {
          const cId = c.id.toLowerCase();
          const cLoc = c.location.toLowerCase();
@@ -124,16 +78,19 @@ const RaceReplayCenterPage: React.FC = () => {
       return fuzzy || circuits[0];
    }, [activeSession]);
 
+   const tabButtonClass = (tab: typeof activeTab) =>
+      `flex-1 py-2 rounded-lg text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${activeTab === tab ? 'bg-f1-red text-white' : 'text-f1-silver hover:text-f1-white'
+      }`;
+
    return (
-      <div className="space-y-6">
+      <div className="space-y-4">
          {/* Header Panel */}
-         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-4">
+         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-3">
             <div>
                <span className="text-xs font-bold text-f1-red uppercase tracking-[0.2em]">F1TV Replay Center</span>
-               <h1 className="text-3xl font-display font-black text-f1-white mt-1">Race Replay Center</h1>
+               <h1 className="text-2xl font-display font-black text-f1-white mt-1">Race Replay Center</h1>
             </div>
 
-            {/* Year / Session Selectors */}
             <div className="flex gap-2">
                <select
                   value={selectedYear}
@@ -141,9 +98,7 @@ const RaceReplayCenterPage: React.FC = () => {
                   className="bg-f1-mid-gray/50 border border-white/10 rounded-xl px-4 py-2 text-sm text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer"
                >
                   {RACE_YEARS.map((y) => (
-                     <option key={y} value={y} className="bg-f1-black">
-                        {y}
-                     </option>
+                     <option key={y} value={y} className="bg-f1-black">{y}</option>
                   ))}
                </select>
 
@@ -172,163 +127,136 @@ const RaceReplayCenterPage: React.FC = () => {
             </div>
          </div>
 
-         {/* Main Grid View */}
-         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {/* Left Side: Map Replay & Telemetry Controls */}
-            <div className="xl:col-span-2 space-y-6">
+         {/* Main Grid — circuit | telemetry/standings toggle group */}
+         <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+            {/* Circuit map with docked media player */}
+            <div className="xl:col-span-7">
                <InteractiveReplayMap circuit={currentCircuit} />
-
-               {/* Media Player HUD Controls */}
-               <div className="rounded-2xl border border-white/10 bg-f1-dark-gray/60 p-4 shadow-xl backdrop-blur-md">
-                  {/* Timeline Progress Bar / Scrubber */}
-                  <div className="relative group mb-4">
-                     <div className="h-1.5 w-full bg-white/[0.08] rounded-full cursor-pointer relative">
-                        <div
-                           className="absolute top-0 left-0 h-full bg-f1-red rounded-full"
-                           style={{ width: `${progressPercent}%` }}
-                        />
-                        <input
-                           type="range"
-                           min="0"
-                           max="100"
-                           step="0.01"
-                           value={progressPercent}
-                           onChange={(e) => scrubToPercent(parseFloat(e.target.value))}
-                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                     </div>
-                     <div className="flex justify-between text-[10px] text-f1-silver mt-1.5 font-mono">
-                        <span>{currentTime ? currentTime.toLocaleTimeString() : '00:00:00'}</span>
-                        <span>Lap Marker Sync</span>
-                     </div>
-                  </div>
-
-                  {/* Controls Button Bar */}
-                  <div className="flex flex-wrap justify-between items-center gap-4">
-                     <div className="flex items-center gap-2">
-                        <button
-                           onClick={() => skip(-10)}
-                           className="rounded-lg bg-white/[0.04] border border-white/5 p-2 hover:bg-white/[0.08] transition-all text-f1-white"
-                           title="Skip back 10s"
-                        >
-                           <SkipBack className="h-4 w-4" />
-                        </button>
-
-                        {isPlaying ? (
-                           <button
-                              onClick={pause}
-                              className="rounded-lg bg-f1-red/10 border border-f1-red/30 p-2.5 hover:bg-f1-red/20 transition-all text-f1-red-light"
-                              title="Pause"
-                           >
-                              <Pause className="h-5 w-5 fill-current" />
-                           </button>
-                        ) : (
-                           <button
-                              onClick={play}
-                              className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-2.5 hover:bg-emerald-500/20 transition-all text-emerald-400"
-                              title="Play"
-                           >
-                              <Play className="h-5 w-5 fill-current" />
-                           </button>
-                        )}
-
-                        <button
-                           onClick={stop}
-                           className="rounded-lg bg-white/[0.04] border border-white/5 p-2 hover:bg-white/[0.08] transition-all text-f1-white"
-                           title="Stop / Reset"
-                        >
-                           <Square className="h-4 w-4" />
-                        </button>
-
-                        <button
-                           onClick={() => skip(10)}
-                           className="rounded-lg bg-white/[0.04] border border-white/5 p-2 hover:bg-white/[0.08] transition-all text-f1-white"
-                           title="Skip forward 10s"
-                        >
-                           <SkipForward className="h-4 w-4" />
-                        </button>
-                     </div>
-
-                     {/* Speed Multipliers */}
-                     <div className="flex bg-white/[0.02] border border-white/5 p-1 rounded-xl gap-1">
-                        {([1, 2, 4, 8] as const).map((spd) => (
-                           <button
-                              key={spd}
-                              onClick={() => setSpeed(spd)}
-                              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${playbackSpeed === spd
-                                 ? 'bg-f1-red text-white'
-                                 : 'text-f1-silver hover:text-f1-white'
-                                 }`}
-                           >
-                              {spd}x
-                           </button>
-                        ))}
-                     </div>
-
-                     {/* Jump to Lap controls */}
-                     <div className="flex items-center gap-2">
-                        <span className="text-xs text-f1-silver">Jump to Lap:</span>
-                        <select
-                           value={selectedLap}
-                           onChange={(e) => {
-                              setSelectedLap(e.target.value);
-                              jumpToLap(Number(e.target.value));
-                           }}
-                           className="bg-f1-mid-gray/50 border border-white/10 rounded-lg px-2 py-1 text-xs text-f1-white focus:outline-none"
-                        >
-                           <option value="">Select...</option>
-                           {laps
-                              .filter((l, idx, self) => self.findIndex((t) => t.lap_number === l.lap_number) === idx)
-                              .sort((a, b) => a.lap_number - b.lap_number)
-                              .map((l) => (
-                                 <option key={l.lap_number} value={l.lap_number}>
-                                    Lap {l.lap_number}
-                                 </option>
-                              ))}
-                        </select>
-                     </div>
-                  </div>
-               </div>
             </div>
 
-            {/* Right Side: Standings, Messages & Radio Feeds */}
-            <div className="rounded-2xl border border-white/10 bg-f1-dark-gray/60 p-4 shadow-xl backdrop-blur-md flex flex-col h-[580px]">
-               {/* Tab Selection */}
-               <div className="flex bg-white/[0.02] border border-white/5 p-1 rounded-xl gap-1 mb-4">
-                  <button
-                     onClick={() => setActiveTab('standings')}
-                     className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${activeTab === 'standings' ? 'bg-f1-red text-white' : 'text-f1-silver hover:text-f1-white'
-                        }`}
-                  >
-                     <Trophy className="h-3.5 w-3.5" /> Standings
-                  </button>
-                  <button
-                     onClick={() => setActiveTab('feeds')}
-                     className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${activeTab === 'feeds' ? 'bg-f1-red text-white' : 'text-f1-silver hover:text-f1-white'
-                        }`}
-                  >
-                     <Flag className="h-3.5 w-3.5" /> Feeds
-                  </button>
-                  <button
-                     onClick={() => setActiveTab('radio')}
-                     className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${activeTab === 'radio' ? 'bg-f1-red text-white' : 'text-f1-silver hover:text-f1-white'
-                        }`}
-                  >
-                     <Radio className="h-3.5 w-3.5" /> Radio
-                  </button>
-               </div>
+            {/* Toggle group: one panel expanded, the other a collapsed vertical tab */}
+            <div className="xl:col-span-5 flex gap-3 h-[590px] overflow-hidden">
+               {/* Battle Telemetry */}
+               <motion.div
+                  animate={{
+                     flexGrow: expandedPanel === 'telemetry' ? 1 : 0,
+                     flexBasis: expandedPanel === 'telemetry' ? '0%' : '56px',
+                  }}
+                  transition={PANEL_TRANSITION}
+                  className="min-w-0 rounded-2xl border border-white/10 bg-f1-dark-gray/60 shadow-xl backdrop-blur-md h-full overflow-hidden"
+                  style={{ flexShrink: 0 }}
+               >
+                  <AnimatePresence mode="wait" initial={false}>
+                     {expandedPanel === 'telemetry' ? (
+                        <motion.div
+                           key="telemetry-expanded"
+                           initial={{ opacity: 0 }}
+                           animate={{ opacity: 1 }}
+                           exit={{ opacity: 0 }}
+                           transition={{ duration: 0.15, delay: expandedPanel === 'telemetry' ? 0.15 : 0 }}
+                           className="p-3 flex flex-col h-full w-[280px] xl:w-full"
+                        >
+                           <button
+                              onClick={() => setExpandedPanel('standings')}
+                              className="flex items-center justify-between mb-2 px-1 group shrink-0"
+                              title="Collapse Battle Telemetry"
+                           >
+                              <h2 className="text-[11px] font-display font-black text-f1-white uppercase tracking-wider">
+                                 Battle Telemetry
+                              </h2>
+                              <ChevronLeft className="h-4 w-4 text-f1-silver group-hover:text-f1-white transition-colors" />
+                           </button>
+                           <div className="flex-1 overflow-y-auto pr-0.5">
+                              <TelemetryDashboard />
+                           </div>
+                        </motion.div>
+                     ) : (
+                        <motion.button
+                           key="telemetry-collapsed"
+                           initial={{ opacity: 0 }}
+                           animate={{ opacity: 1 }}
+                           exit={{ opacity: 0 }}
+                           transition={{ duration: 0.12, delay: 0.12 }}
+                           onClick={() => setExpandedPanel('telemetry')}
+                           className="w-14 h-full flex flex-col items-center justify-between py-4 hover:bg-white/[0.03] hover:border-f1-red/30 transition-colors group"
+                           title="Expand Battle Telemetry"
+                        >
+                           <Gauge className="h-4 w-4 text-f1-silver group-hover:text-f1-red-light transition-colors shrink-0" />
+                           <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-bold uppercase tracking-wider text-f1-silver group-hover:text-f1-white transition-colors whitespace-nowrap">
+                              Battle Telemetry
+                           </span>
+                           <ChevronRight className="h-4 w-4 text-f1-silver group-hover:text-f1-red-light transition-colors shrink-0" />
+                        </motion.button>
+                     )}
+                  </AnimatePresence>
+               </motion.div>
 
-               {/* Feeds View Wrapper */}
-               <div className="flex-1 overflow-hidden">
-                  <ReplayFeeds activeTab={activeTab} />
-               </div>
+               {/* Standings / Feeds / Radio */}
+               <motion.div
+                  animate={{
+                     flexGrow: expandedPanel === 'standings' ? 1 : 0,
+                     flexBasis: expandedPanel === 'standings' ? '0%' : '56px',
+                  }}
+                  transition={PANEL_TRANSITION}
+                  className="min-w-0 rounded-2xl border border-white/10 bg-f1-dark-gray/60 shadow-xl backdrop-blur-md h-full overflow-hidden"
+                  style={{ flexShrink: 0 }}
+               >
+                  <AnimatePresence mode="wait" initial={false}>
+                     {expandedPanel === 'standings' ? (
+                        <motion.div
+                           key="standings-expanded"
+                           initial={{ opacity: 0 }}
+                           animate={{ opacity: 1 }}
+                           exit={{ opacity: 0 }}
+                           transition={{ duration: 0.15, delay: 0.15 }}
+                           className="p-4 flex flex-col h-full w-[320px] xl:w-full"
+                        >
+                           <div className="flex items-center gap-2 mb-3 shrink-0">
+                              <div className="flex flex-1 bg-white/[0.02] border border-white/5 p-1 rounded-xl gap-1">
+                                 <button onClick={() => setActiveTab('standings')} className={tabButtonClass('standings')}>
+                                    <Trophy className="h-3.5 w-3.5" /> Standings
+                                 </button>
+                                 <button onClick={() => setActiveTab('feeds')} className={tabButtonClass('feeds')}>
+                                    <Flag className="h-3.5 w-3.5" /> Feeds
+                                 </button>
+                                 <button onClick={() => setActiveTab('radio')} className={tabButtonClass('radio')}>
+                                    <Radio className="h-3.5 w-3.5" /> Radio
+                                 </button>
+                              </div>
+                              <button
+                                 onClick={() => setExpandedPanel('telemetry')}
+                                 className="shrink-0 p-2 rounded-lg bg-white/[0.04] border border-white/5 hover:bg-white/[0.08] transition-all text-f1-silver hover:text-f1-white"
+                                 title="Collapse"
+                              >
+                                 <ChevronRight className="h-4 w-4" />
+                              </button>
+                           </div>
+
+                           <div className="flex-1 overflow-hidden">
+                              <ReplayFeeds activeTab={activeTab} />
+                           </div>
+                        </motion.div>
+                     ) : (
+                        <motion.button
+                           key="standings-collapsed"
+                           initial={{ opacity: 0 }}
+                           animate={{ opacity: 1 }}
+                           exit={{ opacity: 0 }}
+                           transition={{ duration: 0.12, delay: 0.12 }}
+                           onClick={() => setExpandedPanel('standings')}
+                           className="w-14 h-full flex flex-col items-center justify-between py-4 hover:bg-white/[0.03] hover:border-f1-red/30 transition-colors group"
+                           title="Expand Standings"
+                        >
+                           <Trophy className="h-4 w-4 text-f1-silver group-hover:text-f1-red-light transition-colors shrink-0" />
+                           <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-bold uppercase tracking-wider text-f1-silver group-hover:text-f1-white transition-colors whitespace-nowrap">
+                              Standings · Feeds · Radio
+                           </span>
+                           <ChevronLeft className="h-4 w-4 text-f1-silver group-hover:text-f1-red-light transition-colors shrink-0" />
+                        </motion.button>
+                     )}
+                  </AnimatePresence>
+               </motion.div>
             </div>
-         </div>
-
-         {/* Advanced Telemetry Panel */}
-         <div className="space-y-4">
-            <h2 className="text-xl font-display font-black text-f1-white">Battle Mode Telemetry Comparison</h2>
-            <TelemetryDashboard />
          </div>
       </div>
    );

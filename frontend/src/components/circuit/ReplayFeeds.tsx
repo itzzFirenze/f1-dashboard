@@ -6,6 +6,22 @@ interface ReplayFeedsProps {
    activeTab: 'standings' | 'feeds' | 'radio';
 }
 
+const CheckeredFlagIcon: React.FC<{ className?: string }> = ({ className }) => (
+   <svg viewBox="0 0 16 16" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="0" width="1.5" height="16" fill="currentColor" opacity="0.6" />
+      <rect x="2.5" y="1" width="2" height="2" fill="currentColor" />
+      <rect x="6.5" y="1" width="2" height="2" fill="currentColor" />
+      <rect x="10.5" y="1" width="2" height="2" fill="white" />
+      <rect x="4.5" y="3" width="2" height="2" fill="white" />
+      <rect x="8.5" y="3" width="2" height="2" fill="white" />
+      <rect x="2.5" y="5" width="2" height="2" fill="currentColor" />
+      <rect x="6.5" y="5" width="2" height="2" fill="currentColor" />
+      <rect x="10.5" y="5" width="2" height="2" fill="currentColor" />
+      <rect x="4.5" y="7" width="2" height="2" fill="white" />
+      <rect x="8.5" y="7" width="2" height="2" fill="white" />
+   </svg>
+);
+
 export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
    const {
       drivers,
@@ -19,6 +35,14 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
       laps,
       isDriverOutAt,
    } = useReplay();
+
+   const totalLapsByDriver = useMemo(() => {
+      const map: Record<number, number> = {};
+      for (const l of laps) {
+         map[l.driver_number] = Math.max(map[l.driver_number] || 0, l.lap_number);
+      }
+      return map;
+   }, [laps]);
 
    const liveStandings = useMemo(() => {
       if (!currentTime) return [];
@@ -41,11 +65,18 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
             }, null);
 
             let lapProgress = 0;
+            let activeLapStartMs = Infinity;
+            let activeLapEndMs = Infinity;
+
             if (activeLap?.date_start) {
                const lapStartMs = new Date(activeLap.date_start).getTime();
+               activeLapStartMs = lapStartMs;
+
                const lapDurationSec = activeLap.lap_duration && activeLap.lap_duration > 0 ? activeLap.lap_duration : 90;
+               activeLapEndMs = lapStartMs + lapDurationSec * 1000;
+
                const elapsedSec = Math.max(0, (nowMs - lapStartMs) / 1000);
-               lapProgress = Math.min(0.995, elapsedSec / lapDurationSec);
+               lapProgress = elapsedSec / (elapsedSec + lapDurationSec);
             }
 
             const raceDistance = Math.max(0, lapsCompleted - 1) + lapProgress;
@@ -55,8 +86,18 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                driverStints.find((s) => lapsCompleted >= s.lap_start && lapsCompleted <= s.lap_end) ||
                driverStints[driverStints.length - 1];
 
-            // NEW: is this driver retired/DNS at the current replay time?
             const isOut = isDriverOutAt(drv.driver_number, currentTime);
+
+            // Finished = this driver reached the LAST lap they ever recorded
+            // in the data (which may be fewer than the leader's, if lapped)
+            // and current time has actually passed that lap's end — not
+            // "reached the leader's lap count", which lapped drivers never do.
+            const driverTotalLaps = totalLapsByDriver[drv.driver_number] || 0;
+            const isFinished =
+               !isOut &&
+               driverTotalLaps > 0 &&
+               activeLap?.lap_number === driverTotalLaps &&
+               nowMs >= activeLapEndMs;
 
             return {
                ...drv,
@@ -64,16 +105,17 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                stintAge: activeStint?.tyre_age_at_start || 0,
                lapsCompleted,
                raceDistance,
-               isOut,           // keep this around too, useful for sorting/styling below
+               activeLapStartMs,
+               isOut,
+               isFinished,
             };
          })
          .sort((a, b) => {
-            // Retired drivers sink to the bottom of the standings instead of
-            // freezing mid-pack at their last known race distance.
             if (a.isOut !== b.isOut) return a.isOut ? 1 : -1;
-            return b.raceDistance - a.raceDistance;
+            if (b.raceDistance !== a.raceDistance) return b.raceDistance - a.raceDistance;
+            return a.activeLapStartMs - b.activeLapStartMs;
          });
-   }, [drivers, laps, stints, currentTime, isDriverOutAt]);
+   }, [drivers, laps, stints, currentTime, isDriverOutAt, totalLapsByDriver]);
 
    const [playingUrl, setPlayingUrl] = useState<string | null>(null);
    const [playbackProgress, setPlaybackProgress] = useState(0);
@@ -158,6 +200,11 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                            <span className="text-[10px] text-f1-silver">{drv.team_name}</span>
                         </div>
                         <div className="flex items-center gap-2">
+                           {drv.isFinished && (
+                              <span title="Finished" className="shrink-0">
+                                 <CheckeredFlagIcon className="h-3 w-3 text-f1-white" />
+                              </span>
+                           )}
                            <span className="text-[10px] text-f1-silver font-mono">L{drv.lapsCompleted}</span>
                            {/* Tyre badge */}
                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${drv.tyre === 'DNF'

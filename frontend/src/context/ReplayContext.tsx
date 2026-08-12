@@ -37,6 +37,7 @@ interface ReplayContextProps {
    playbackSpeed: 1 | 2 | 4 | 8;
    currentTime: Date | null;
    durationMs: number;
+   elapsedMs: number; // NEW — ms since playbackStart, so the seek bar can render 0:00:00-based time
    progressPercent: number;
    driverLocations: Record<number, OpenF1Location>;
    selectedDrivers: number[];
@@ -94,6 +95,10 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
    const SYNC_INTERVAL_MS = 500;
    const syncRequestIdRef = useRef(0);
 
+   // Raw, official session window — kept only for the location/telemetry
+   // chunk-caching scheme below, which just needs a stable, arbitrary anchor
+   // point per session. It is NOT used for anything the user sees (seek bar,
+   // duration, playback bounds) — see playbackStart/playbackEnd for that.
    const sessionStart = useMemo(() => {
       if (!activeSession) return null;
       return new Date(activeSession.date_start);
@@ -103,17 +108,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!activeSession) return null;
       return new Date(activeSession.date_end);
    }, [activeSession]);
-
-   const durationMs = useMemo(() => {
-      if (!sessionStart || !sessionEnd) return 0;
-      return sessionEnd.getTime() - sessionStart.getTime();
-   }, [sessionStart, sessionEnd]);
-
-   const progressPercent = useMemo(() => {
-      if (!sessionStart || !currentTime || durationMs <= 0) return 0;
-      const elapsed = currentTime.getTime() - sessionStart.getTime();
-      return Math.min(100, Math.max(0, (elapsed / durationMs) * 100));
-   }, [sessionStart, currentTime, durationMs]);
 
    const retiredAtByDriver = useMemo(() => {
       const map: Record<number, number> = {};
@@ -139,9 +133,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return map;
    }, [raceControl]);
 
-   // Last completed lap (and its estimated end time) per driver, and how far
-   // the session's data actually progresses overall — used as a fallback
-   // retirement signal when race control never sends an explicit message.
    const lastLapInfoByDriver = useMemo(() => {
       const map: Record<number, { lapNumber: number; endMs: number }> = {};
 
@@ -169,6 +160,46 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
       return max;
    }, [lastLapInfoByDriver]);
+
+   const playbackStart = useMemo(() => {
+      if (!sessionStart) return null;
+
+      const startedLaps = laps.filter((l) => l.date_start);
+      if (startedLaps.length === 0) return sessionStart;
+
+      const earliestMs = startedLaps.reduce((min, l) => {
+         const t = new Date(l.date_start!).getTime();
+         return t < min ? t : min;
+      }, Infinity);
+
+      return new Date(earliestMs);
+   }, [laps, sessionStart]);
+
+   const playbackEnd = useMemo(() => {
+      if (!sessionEnd) return null;
+      if (latestLapEndAcrossField <= 0) return sessionEnd;
+
+      const lapsBasedEnd = new Date(latestLapEndAcrossField);
+      // Never extend past the official end, just in case a lap_duration
+      // fallback overestimates.
+      return lapsBasedEnd.getTime() > sessionEnd.getTime() ? sessionEnd : lapsBasedEnd;
+   }, [latestLapEndAcrossField, sessionEnd]);
+
+   const durationMs = useMemo(() => {
+      if (!playbackStart || !playbackEnd) return 0;
+      return playbackEnd.getTime() - playbackStart.getTime();
+   }, [playbackStart, playbackEnd]);
+
+   const progressPercent = useMemo(() => {
+      if (!playbackStart || !currentTime || durationMs <= 0) return 0;
+      const elapsed = currentTime.getTime() - playbackStart.getTime();
+      return Math.min(100, Math.max(0, (elapsed / durationMs) * 100));
+   }, [playbackStart, currentTime, durationMs]);
+
+   const elapsedMs = useMemo(() => {
+      if (!playbackStart || !currentTime) return 0;
+      return Math.max(0, currentTime.getTime() - playbackStart.getTime());
+   }, [playbackStart, currentTime]);
 
    const isDriverOutAt = useCallback(
       (driverNumber: number, time: Date | null): boolean => {
@@ -222,9 +253,16 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setActiveSession(session);
       setIsPlaying(false);
 
-      const initialTime = new Date(session.date_start);
-      setCurrentTime(initialTime);
-      currentTimeRef.current = initialTime;
+      setCurrentTime(null);
+      currentTimeRef.current = null;
+
+      setDrivers([]);
+      driversRef.current = [];
+      setLaps([]);
+      setStints([]);
+      setPits([]);
+      setRaceControl([]);
+      setTeamRadios([]);
 
       setSelectedDrivers([]);
       selectedDriversRef.current = [];
@@ -272,6 +310,8 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
          const validLaps = loadedLaps.filter((lap) => Boolean(lap.date_start));
 
+         let startTime = new Date(session.date_start);
+
          if (validLaps.length > 0) {
             const firstLap = validLaps.reduce((earliest, lap) => {
                if (new Date(lap.date_start!).getTime() < new Date(earliest.date_start!).getTime()) {
@@ -281,11 +321,12 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
 
             if (firstLap.date_start) {
-               const firstLapTime = new Date(firstLap.date_start);
-               setCurrentTime(firstLapTime);
-               currentTimeRef.current = firstLapTime;
+               startTime = new Date(firstLap.date_start);
             }
          }
+
+         setCurrentTime(startTime);
+         currentTimeRef.current = startTime;
       } catch (error) {
          console.error('[Replay] Failed to load session data:', error);
       } finally {
@@ -443,10 +484,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
          // Prevent stale async calls from overwriting newer sync results.
          const requestId = ++syncRequestIdRef.current;
 
-         // Prefetch the NEXT chunk once we're most of the way through this one,
-         // so it's already cached (near-instant) by the time playback crosses
-         // the minute boundary, instead of blocking on a fresh fetch there.
-         // Fire-and-forget — we don't need to wait on this.
          const msIntoChunk = time.getTime() - sessionStart.getTime() - currentChunk * 60_000;
          if (msIntoChunk > 45_000 && prefetchedChunkRef.current !== currentChunk) {
             prefetchedChunkRef.current = currentChunk;
@@ -503,9 +540,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                continue;
             }
 
-            // If the API response exists but the earliest frame in this minute
-            // is slightly after replay time, preserve the previous valid
-            // telemetry instead of flashing back to "Awaiting telemetry frames...".
             const previousTelemetry = telemetryDataRef.current[driverNumber];
             if (previousTelemetry) {
                nextTelemetry[driverNumber] = previousTelemetry;
@@ -525,14 +559,14 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
          lastTickRef.current = now;
 
          setCurrentTime((previous) => {
-            if (!previous || !sessionEnd) return previous;
+            if (!previous || !playbackEnd) return previous;
 
             const nextTime = new Date(previous.getTime() + delta * playbackSpeed);
 
-            if (nextTime >= sessionEnd) {
+            if (nextTime >= playbackEnd) {
                setIsPlaying(false);
-               currentTimeRef.current = sessionEnd;
-               return sessionEnd;
+               currentTimeRef.current = playbackEnd;
+               return playbackEnd;
             }
 
             currentTimeRef.current = nextTime;
@@ -541,12 +575,12 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
          timerRef.current = requestAnimationFrame(tick);
       },
-      [playbackSpeed, sessionEnd]
+      [playbackSpeed, playbackEnd]
    );
 
    // Start/stop RAF.
    useEffect(() => {
-      if (!isPlaying || !sessionEnd) {
+      if (!isPlaying || !playbackEnd) {
          if (timerRef.current !== null) {
             cancelAnimationFrame(timerRef.current);
             timerRef.current = null;
@@ -563,7 +597,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             timerRef.current = null;
          }
       };
-   }, [isPlaying, sessionEnd, tick]);
+   }, [isPlaying, playbackEnd, tick]);
 
    // Sync while playing.
    useEffect(() => {
@@ -584,9 +618,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
    // IMPORTANT: immediately fetch telemetry when driver selection changes.
    useEffect(() => {
-      // Update the ref FIRST. syncLocations reads selectedDriversRef.current,
-      // so this guarantees the clicked driver exists before telemetry fetching
-      // begins.
       selectedDriversRef.current = selectedDrivers;
 
       // Remove telemetry entries for deselected drivers immediately.
@@ -607,14 +638,10 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const replayTime = currentTimeRef.current;
 
       if (replayTime && sessionStart) {
-         // This is the request that should populate TelemetryDashboard
-         // immediately after clicking a driver marker.
          void syncLocations(replayTime);
       }
    }, [selectedDrivers, sessionStart, syncLocations]);
 
-   // Auto-select first session — also re-fires when the active session
-   // isn't part of the current list anymore (e.g. after switching years).
    useEffect(() => {
       if (sessions.length === 0) return;
 
@@ -634,24 +661,24 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
    const stop = useCallback(() => {
       setIsPlaying(false);
 
-      if (sessionStart) {
-         setCurrentTime(sessionStart);
-         currentTimeRef.current = sessionStart;
+      if (playbackStart) {
+         setCurrentTime(playbackStart);
+         currentTimeRef.current = playbackStart;
       }
-   }, [sessionStart]);
+   }, [playbackStart]);
 
    const skip = useCallback(
       (seconds: number) => {
          setCurrentTime((previous) => {
-            if (!previous || !sessionStart || !sessionEnd) return previous;
+            if (!previous || !playbackStart || !playbackEnd) return previous;
 
             const target = new Date(previous.getTime() + seconds * 1000);
             let result: Date;
 
-            if (target < sessionStart) {
-               result = sessionStart;
-            } else if (target > sessionEnd) {
-               result = sessionEnd;
+            if (target < playbackStart) {
+               result = playbackStart;
+            } else if (target > playbackEnd) {
+               result = playbackEnd;
             } else {
                result = target;
             }
@@ -660,7 +687,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             return result;
          });
       },
-      [sessionStart, sessionEnd]
+      [playbackStart, playbackEnd]
    );
 
    const setSpeed = useCallback((speed: 1 | 2 | 4 | 8) => {
@@ -669,22 +696,20 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
    const scrubToPercent = useCallback(
       (percent: number) => {
-         if (!sessionStart || durationMs <= 0) return;
+         if (!playbackStart || durationMs <= 0) return;
 
          const safePercent = Math.min(100, Math.max(0, percent));
          const targetMs = (safePercent / 100) * durationMs;
-         const target = new Date(sessionStart.getTime() + targetMs);
+         const target = new Date(playbackStart.getTime() + targetMs);
 
          currentTimeRef.current = target;
          setCurrentTime(target);
       },
-      [sessionStart, durationMs]
+      [playbackStart, durationMs]
    );
 
    const jumpToLap = useCallback(
       (lapNumber: number) => {
-         // Multiple drivers share the same lap number; we only need one
-         // lap-start timestamp for the replay clock.
          const lap = laps.find(
             (candidate) => candidate.lap_number === lapNumber && candidate.date_start
          );
@@ -704,14 +729,10 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
          let next: number[];
 
          if (previous.includes(driverNumber)) {
-            // Clicking an already-selected driver deselects it.
             next = previous.filter((number) => number !== driverNumber);
          } else if (previous.length >= 2) {
-            // Battle mode supports max 2 drivers. When two are already selected,
-            // drop the oldest selection and add the newly clicked driver.
             next = [previous[previous.length - 1], driverNumber];
          } else {
-            // Add first/second driver.
             next = [...previous, driverNumber];
          }
 
@@ -741,6 +762,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             playbackSpeed,
             currentTime,
             durationMs,
+            elapsedMs,
             progressPercent,
 
             driverLocations,
