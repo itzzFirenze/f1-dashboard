@@ -67,12 +67,14 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
             let lapProgress = 0;
             let activeLapStartMs = Infinity;
             let activeLapEndMs = Infinity;
+            let activeLapHasRealDuration = false;
 
             if (activeLap?.date_start) {
                const lapStartMs = new Date(activeLap.date_start).getTime();
                activeLapStartMs = lapStartMs;
 
-               const lapDurationSec = activeLap.lap_duration && activeLap.lap_duration > 0 ? activeLap.lap_duration : 90;
+               activeLapHasRealDuration = Boolean(activeLap.lap_duration && activeLap.lap_duration > 0);
+               const lapDurationSec = activeLapHasRealDuration ? activeLap.lap_duration! : 90;
                activeLapEndMs = lapStartMs + lapDurationSec * 1000;
 
                const elapsedSec = Math.max(0, (nowMs - lapStartMs) / 1000);
@@ -89,22 +91,29 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
 
             const isOut = isDriverOutAt(drv.driver_number, currentTime);
 
-            // Finished = this driver reached the LAST lap they ever recorded
-            // in the data (which may be fewer than the leader's, if lapped)
-            // and current time has actually passed that lap's end — not
-            // "reached the leader's lap count", which lapped drivers never do.
+            // Once a driver is out, "laps completed" should only count laps
+            // that actually finished (have a recorded lap_duration) — not the
+            // trailing lap they started but never crossed the line to close
+            // out. Otherwise a driver who DNFs mid-lap-42 gets shown as L42
+            // instead of the correct L41.
+            const completedLapsOnly = driverLaps.filter(
+               (l) => l.lap_duration && l.lap_duration > 0
+            ).length;
+            const displayLaps = isOut ? completedLapsOnly : lapsCompleted;
+
             const driverTotalLaps = totalLapsByDriver[drv.driver_number] || 0;
             const isFinished =
                !isOut &&
                driverTotalLaps > 0 &&
                activeLap?.lap_number === driverTotalLaps &&
+               activeLapHasRealDuration &&
                nowMs >= activeLapEndMs;
 
             return {
                ...drv,
                tyre: isOut ? 'DNF' : (activeStint?.compound || 'UNKNOWN'),
                stintAge: activeStint?.tyre_age_at_start || 0,
-               lapsCompleted,
+               lapsCompleted: displayLaps,
                raceDistance,
                activeLapStartMs,
                isOut,

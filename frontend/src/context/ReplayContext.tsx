@@ -114,14 +114,12 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
    const retiredAtByDriver = useMemo(() => {
       const map: Record<number, number> = {};
       const RETIRE_PATTERN =
-         /\b(RETIRED|RETIRES|RETIREMENT|WILL NOT CONTINUE|DID NOT START|DOES NOT START|STOPPED ON TRACK|OUT OF THE RACE|PARKED|DNF|DNS|COLLISION|ACCIDENT|CRASH|SPUN OFF|SPIN OFF|OFF(?:\s|-)TRACK|TERMINAL DAMAGE|WITHDRAWN|WITHDRAW|EXCLUDED|DISQUALIFIED|\bDSQ\b|MECHANICAL|ENGINE FAILURE|GEARBOX|HYDRAULIC|POWER UNIT|CAUGHT FIRE|FIRE ON)\b/i;
+         /\b(RETIRED|RETIRES|RETIREMENT|WILL NOT CONTINUE|DID NOT START|DOES NOT START|STOPPED ON TRACK|OUT OF THE RACE|PARKED|DNF|DNS|TERMINAL DAMAGE|WITHDRAWN|WITHDRAW|EXCLUDED|DISQUALIFIED|\bDSQ\b)\b/i;
       const CAR_NUMBER_PATTERN = /CAR\s+(\d+)/i;
 
       for (const rc of raceControl) {
          if (!rc.message || !RETIRE_PATTERN.test(rc.message)) continue;
 
-         // Use the API's own driver_number when present; only fall back to
-         // parsing it out of the message text if it's missing.
          const driverNumber = rc.driver_number ?? Number(rc.message.match(CAR_NUMBER_PATTERN)?.[1]);
          if (!driverNumber || Number.isNaN(driverNumber)) continue;
 
@@ -132,23 +130,48 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             map[driverNumber] = timestamp;
          }
       }
+
+      // Cross-validate against actual lap data. Race-control text is free-form
+      // and messages about collisions/incidents/off-tracks that a driver
+      // recovered from can still match keyword patterns above without the
+      // driver actually retiring. Lap data is authoritative: if this driver
+      // has any lap starting AFTER the flagged "retirement" moment, they
+      // clearly kept racing, so drop the false flag rather than hiding a
+      // driver who's still lapping normally.
+      for (const driverNumberKey of Object.keys(map)) {
+         const driverNumber = Number(driverNumberKey);
+         const retiredAt = map[driverNumber];
+
+         const hasLaterLap = laps.some(
+            (l) =>
+               l.driver_number === driverNumber &&
+               l.date_start &&
+               new Date(l.date_start).getTime() > retiredAt
+         );
+
+         if (hasLaterLap) {
+            delete map[driverNumber];
+         }
+      }
+
       return map;
-   }, [raceControl]);
+   }, [raceControl, laps]);
 
    const lastLapInfoByDriver = useMemo(() => {
-      const map: Record<number, { lapNumber: number; endMs: number }> = {};
+      const map: Record<number, { lapNumber: number; startMs: number; endMs: number; hasRealDuration: boolean }> = {};
 
       for (const lap of laps) {
          if (!lap.date_start) continue;
          const startMs = new Date(lap.date_start).getTime();
          if (!Number.isFinite(startMs)) continue;
 
-         const durationMs = (lap.lap_duration && lap.lap_duration > 0 ? lap.lap_duration : 100) * 1000;
+         const hasRealDuration = Boolean(lap.lap_duration && lap.lap_duration > 0);
+         const durationMs = (hasRealDuration ? lap.lap_duration! : 100) * 1000;
          const endMs = startMs + durationMs;
 
          const existing = map[lap.driver_number];
          if (!existing || lap.lap_number > existing.lapNumber) {
-            map[lap.driver_number] = { lapNumber: lap.lap_number, endMs };
+            map[lap.driver_number] = { lapNumber: lap.lap_number, startMs, endMs, hasRealDuration };
          }
       }
 
@@ -211,13 +234,24 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
          const retiredAt = retiredAtByDriver[driverNumber];
          if (retiredAt !== undefined && (time?.getTime() ?? 0) >= retiredAt) return true;
 
-         // Fallback: no race-control retirement message exists for this driver,
-         // but the field has clearly kept racing well beyond when this driver's
-         // last lap ended — infer a retirement.
          const lastLap = lastLapInfoByDriver[driverNumber];
          const timeMs = time?.getTime() ?? 0;
-         const GRACE_MS = 150_000; // 2.5 min beyond own last lap's expected end
 
+         // Primary fallback: this driver's own last lap never recorded a real
+         // duration (they crossed the line to start it but didn't finish it)
+         // and enough time has passed since it started that no genuine F1 lap
+         // would still be running — this alone means retired/stopped on track.
+         // Independent of what the rest of the field is doing, so it fires
+         // promptly instead of waiting on other cars to lap further.
+         const MAX_PLAUSIBLE_LAP_MS = 150_000; // 2.5 min — generous upper bound for any real lap
+         if (lastLap && !lastLap.hasRealDuration && timeMs >= lastLap.startMs + MAX_PLAUSIBLE_LAP_MS) {
+            return true;
+         }
+
+         // Secondary fallback: no race-control retirement message exists for
+         // this driver, but the field has clearly kept racing well beyond when
+         // this driver's last lap ended — infer a retirement.
+         const GRACE_MS = 150_000;
          if (
             lastLap &&
             latestLapEndAcrossField - lastLap.endMs > GRACE_MS &&
