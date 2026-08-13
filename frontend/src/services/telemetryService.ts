@@ -56,41 +56,43 @@ const getCarData = async (
    startDate?: string,
    endDate?: string
 ): Promise<OpenF1CarData[]> => {
-   let url =
-      `${OPENF1_BASE_URL}/car_data` +
-      `?session_key=${sessionKey}` +
-      `&driver_number=${driverNumber}`;
+   return enqueue(async () => {
+      let url =
+         `${OPENF1_BASE_URL}/car_data` +
+         `?session_key=${sessionKey}` +
+         `&driver_number=${driverNumber}`;
 
-   if (startDate) {
-      url += `&date>=${encodeURIComponent(startDate)}`;
-   }
+      if (startDate) {
+         url += `&date>=${encodeURIComponent(startDate)}`;
+      }
 
-   if (endDate) {
-      url += `&date<${encodeURIComponent(endDate)}`;
-   }
+      if (endDate) {
+         url += `&date<${encodeURIComponent(endDate)}`;
+      }
 
-   console.log('[OpenF1 car_data]', url);
+      console.log('[OpenF1 car_data]', url);
 
-   const response = await fetch(url);
+      const response = await fetch(url);
 
-   if (!response.ok) {
-      const message = await response.text();
+      if (!response.ok) {
+         const message = await response.text();
 
-      throw new Error(
-         `OpenF1 car_data failed: ${response.status} ${message}`
+         throw new Error(
+            `OpenF1 car_data failed: ${response.status} ${message}`
+         );
+      }
+
+      const data: OpenF1CarData[] = await response.json();
+
+      console.log(
+         `[OpenF1 car_data] driver=${driverNumber}`,
+         'frames:',
+         data.length,
+         data[0]
       );
-   }
 
-   const data: OpenF1CarData[] = await response.json();
-
-   console.log(
-      `[OpenF1 car_data] driver=${driverNumber}`,
-      'frames:',
-      data.length,
-      data[0]
-   );
-
-   return data;
+      return data;
+   });
 };
 
 export interface OpenF1Lap {

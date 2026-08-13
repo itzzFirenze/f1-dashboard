@@ -97,10 +97,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
    const SYNC_INTERVAL_MS = 500;
    const syncRequestIdRef = useRef(0);
 
-   // Raw, official session window — kept only for the location/telemetry
-   // chunk-caching scheme below, which just needs a stable, arbitrary anchor
-   // point per session. It is NOT used for anything the user sees (seek bar,
-   // duration, playback bounds) — see playbackStart/playbackEnd for that.
    const sessionStart = useMemo(() => {
       if (!activeSession) return null;
       return new Date(activeSession.date_start);
@@ -131,13 +127,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
          }
       }
 
-      // Cross-validate against actual lap data. Race-control text is free-form
-      // and messages about collisions/incidents/off-tracks that a driver
-      // recovered from can still match keyword patterns above without the
-      // driver actually retiring. Lap data is authoritative: if this driver
-      // has any lap starting AFTER the flagged "retirement" moment, they
-      // clearly kept racing, so drop the false flag rather than hiding a
-      // driver who's still lapping normally.
       for (const driverNumberKey of Object.keys(map)) {
          const driverNumber = Number(driverNumberKey);
          const retiredAt = map[driverNumber];
@@ -237,20 +226,11 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
          const lastLap = lastLapInfoByDriver[driverNumber];
          const timeMs = time?.getTime() ?? 0;
 
-         // Primary fallback: this driver's own last lap never recorded a real
-         // duration (they crossed the line to start it but didn't finish it)
-         // and enough time has passed since it started that no genuine F1 lap
-         // would still be running — this alone means retired/stopped on track.
-         // Independent of what the rest of the field is doing, so it fires
-         // promptly instead of waiting on other cars to lap further.
-         const MAX_PLAUSIBLE_LAP_MS = 150_000; // 2.5 min — generous upper bound for any real lap
+         const MAX_PLAUSIBLE_LAP_MS = 150_000;
          if (lastLap && !lastLap.hasRealDuration && timeMs >= lastLap.startMs + MAX_PLAUSIBLE_LAP_MS) {
             return true;
          }
 
-         // Secondary fallback: no race-control retirement message exists for
-         // this driver, but the field has clearly kept racing well beyond when
-         // this driver's last lap ended — infer a retirement.
          const GRACE_MS = 150_000;
          if (
             lastLap &&
@@ -475,11 +455,11 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       []
    );
 
-   /* Find closest location frame at/before replay time */
    const findClosestLocation = (
       locations: OpenF1Location[],
       driverNumber: number,
-      timeMs: number
+      timeMs: number,
+      fallbackLocations?: OpenF1Location[]
    ): OpenF1Location | undefined => {
       let best: OpenF1Location | undefined;
       let bestTime = -Infinity;
@@ -494,13 +474,29 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
          }
       }
 
+      // Nothing at-or-before timeMs in this chunk (e.g. we just crossed a
+      // chunk boundary and the new chunk's first real frame is still ahead of
+      // us) — fall back to the tail of the previous chunk instead of going
+      // stale until this chunk catches up.
+      if (!best && fallbackLocations) {
+         for (const location of fallbackLocations) {
+            if (location.driver_number !== driverNumber) continue;
+
+            const locationTime = new Date(location.date).getTime();
+            if (locationTime <= timeMs && locationTime > bestTime) {
+               bestTime = locationTime;
+               best = location;
+            }
+         }
+      }
+
       return best;
    };
 
-   /* Find closest car telemetry frame at/before replay time */
    const findClosestTelemetry = (
       frames: OpenF1CarData[],
-      timeMs: number
+      timeMs: number,
+      fallbackFrames?: OpenF1CarData[]
    ): OpenF1CarData | undefined => {
       let best: OpenF1CarData | undefined;
       let bestTime = -Infinity;
@@ -513,24 +509,84 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
          }
       }
 
+      if (!best && fallbackFrames) {
+         for (const frame of fallbackFrames) {
+            const frameTime = new Date(frame.date).getTime();
+            if (frameTime <= timeMs && frameTime > bestTime) {
+               bestTime = frameTime;
+               best = frame;
+            }
+         }
+      }
+
       return best;
    };
 
-   /* Synchronize locations + selected driver telemetry */
-   const syncLocations = useCallback(
+   const applyCachedFrames = useCallback((time: Date) => {
+      if (!sessionStart) return;
+
+      const currentChunk = Math.floor((time.getTime() - sessionStart.getTime()) / 60_000);
+      if (currentChunk < 0) return;
+
+      const timeMs = time.getTime();
+
+      // --- Driver locations ---
+      const locations = locationCache.current[currentChunk] ?? [];
+      const previousChunkLocations = locationCache.current[currentChunk - 1];
+      const nextLocations: Record<number, OpenF1Location> = {};
+
+      for (const driver of driversRef.current) {
+         const location = findClosestLocation(locations, driver.driver_number, timeMs, previousChunkLocations);
+
+         if (location) {
+            nextLocations[driver.driver_number] = location;
+            continue;
+         }
+
+         const previousLocation = driverLocationsRef.current[driver.driver_number];
+         if (previousLocation) {
+            nextLocations[driver.driver_number] = previousLocation;
+         }
+      }
+
+      driverLocationsRef.current = nextLocations;
+      setDriverLocations(nextLocations);
+
+      // --- Selected driver telemetry ---
+      const nextTelemetry: Record<number, OpenF1CarData> = {};
+
+      for (const driverNumber of selectedDriversRef.current) {
+         const cacheKey = `${driverNumber}-${currentChunk}`;
+         const previousCacheKey = `${driverNumber}-${currentChunk - 1}`;
+         const frames = carDataCache.current[cacheKey] ?? [];
+         const previousChunkFrames = carDataCache.current[previousCacheKey];
+         const telemetryFrame = findClosestTelemetry(frames, timeMs, previousChunkFrames);
+
+         if (telemetryFrame) {
+            nextTelemetry[driverNumber] = telemetryFrame;
+            continue;
+         }
+
+         const previousTelemetry = telemetryDataRef.current[driverNumber];
+         if (previousTelemetry) {
+            nextTelemetry[driverNumber] = previousTelemetry;
+         }
+      }
+
+      telemetryDataRef.current = nextTelemetry;
+      setTelemetryData(nextTelemetry);
+   }, [sessionStart]);
+
+   // Fetches whatever chunks are missing for the given time. This is the
+   // expensive part and stays throttled to real wall-clock time.
+   const ensureChunksLoaded = useCallback(
       async (time: Date) => {
          if (!sessionStart || !activeSession) return;
 
          const currentChunk = Math.floor((time.getTime() - sessionStart.getTime()) / 60_000);
          if (currentChunk < 0) return;
 
-         const timeMs = time.getTime();
-
-         // Capture which drivers this sync belongs to, so state changes during
-         // the network request don't affect this particular operation.
          const driversForTelemetry = [...selectedDriversRef.current];
-
-         // Prevent stale async calls from overwriting newer sync results.
          const requestId = ++syncRequestIdRef.current;
 
          const msIntoChunk = time.getTime() - sessionStart.getTime() - currentChunk * 60_000;
@@ -549,56 +605,13 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             ),
          ]);
 
-         // If a newer sync started while the requests were running, don't let
-         // this older request overwrite it.
          if (requestId !== syncRequestIdRef.current) return;
 
-         // --- Driver locations ---
-         const locations = locationCache.current[currentChunk] ?? [];
-         const nextLocations: Record<number, OpenF1Location> = {};
-
-         for (const driver of driversRef.current) {
-            const location = findClosestLocation(locations, driver.driver_number, timeMs);
-
-            if (location) {
-               nextLocations[driver.driver_number] = location;
-               continue;
-            }
-
-            // Keep the previous known position when no frame exists inside
-            // this exact chunk yet.
-            const previousLocation = driverLocationsRef.current[driver.driver_number];
-            if (previousLocation) {
-               nextLocations[driver.driver_number] = previousLocation;
-            }
-         }
-
-         driverLocationsRef.current = nextLocations;
-         setDriverLocations(nextLocations);
-
-         // --- Selected driver telemetry ---
-         const nextTelemetry: Record<number, OpenF1CarData> = {};
-
-         for (const driverNumber of driversForTelemetry) {
-            const cacheKey = `${driverNumber}-${currentChunk}`;
-            const frames = carDataCache.current[cacheKey] ?? [];
-            const telemetryFrame = findClosestTelemetry(frames, timeMs);
-
-            if (telemetryFrame) {
-               nextTelemetry[driverNumber] = telemetryFrame;
-               continue;
-            }
-
-            const previousTelemetry = telemetryDataRef.current[driverNumber];
-            if (previousTelemetry) {
-               nextTelemetry[driverNumber] = previousTelemetry;
-            }
-         }
-
-         telemetryDataRef.current = nextTelemetry;
-         setTelemetryData(nextTelemetry);
+         // Refresh the display against wherever playback actually is now
+         // (it may have moved on while this fetch was in flight).
+         applyCachedFrames(currentTimeRef.current ?? time);
       },
-      [sessionStart, activeSession, fetchLocationChunk, fetchCarChunk]
+      [sessionStart, activeSession, fetchLocationChunk, fetchCarChunk, applyCachedFrames]
    );
 
    /* Playback animation loop */
@@ -648,7 +661,15 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       };
    }, [isPlaying, playbackEnd, tick]);
 
-   // Sync while playing.
+   // Display: unthrottled, cache-only — keeps telemetry visually in step with
+   // the track marker regardless of playback speed.
+   useEffect(() => {
+      if (!currentTime) return;
+      applyCachedFrames(currentTime);
+   }, [currentTime, applyCachedFrames]);
+
+   // Fetch trigger while playing — throttled to real time, since this is the
+   // costly network-bound part.
    useEffect(() => {
       if (!isPlaying || !currentTime) return;
 
@@ -656,14 +677,14 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (now - lastSyncRef.current < SYNC_INTERVAL_MS) return;
 
       lastSyncRef.current = now;
-      void syncLocations(currentTime);
-   }, [currentTime, isPlaying, syncLocations]);
+      void ensureChunksLoaded(currentTime);
+   }, [currentTime, isPlaying, ensureChunksLoaded]);
 
-   // Sync when paused and user scrubs / skips / jumps laps.
+   // Fetch trigger when paused and user scrubs / skips / jumps laps.
    useEffect(() => {
       if (isPlaying || !currentTime || !sessionStart) return;
-      void syncLocations(currentTime);
-   }, [currentTime, isPlaying, sessionStart, syncLocations]);
+      void ensureChunksLoaded(currentTime);
+   }, [currentTime, isPlaying, sessionStart, ensureChunksLoaded]);
 
    // IMPORTANT: immediately fetch telemetry when driver selection changes.
    useEffect(() => {
@@ -687,9 +708,9 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const replayTime = currentTimeRef.current;
 
       if (replayTime && sessionStart) {
-         void syncLocations(replayTime);
+         void ensureChunksLoaded(replayTime);
       }
-   }, [selectedDrivers, sessionStart, syncLocations]);
+   }, [selectedDrivers, sessionStart, ensureChunksLoaded]);
 
    useEffect(() => {
       if (sessions.length === 0) return;

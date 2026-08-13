@@ -93,8 +93,6 @@ const formatElapsed = (ms: number): string => {
    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
-// Pure lap-completion fraction (0 -> ~99.5), independent of track direction
-// or where the start/finish line sits on the SVG path.
 const getDriverRaceFraction = (
    driverNumber: number,
    index: number,
@@ -125,8 +123,6 @@ const getDriverRaceFraction = (
    return Math.min(99.5, Math.max(0, (elapsedSec / lapDurationSec) * 100));
 };
 
-// Track-path position for placing the marker on the SVG — builds on the
-// fraction above but wraps/reverses it relative to the start/finish line.
 const getDriverLapPercent = (
    driverNumber: number,
    index: number,
@@ -149,11 +145,42 @@ const getDriverLapPercent = (
    }
 
    if (driverLaps.length === 0) {
-      return startPercent; // sitting on the grid at the line, not scattered
+      return startPercent;
    }
 
    const raceFraction = getDriverRaceFraction(driverNumber, index, currentTime, laps);
    return step(raceFraction);
+};
+
+
+const getDriverLapElapsed = (
+   driverNumber: number,
+   currentTime: Date | null,
+   laps: OpenF1Lap[]
+): { lapNumber: number; elapsedSec: number } | null => {
+   if (!currentTime) return null;
+
+   const nowMs = currentTime.getTime();
+   const driverLaps = laps.filter(
+      (l) => l.driver_number === driverNumber && l.date_start && new Date(l.date_start).getTime() <= nowMs
+   );
+
+   if (driverLaps.length === 0) return null;
+
+   const activeLap = driverLaps.reduce((latest, l) =>
+      new Date(l.date_start!).getTime() > new Date(latest.date_start!).getTime() ? l : latest
+      , driverLaps[0]);
+
+   const lapStartMs = new Date(activeLap.date_start!).getTime();
+   const elapsedSec = Math.max(0, (nowMs - lapStartMs) / 1000);
+
+   return { lapNumber: activeLap.lap_number, elapsedSec };
+};
+
+const formatLapTime = (seconds: number): string => {
+   const m = Math.floor(seconds / 60);
+   const s = seconds % 60;
+   return `${m}:${s.toFixed(3).padStart(6, '0')}`;
 };
 
 export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circuit }) => {
@@ -201,6 +228,16 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
       return startedLaps.reduce((max, l) => Math.max(max, l.lap_number), 0);
    }, [laps, currentTime]);
 
+   // Prefer whichever driver the user is hovering; fall back to the first
+   // selected driver. This is the driver the live lap-timer HUD tracks.
+   const focusDriverNumber = hoveredDriver ?? selectedDrivers[0] ?? null;
+   const focusDriver = focusDriverNumber
+      ? drivers.find((d) => d.driver_number === focusDriverNumber)
+      : null;
+   const focusLapElapsed = focusDriverNumber
+      ? getDriverLapElapsed(focusDriverNumber, currentTime, laps)
+      : null;
+
    return (
       <div className="flex flex-col h-[590px] overflow-hidden rounded-2xl border border-white/10 bg-f1-dark-gray/60 shadow-2xl backdrop-blur-md">
          {/* Map area */}
@@ -223,10 +260,24 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                <span className="rounded-md border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[9px] text-amber-200">OT</span>
             </div>
 
-            {currentLap !== null && (
-               <div className="absolute bottom-1 right-3 z-10 rounded-lg border border-white/10 bg-black/60 px-3 py-1 backdrop-blur-md">
-                  <p className="text-[8px] uppercase text-center tracking-wider text-f1-silver">Lap</p>
-                  <p className="text-lg font-black text-f1-white font-mono leading-tight text-center">{currentLap}</p>
+            {(currentLap !== null || (focusDriver && focusLapElapsed)) && (
+               <div className="absolute bottom-1 right-3 z-10 flex items-end gap-2">
+                  {focusDriver && focusLapElapsed && (
+                     <div className="rounded-lg border border-white/10 bg-black/60 px-3 py-1 backdrop-blur-md">
+                        <p className="text-[8px] uppercase text-center tracking-wider text-f1-silver">
+                           {focusDriver.name_acronym} · L{focusLapElapsed.lapNumber}
+                        </p>
+                        <p className="text-lg font-black text-f1-white font-mono leading-tight text-center tabular-nums">
+                           {formatLapTime(focusLapElapsed.elapsedSec)}
+                        </p>
+                     </div>
+                  )}
+                  {currentLap !== null && (
+                     <div className="rounded-lg border border-white/10 bg-black/60 px-3 py-1 backdrop-blur-md">
+                        <p className="text-[8px] uppercase text-center tracking-wider text-f1-silver">Lap</p>
+                        <p className="text-lg font-black text-f1-white font-mono leading-tight text-center">{currentLap}</p>
+                     </div>
+                  )}
                </div>
             )}
 
