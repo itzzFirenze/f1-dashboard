@@ -34,6 +34,7 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
       jumpToLap,
       laps,
       isDriverOutAt,
+      isDriverPittingAt,
    } = useReplay();
 
    const totalLapsByDriver = useMemo(() => {
@@ -90,6 +91,7 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                .pop() ?? driverStints[0];
 
             const isOut = isDriverOutAt(drv.driver_number, currentTime);
+            const isPitting = !isOut && isDriverPittingAt(drv.driver_number, currentTime);
 
             // Once a driver is out, "laps completed" should only count laps
             // that actually finished (have a recorded lap_duration) — not the
@@ -117,6 +119,7 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                raceDistance,
                activeLapStartMs,
                isOut,
+               isPitting,
                isFinished,
             };
          })
@@ -213,6 +216,11 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                            {drv.isFinished && (
                               <span title="Finished" className="shrink-0">
                                  <CheckeredFlagIcon className="h-3 w-3 text-f1-white" />
+                              </span>
+                           )}
+                           {drv.isPitting && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/25 text-amber-300 animate-pulse">
+                                 PIT
                               </span>
                            )}
                            <span className="text-[10px] text-f1-silver font-mono">L{drv.lapsCompleted}</span>

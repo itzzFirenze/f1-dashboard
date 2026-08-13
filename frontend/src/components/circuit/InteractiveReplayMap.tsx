@@ -25,16 +25,33 @@ const DetectionPoint: React.FC<{ pathId: string; point: { id: string; label: str
    );
 };
 
+const PitMarkerOffset = 22; // px, perpendicular distance off the centerline
+
 const DriverMarkerOnTrack: React.FC<{
    pathId: string;
    driver: OpenF1Driver;
    percent: number;
    isSelected: boolean;
+   isPitting: boolean;
    onSelect: () => void;
    onHover: (driverNo: number | null) => void;
-}> = ({ pathId, driver, percent, isSelected, onHover, onSelect }) => {
+}> = ({ pathId, driver, percent, isSelected, isPitting, onHover, onSelect }) => {
    const pos = usePathPoint(pathId, percent);
+   const posAhead = usePathPoint(pathId, (percent + 0.5) % 100); // tiny step forward, to get tangent
    const teamColor = `#${driver.team_colour || 'ffffff'}`;
+
+   // Perpendicular offset so pitting cars render visibly off the racing line
+   let drawX = pos.x;
+   let drawY = pos.y;
+   if (isPitting) {
+      const dx = posAhead.x - pos.x;
+      const dy = posAhead.y - pos.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len; // perpendicular unit vector
+      const ny = dx / len;
+      drawX = pos.x + nx * PitMarkerOffset;
+      drawY = pos.y + ny * PitMarkerOffset;
+   }
 
    return (
       <g
@@ -43,44 +60,28 @@ const DriverMarkerOnTrack: React.FC<{
          onMouseLeave={() => onHover(null)}
          className="cursor-pointer group"
       >
-         {isSelected && (
-            <circle
-               cx={pos.x}
-               cy={pos.y}
-               r="14"
-               fill="transparent"
-               stroke={teamColor}
-               strokeWidth="2"
-               className="animate-ping opacity-75 [transform-box:fill-box] [transform-origin:center]"
-            />
+         {isPitting && (
+            <line x1={pos.x} y1={pos.y} x2={drawX} y2={drawY} stroke="#f59e0b" strokeWidth="1" strokeDasharray="2 2" opacity={0.6} />
          )}
-         <circle
-            cx={pos.x}
-            cy={pos.y}
-            r="9"
-            fill="#0f172a"
-            stroke={teamColor}
-            strokeWidth="2"
-            className="transition-transform duration-300 group-hover:scale-125 [transform-box:fill-box] [transform-origin:center]"
-         />
-         <circle
-            cx={pos.x}
-            cy={pos.y}
-            r="5.5"
-            fill={teamColor}
-            className="transition-transform duration-300 group-hover:scale-125 [transform-box:fill-box] [transform-origin:center]"
-         />
-         <text
-            x={pos.x}
-            y={pos.y - 13}
-            textAnchor="middle"
-            fontSize="9"
-            fontWeight="800"
-            fill="#f8fafc"
-            className="select-none font-mono filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
-         >
+         {isSelected && (
+            <circle cx={drawX} cy={drawY} r="14" fill="transparent" stroke={teamColor} strokeWidth="2"
+               className="animate-ping opacity-75 [transform-box:fill-box] [transform-origin:center]" />
+         )}
+         <circle cx={drawX} cy={drawY} r="9" fill="#0f172a"
+            stroke={isPitting ? '#f59e0b' : teamColor} strokeWidth="2"
+            strokeDasharray={isPitting ? '2 2' : undefined}
+            className="transition-transform duration-300 group-hover:scale-125 [transform-box:fill-box] [transform-origin:center]" />
+         <circle cx={drawX} cy={drawY} r="5.5" fill={teamColor}
+            className="transition-transform duration-300 group-hover:scale-125 [transform-box:fill-box] [transform-origin:center]" />
+         <text x={drawX} y={drawY - 13} textAnchor="middle" fontSize="9" fontWeight="800" fill="#f8fafc"
+            className="select-none font-mono filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
             {driver.name_acronym}
          </text>
+         {isPitting && (
+            <text x={drawX} y={drawY + 17} textAnchor="middle" fontSize="6" fontWeight="800" fill="#f59e0b" className="select-none font-mono">
+               PIT
+            </text>
+         )}
       </g>
    );
 };
@@ -193,6 +194,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
       laps,
       currentTime,
       isDriverOutAt,
+      isDriverPittingAt,
       activeSession,
       isPlaying,
       playbackSpeed,
@@ -331,10 +333,13 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                   .filter((driver) => !isDriverOutAt(driver.driver_number, currentTime))
                   .map((driver, index) => {
                      const isSelected = selectedDrivers.includes(driver.driver_number);
-                     const percent = getDriverLapPercent(
-                        driver.driver_number, index, currentTime, laps,
-                        circuit.sectors[0].startPercent, circuit.isReversed
-                     );
+                     const isPitting = isDriverPittingAt(driver.driver_number, currentTime);
+                     const percent = isPitting
+                        ? circuit.sectors[0].startPercent // approx pit entry, near start/finish
+                        : getDriverLapPercent(
+                           driver.driver_number, index, currentTime, laps,
+                           circuit.sectors[0].startPercent, circuit.isReversed
+                        );
                      return (
                         <DriverMarkerOnTrack
                            key={driver.driver_number}
@@ -342,6 +347,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                            driver={driver}
                            percent={percent}
                            isSelected={isSelected}
+                           isPitting={isPitting}
                            onSelect={() => toggleDriverSelection(driver.driver_number)}
                            onHover={handleHover}
                         />
@@ -382,6 +388,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                {hoveredDriver && (() => {
                   const driver = drivers.find((d) => d.driver_number === hoveredDriver);
                   if (!driver) return null;
+                  const pitting = isDriverPittingAt(hoveredDriver, currentTime);
 
                   const index = drivers.findIndex((d) => d.driver_number === hoveredDriver);
                   const raceFraction = getDriverRaceFraction(hoveredDriver, index, currentTime, laps); // <-- was getDriverLapPercent
@@ -413,6 +420,12 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                               <span>Track Lap Progress</span>
                               <span className="font-mono text-f1-white">{raceFraction.toFixed(1)}%</span>
                            </div>
+                           {pitting && (
+                              <div className="flex justify-between text-amber-300">
+                                 <span>Status</span>
+                                 <span className="font-mono font-bold">IN PIT LANE</span>
+                              </div>
+                           )}
                         </div>
                      </motion.div>
                   );

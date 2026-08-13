@@ -48,6 +48,15 @@ export interface OpenF1CarData {
    throttle: number;
 }
 
+export interface OpenF1Pit {
+   date: string;
+   lap_number: number;
+   driver_number: number;
+   pit_duration: number | null;
+   lane_duration?: number | null;
+   stop_duration?: number | null;
+}
+
 const OPENF1_BASE_URL = 'https://api.openf1.org/v1';
 
 const getCarData = async (
@@ -70,7 +79,7 @@ const getCarData = async (
          url += `&date<${encodeURIComponent(endDate)}`;
       }
 
-      console.log('[OpenF1 car_data]', url);
+
 
       const response = await fetch(url);
 
@@ -83,13 +92,6 @@ const getCarData = async (
       }
 
       const data: OpenF1CarData[] = await response.json();
-
-      console.log(
-         `[OpenF1 car_data] driver=${driverNumber}`,
-         'frames:',
-         data.length,
-         data[0]
-      );
 
       return data;
    });
