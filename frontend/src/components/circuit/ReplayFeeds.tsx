@@ -82,9 +82,10 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
             const raceDistance = Math.max(0, lapsCompleted - 1) + lapProgress;
 
             const driverStints = stints.filter((s) => s.driver_number === drv.driver_number);
-            const activeStint =
-               driverStints.find((s) => lapsCompleted >= s.lap_start && lapsCompleted <= s.lap_end) ||
-               driverStints[driverStints.length - 1];
+            const activeStint = [...driverStints]
+               .sort((a, b) => a.lap_start - b.lap_start)
+               .filter((s) => s.lap_start <= lapsCompleted)
+               .pop() ?? driverStints[0];
 
             const isOut = isDriverOutAt(drv.driver_number, currentTime);
 

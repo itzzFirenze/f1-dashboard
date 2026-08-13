@@ -8,6 +8,7 @@ import CornerMarker from './CornerMarker';
 import ActiveAeroZone from './ActiveAeroZone';
 import SectorPath from './SectorPath';
 import SpeedTrapMarker from './SpeedTrapMarker';
+import FinishLineMarker from './FinishLineMarker';
 import { usePathPoint } from './usePathPoint';
 
 interface InteractiveReplayMapProps {
@@ -96,10 +97,15 @@ const getDriverLapPercent = (
    driverNumber: number,
    index: number,
    currentTime: Date | null,
-   laps: OpenF1Lap[]
+   laps: OpenF1Lap[],
+   startPercent: number,
+   isReversed: boolean
 ): number => {
+   const step = (fraction: number) =>
+      isReversed ? (startPercent - fraction + 100) % 100 : (startPercent + fraction) % 100;
+
    if (!currentTime || !laps || laps.length === 0) {
-      return (100 - (index * 2.2)) % 100;
+      return step((index * 2.2) % 100);
    }
 
    const nowMs = currentTime.getTime();
@@ -108,18 +114,19 @@ const getDriverLapPercent = (
    );
 
    if (driverLaps.length === 0) {
-      return (100 - (index * 2.2)) % 100;
+      return startPercent; // sitting on the grid at the line, not scattered
    }
 
-   const activeLap = driverLaps.reduce((latest, l) => {
-      return new Date(l.date_start!).getTime() > new Date(latest.date_start!).getTime() ? l : latest;
-   }, driverLaps[0]);
+   const activeLap = driverLaps.reduce((latest, l) =>
+      new Date(l.date_start!).getTime() > new Date(latest.date_start!).getTime() ? l : latest
+      , driverLaps[0]);
 
    const lapStartMs = new Date(activeLap.date_start!).getTime();
    const lapDurationSec = activeLap.lap_duration && activeLap.lap_duration > 0 ? activeLap.lap_duration : 90;
    const elapsedSec = Math.max(0, (nowMs - lapStartMs) / 1000);
+   const raceFraction = Math.min(99.5, Math.max(0, (elapsedSec / lapDurationSec) * 100));
 
-   return Math.min(99.5, Math.max(0, (elapsedSec / lapDurationSec) * 100));
+   return step(raceFraction);
 };
 
 export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circuit }) => {
@@ -225,6 +232,12 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
 
                <SpeedTrapMarker speedTrap={circuit.speedTrap} pathId={pathId} onHover={() => { }} />
 
+               <FinishLineMarker
+                  pathId={pathId}
+                  positionPercent={circuit.sectors[0].startPercent}
+                  onHover={() => { }}
+               />
+
                {circuit.cornerMarkers.map((corner) => (
                   <CornerMarker
                      key={corner.number}
@@ -240,7 +253,10 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                   .filter((driver) => !isDriverOutAt(driver.driver_number, currentTime))
                   .map((driver, index) => {
                      const isSelected = selectedDrivers.includes(driver.driver_number);
-                     const percent = getDriverLapPercent(driver.driver_number, index, currentTime, laps);
+                     const percent = getDriverLapPercent(
+                        driver.driver_number, index, currentTime, laps,
+                        circuit.sectors[0].startPercent, circuit.isReversed
+                     );
                      return (
                         <DriverMarkerOnTrack
                            key={driver.driver_number}
@@ -287,10 +303,13 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
             <AnimatePresence>
                {hoveredDriver && (() => {
                   const driver = drivers.find((d) => d.driver_number === hoveredDriver);
-                  const index = drivers.findIndex((d) => d.driver_number === hoveredDriver);
-                  const percent = getDriverLapPercent(hoveredDriver, Math.max(0, index), currentTime, laps);
-
                   if (!driver) return null;
+
+                  const index = drivers.findIndex((d) => d.driver_number === hoveredDriver);
+                  const percent = getDriverLapPercent(
+                     hoveredDriver, index, currentTime, laps,
+                     circuit.sectors[0].startPercent, circuit.isReversed
+                  );
 
                   return (
                      <motion.div

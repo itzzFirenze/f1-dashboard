@@ -37,7 +37,8 @@ interface ReplayContextProps {
    playbackSpeed: 1 | 2 | 4 | 8;
    currentTime: Date | null;
    durationMs: number;
-   elapsedMs: number; // NEW — ms since playbackStart, so the seek bar can render 0:00:00-based time
+   elapsedMs: number;
+   cancelledSessions: Set<number>;
    progressPercent: number;
    driverLocations: Record<number, OpenF1Location>;
    selectedDrivers: number[];
@@ -79,6 +80,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
    const [driverLocations, setDriverLocations] = useState<Record<number, OpenF1Location>>({});
    const [telemetryData, setTelemetryData] = useState<Record<number, OpenF1CarData>>({});
+   const [cancelledSessions, setCancelledSessions] = useState<Set<number>>(new Set());
 
    const locationCache = useRef<Record<number, OpenF1Location[]>>({});
    const carDataCache = useRef<Record<string, OpenF1CarData[]>>({});
@@ -112,7 +114,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
    const retiredAtByDriver = useMemo(() => {
       const map: Record<number, number> = {};
       const RETIRE_PATTERN =
-         /\b(RETIRED|RETIRES|RETIREMENT|WILL NOT CONTINUE|DID NOT START|DOES NOT START|STOPPED ON TRACK|OUT OF THE RACE|PARKED|DNF|DNS)\b/i;
+         /\b(RETIRED|RETIRES|RETIREMENT|WILL NOT CONTINUE|DID NOT START|DOES NOT START|STOPPED ON TRACK|OUT OF THE RACE|PARKED|DNF|DNS|COLLISION|ACCIDENT|CRASH|SPUN OFF|SPIN OFF|OFF(?:\s|-)TRACK|TERMINAL DAMAGE|WITHDRAWN|WITHDRAW|EXCLUDED|DISQUALIFIED|\bDSQ\b|MECHANICAL|ENGINE FAILURE|GEARBOX|HYDRAULIC|POWER UNIT|CAUGHT FIRE|FIRE ON)\b/i;
       const CAR_NUMBER_PATTERN = /CAR\s+(\d+)/i;
 
       for (const rc of raceControl) {
@@ -295,6 +297,19 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
          const loadedLaps = await telemetryService.getLaps(session.session_key);
          setLaps(loadedLaps);
+
+         // A session with no drivers AND no laps has no real timing data —
+         // treat it as cancelled rather than rendering an empty replay.
+         if (loadedDrivers.length === 0 && loadedLaps.length === 0) {
+            setCancelledSessions((prev) => new Set(prev).add(session.session_key));
+         } else {
+            setCancelledSessions((prev) => {
+               if (!prev.has(session.session_key)) return prev;
+               const next = new Set(prev);
+               next.delete(session.session_key);
+               return next;
+            });
+         }
 
          const loadedStints = await telemetryService.getStints(session.session_key);
          setStints(loadedStints);
@@ -764,6 +779,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             durationMs,
             elapsedMs,
             progressPercent,
+            cancelledSessions,
 
             driverLocations,
             selectedDrivers,
