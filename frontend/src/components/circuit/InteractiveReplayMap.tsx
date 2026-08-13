@@ -93,6 +93,40 @@ const formatElapsed = (ms: number): string => {
    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
+// Pure lap-completion fraction (0 -> ~99.5), independent of track direction
+// or where the start/finish line sits on the SVG path.
+const getDriverRaceFraction = (
+   driverNumber: number,
+   index: number,
+   currentTime: Date | null,
+   laps: OpenF1Lap[]
+): number => {
+   if (!currentTime || !laps || laps.length === 0) {
+      return (index * 2.2) % 100;
+   }
+
+   const nowMs = currentTime.getTime();
+   const driverLaps = laps.filter(
+      (l) => l.driver_number === driverNumber && l.date_start && new Date(l.date_start).getTime() <= nowMs
+   );
+
+   if (driverLaps.length === 0) {
+      return 0;
+   }
+
+   const activeLap = driverLaps.reduce((latest, l) =>
+      new Date(l.date_start!).getTime() > new Date(latest.date_start!).getTime() ? l : latest
+      , driverLaps[0]);
+
+   const lapStartMs = new Date(activeLap.date_start!).getTime();
+   const lapDurationSec = activeLap.lap_duration && activeLap.lap_duration > 0 ? activeLap.lap_duration : 90;
+   const elapsedSec = Math.max(0, (nowMs - lapStartMs) / 1000);
+
+   return Math.min(99.5, Math.max(0, (elapsedSec / lapDurationSec) * 100));
+};
+
+// Track-path position for placing the marker on the SVG — builds on the
+// fraction above but wraps/reverses it relative to the start/finish line.
 const getDriverLapPercent = (
    driverNumber: number,
    index: number,
@@ -104,28 +138,21 @@ const getDriverLapPercent = (
    const step = (fraction: number) =>
       isReversed ? (startPercent - fraction + 100) % 100 : (startPercent + fraction) % 100;
 
+   const driverLaps = currentTime
+      ? laps.filter(
+         (l) => l.driver_number === driverNumber && l.date_start && new Date(l.date_start).getTime() <= currentTime.getTime()
+      )
+      : [];
+
    if (!currentTime || !laps || laps.length === 0) {
       return step((index * 2.2) % 100);
    }
-
-   const nowMs = currentTime.getTime();
-   const driverLaps = laps.filter(
-      (l) => l.driver_number === driverNumber && l.date_start && new Date(l.date_start).getTime() <= nowMs
-   );
 
    if (driverLaps.length === 0) {
       return startPercent; // sitting on the grid at the line, not scattered
    }
 
-   const activeLap = driverLaps.reduce((latest, l) =>
-      new Date(l.date_start!).getTime() > new Date(latest.date_start!).getTime() ? l : latest
-      , driverLaps[0]);
-
-   const lapStartMs = new Date(activeLap.date_start!).getTime();
-   const lapDurationSec = activeLap.lap_duration && activeLap.lap_duration > 0 ? activeLap.lap_duration : 90;
-   const elapsedSec = Math.max(0, (nowMs - lapStartMs) / 1000);
-   const raceFraction = Math.min(99.5, Math.max(0, (elapsedSec / lapDurationSec) * 100));
-
+   const raceFraction = getDriverRaceFraction(driverNumber, index, currentTime, laps);
    return step(raceFraction);
 };
 
@@ -306,10 +333,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                   if (!driver) return null;
 
                   const index = drivers.findIndex((d) => d.driver_number === hoveredDriver);
-                  const percent = getDriverLapPercent(
-                     hoveredDriver, index, currentTime, laps,
-                     circuit.sectors[0].startPercent, circuit.isReversed
-                  );
+                  const raceFraction = getDriverRaceFraction(hoveredDriver, index, currentTime, laps); // <-- was getDriverLapPercent
 
                   return (
                      <motion.div
@@ -336,7 +360,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                            </div>
                            <div className="flex justify-between">
                               <span>Track Lap Progress</span>
-                              <span className="font-mono text-f1-white">{percent.toFixed(1)}%</span>
+                              <span className="font-mono text-f1-white">{raceFraction.toFixed(1)}%</span>
                            </div>
                         </div>
                      </motion.div>

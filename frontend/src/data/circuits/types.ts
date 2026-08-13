@@ -13,7 +13,7 @@ export interface Sector {
    lengthKm: number;
    averageSpeedKmh: number;
    fastestSectorHolder: string;
-   isReversed: boolean; // NEW — true when this sector is drawn "backwards" along the SVG path
+   isReversed: boolean;
 }
 
 export interface ActiveAeroZone {
