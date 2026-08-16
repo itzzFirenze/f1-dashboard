@@ -8,19 +8,22 @@ import java.util.List;
  * Null fields are skipped during update.
  */
 public record CircuitPositionsRequest(
-    @NotBlank(message = "circuitId cannot be blank")
-    String circuitId,
+      @NotBlank(message = "circuitId cannot be blank") String circuitId,
 
-    List<Double> cornerPositions,
+      List<Double> cornerPositions,
 
-    Double sector1StartPercent,
-    Double sector2StartPercent,
-    Double sector3StartPercent,
+      Double sector1StartPercent,
+      Double sector2StartPercent,
+      Double sector3StartPercent,
 
-    List<List<Double>> activeAeroRanges,
+      List<List<Double>> activeAeroRanges,
 
-    Double overtakeDetectionPercent,
-    Double overtakeActivationPercent,
+      Double overtakeDetectionPercent,
+      Double overtakeActivationPercent,
 
-    Double speedTrapPercent
-) {}
+      Double speedTrapPercent,
+
+      Double pitLaneEntryPercent,
+      Double pitLaneExitPercent,
+      Double pitLaneSpeedLimitKmh) {
+}

@@ -15,196 +15,216 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Development-only service to update the index.ts circuits source file directly.
+ * Development-only service to update the index.ts circuits source file
+ * directly.
  */
 @Service
 @Slf4j
-@Profile({"dev", "default"})
+@Profile({ "dev", "default" })
 public class DevCircuitService {
 
-    @Value("${circuits.index.path}")
-    private String indexPathString;
+   @Value("${circuits.index.path}")
+   private String indexPathString;
 
-    /**
-     * Locates the circuit by ID in index.ts and updates all supplied position properties.
-     */
-    public void updateCircuitPositions(
-            String circuitId,
-            List<Double> cornerPositions,
-            Double sector1StartPercent,
-            Double sector2StartPercent,
-            Double sector3StartPercent,
-            List<List<Double>> activeAeroRanges,
-            Double overtakeDetectionPercent,
-            Double overtakeActivationPercent,
-            Double speedTrapPercent
-    ) {
-        Path path = Paths.get(indexPathString).normalize().toAbsolutePath();
-        log.info("Updating circuit positions for: {} in file: {}", circuitId, path);
+   /**
+    * Locates the circuit by ID in index.ts and updates all supplied position
+    * properties.
+    */
+   public void updateCircuitPositions(
+         String circuitId,
+         List<Double> cornerPositions,
+         Double sector1StartPercent,
+         Double sector2StartPercent,
+         Double sector3StartPercent,
+         List<List<Double>> activeAeroRanges,
+         Double overtakeDetectionPercent,
+         Double overtakeActivationPercent,
+         Double speedTrapPercent,
+         Double pitLaneEntryPercent,
+         Double pitLaneExitPercent,
+         Double pitLaneSpeedLimitKmh) {
+      Path path = Paths.get(indexPathString).normalize().toAbsolutePath();
+      log.info("Updating circuit positions for: {} in file: {}", circuitId, path);
 
-        if (!Files.exists(path)) {
-            throw new IllegalArgumentException("Circuits index file not found at path: " + path);
-        }
+      if (!Files.exists(path)) {
+         throw new IllegalArgumentException("Circuits index file not found at path: " + path);
+      }
 
-        String fileContent;
-        try {
-            fileContent = Files.readString(path);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read circuits index file: " + e.getMessage(), e);
-        }
+      String fileContent;
+      try {
+         fileContent = Files.readString(path);
+      } catch (IOException e) {
+         throw new RuntimeException("Failed to read circuits index file: " + e.getMessage(), e);
+      }
 
-        // 1. Locate the circuit block
-        String block = extractCircuitBlock(fileContent, circuitId);
-        int blockStart = fileContent.indexOf(block);
-        String updatedBlock = block;
+      // 1. Locate the circuit block
+      String block = extractCircuitBlock(fileContent, circuitId);
+      int blockStart = fileContent.indexOf(block);
+      String updatedBlock = block;
 
-        // 2. Replace each non-null property
-        if (cornerPositions != null && !cornerPositions.isEmpty()) {
-            updatedBlock = replaceArrayProperty(updatedBlock, "cornerPositions", formatDoubleList(cornerPositions));
-        }
+      // 2. Replace each non-null property
+      if (cornerPositions != null && !cornerPositions.isEmpty()) {
+         updatedBlock = replaceArrayProperty(updatedBlock, "cornerPositions", formatDoubleList(cornerPositions));
+      }
 
-        if (sector1StartPercent != null) {
-            updatedBlock = replaceScalarProperty(updatedBlock, "sector1StartPercent", formatDouble(sector1StartPercent));
-        }
-        if (sector2StartPercent != null) {
-            updatedBlock = replaceScalarProperty(updatedBlock, "sector2StartPercent", formatDouble(sector2StartPercent));
-        }
-        if (sector3StartPercent != null) {
-            updatedBlock = replaceScalarProperty(updatedBlock, "sector3StartPercent", formatDouble(sector3StartPercent));
-        }
+      if (sector1StartPercent != null) {
+         updatedBlock = replaceScalarProperty(updatedBlock, "sector1StartPercent", formatDouble(sector1StartPercent));
+      }
+      if (sector2StartPercent != null) {
+         updatedBlock = replaceScalarProperty(updatedBlock, "sector2StartPercent", formatDouble(sector2StartPercent));
+      }
+      if (sector3StartPercent != null) {
+         updatedBlock = replaceScalarProperty(updatedBlock, "sector3StartPercent", formatDouble(sector3StartPercent));
+      }
 
-        if (activeAeroRanges != null) {
-            String formatted = formatNestedArray(activeAeroRanges);
-            updatedBlock = replaceNestedArrayProperty(updatedBlock, "activeAeroRanges", formatted);
-        }
+      if (activeAeroRanges != null) {
+         String formatted = formatNestedArray(activeAeroRanges);
+         updatedBlock = replaceNestedArrayProperty(updatedBlock, "activeAeroRanges", formatted);
+      }
 
-        if (overtakeDetectionPercent != null) {
-            updatedBlock = replaceScalarProperty(updatedBlock, "overtakeDetectionPercent", formatDouble(overtakeDetectionPercent));
-        }
-        if (overtakeActivationPercent != null) {
-            updatedBlock = replaceScalarProperty(updatedBlock, "overtakeActivationPercent", formatDouble(overtakeActivationPercent));
-        }
+      if (overtakeDetectionPercent != null) {
+         updatedBlock = replaceScalarProperty(updatedBlock, "overtakeDetectionPercent",
+               formatDouble(overtakeDetectionPercent));
+      }
+      if (overtakeActivationPercent != null) {
+         updatedBlock = replaceScalarProperty(updatedBlock, "overtakeActivationPercent",
+               formatDouble(overtakeActivationPercent));
+      }
 
-        if (speedTrapPercent != null) {
-            updatedBlock = replaceScalarProperty(updatedBlock, "speedTrapPercent", formatDouble(speedTrapPercent));
-        }
+      if (speedTrapPercent != null) {
+         updatedBlock = replaceScalarProperty(updatedBlock, "speedTrapPercent", formatDouble(speedTrapPercent));
+      }
 
-        // 3. Write back
-        String newFileContent = fileContent.substring(0, blockStart) + updatedBlock + fileContent.substring(blockStart + block.length());
+      if (pitLaneEntryPercent != null) {
+         updatedBlock = replaceScalarProperty(updatedBlock, "pitLaneEntryPercent", formatDouble(pitLaneEntryPercent));
+      }
+      if (pitLaneExitPercent != null) {
+         updatedBlock = replaceScalarProperty(updatedBlock, "pitLaneExitPercent", formatDouble(pitLaneExitPercent));
+      }
+      if (pitLaneSpeedLimitKmh != null) {
+         updatedBlock = replaceScalarProperty(updatedBlock, "pitLaneSpeedLimitKmh", formatDouble(pitLaneSpeedLimitKmh));
+      }
 
-        try {
-            Files.writeString(path, newFileContent);
-            log.info("Successfully updated circuit positions for {} in index.ts", circuitId);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to write updated content to index.ts: " + e.getMessage(), e);
-        }
-    }
+      // 3. Write back
+      String newFileContent = fileContent.substring(0, blockStart) + updatedBlock
+            + fileContent.substring(blockStart + block.length());
 
-    // ── Block extraction ───────────────────────────────────────────────────
+      try {
+         Files.writeString(path, newFileContent);
+         log.info("Successfully updated circuit positions for {} in index.ts", circuitId);
+      } catch (IOException e) {
+         throw new RuntimeException("Failed to write updated content to index.ts: " + e.getMessage(), e);
+      }
+   }
 
-    private String extractCircuitBlock(String fileContent, String circuitId) {
-        String targetIdPattern = "id:\\s*['\"]" + Pattern.quote(circuitId) + "['\"]";
-        Matcher idMatcher = Pattern.compile(targetIdPattern).matcher(fileContent);
+   // ── Block extraction ───────────────────────────────────────────────────
 
-        if (!idMatcher.find()) {
-            throw new IllegalArgumentException("Circuit not found in index.ts: " + circuitId);
-        }
+   private String extractCircuitBlock(String fileContent, String circuitId) {
+      String targetIdPattern = "id:\\s*['\"]" + Pattern.quote(circuitId) + "['\"]";
+      Matcher idMatcher = Pattern.compile(targetIdPattern).matcher(fileContent);
 
-        int idIndex = idMatcher.start();
+      if (!idMatcher.find()) {
+         throw new IllegalArgumentException("Circuit not found in index.ts: " + circuitId);
+      }
 
-        int blockStart = fileContent.lastIndexOf("buildCircuit({", idIndex);
-        if (blockStart == -1) {
-            throw new IllegalArgumentException("Failed to locate buildCircuit block for: " + circuitId);
-        }
+      int idIndex = idMatcher.start();
 
-        int nextBlockStart = fileContent.indexOf("buildCircuit({", blockStart + 1);
-        int arrayEnd = fileContent.indexOf("];", blockStart);
-        int blockEnd = fileContent.length();
+      int blockStart = fileContent.lastIndexOf("buildCircuit({", idIndex);
+      if (blockStart == -1) {
+         throw new IllegalArgumentException("Failed to locate buildCircuit block for: " + circuitId);
+      }
 
-        if (nextBlockStart != -1 && (arrayEnd == -1 || nextBlockStart < arrayEnd)) {
-            blockEnd = nextBlockStart;
-        } else if (arrayEnd != -1) {
-            blockEnd = arrayEnd;
-        }
+      int nextBlockStart = fileContent.indexOf("buildCircuit({", blockStart + 1);
+      int arrayEnd = fileContent.indexOf("];", blockStart);
+      int blockEnd = fileContent.length();
 
-        return fileContent.substring(blockStart, blockEnd);
-    }
+      if (nextBlockStart != -1 && (arrayEnd == -1 || nextBlockStart < arrayEnd)) {
+         blockEnd = nextBlockStart;
+      } else if (arrayEnd != -1) {
+         blockEnd = arrayEnd;
+      }
 
-    // ── Property replacement helpers ───────────────────────────────────────
+      return fileContent.substring(blockStart, blockEnd);
+   }
 
-    private String appendPropertyToBlock(String block, String propertyName, String newValue, boolean isArray) {
-        int lastBrace = block.lastIndexOf('}');
-        if (lastBrace == -1) return block;
+   // ── Property replacement helpers ───────────────────────────────────────
 
-        String beforeBrace = block.substring(0, lastBrace);
-        String trimmedBefore = beforeBrace.trim();
-        boolean endsWithComma = trimmedBefore.endsWith(",");
+   private String appendPropertyToBlock(String block, String propertyName, String newValue, boolean isArray) {
+      int lastBrace = block.lastIndexOf('}');
+      if (lastBrace == -1)
+         return block;
 
-        String prefix = endsWithComma ? " " : ", ";
-        String formattedValue = isArray ? "[" + newValue + "]" : newValue;
+      String beforeBrace = block.substring(0, lastBrace);
+      String trimmedBefore = beforeBrace.trim();
+      boolean endsWithComma = trimmedBefore.endsWith(",");
 
-        String insertValue = prefix + propertyName + ": " + formattedValue;
-        return block.substring(0, lastBrace) + insertValue + block.substring(lastBrace);
-    }
+      String prefix = endsWithComma ? " " : ", ";
+      String formattedValue = isArray ? "[" + newValue + "]" : newValue;
 
-    /**
-     * Replace a simple array property like: cornerPositions: [1, 2, 3]
-     */
-    private String replaceArrayProperty(String block, String propertyName, String newValue) {
-        Pattern p = Pattern.compile(propertyName + "\\s*:\\s*\\[[^\\]]*\\]");
-        Matcher m = p.matcher(block);
-        if (m.find()) {
-            return m.replaceFirst(propertyName + ": [" + newValue + "]");
-        }
-        return appendPropertyToBlock(block, propertyName, newValue, true);
-    }
+      String insertValue = prefix + propertyName + ": " + formattedValue;
+      return block.substring(0, lastBrace) + insertValue + block.substring(lastBrace);
+   }
 
-    /**
-     * Replace a nested array property like: activeAeroRanges: [[1, 2], [3, 4]]
-     */
-    private String replaceNestedArrayProperty(String block, String propertyName, String newValue) {
-        // Match activeAeroRanges: [[...], [...]] — greedy within the outermost brackets
-        Pattern p = Pattern.compile(propertyName + "\\s*:\\s*\\[\\[.*?\\]\\]");
-        Matcher m = p.matcher(block);
-        if (m.find()) {
-            return m.replaceFirst(Matcher.quoteReplacement(propertyName + ": " + newValue));
-        }
-        return appendPropertyToBlock(block, propertyName, newValue, false);
-    }
+   /**
+    * Replace a simple array property like: cornerPositions: [1, 2, 3]
+    */
+   private String replaceArrayProperty(String block, String propertyName, String newValue) {
+      Pattern p = Pattern.compile(propertyName + "\\s*:\\s*\\[[^\\]]*\\]");
+      Matcher m = p.matcher(block);
+      if (m.find()) {
+         return m.replaceFirst(propertyName + ": [" + newValue + "]");
+      }
+      return appendPropertyToBlock(block, propertyName, newValue, true);
+   }
 
-    /**
-     * Replace a scalar property like: overtakeDetectionPercent: 80
-     */
-    private String replaceScalarProperty(String block, String propertyName, String newValue) {
-        // Match the property name followed by colon, optional space, then a number (possibly negative, with decimals)
-        Pattern p = Pattern.compile(propertyName + "\\s*:\\s*[\\d.]+");
-        Matcher m = p.matcher(block);
-        if (m.find()) {
-            return m.replaceFirst(propertyName + ": " + newValue);
-        }
-        return appendPropertyToBlock(block, propertyName, newValue, false);
-    }
+   /**
+    * Replace a nested array property like: activeAeroRanges: [[1, 2], [3, 4]]
+    */
+   private String replaceNestedArrayProperty(String block, String propertyName, String newValue) {
+      // Match activeAeroRanges: [[...], [...]] — greedy within the outermost brackets
+      Pattern p = Pattern.compile(propertyName + "\\s*:\\s*\\[\\[.*?\\]\\]");
+      Matcher m = p.matcher(block);
+      if (m.find()) {
+         return m.replaceFirst(Matcher.quoteReplacement(propertyName + ": " + newValue));
+      }
+      return appendPropertyToBlock(block, propertyName, newValue, false);
+   }
 
-    // ── Formatting helpers ─────────────────────────────────────────────────
+   /**
+    * Replace a scalar property like: overtakeDetectionPercent: 80
+    */
+   private String replaceScalarProperty(String block, String propertyName, String newValue) {
+      // Match the property name followed by colon, optional space, then a number
+      // (possibly negative, with decimals)
+      Pattern p = Pattern.compile(propertyName + "\\s*:\\s*[\\d.]+");
+      Matcher m = p.matcher(block);
+      if (m.find()) {
+         return m.replaceFirst(propertyName + ": " + newValue);
+      }
+      return appendPropertyToBlock(block, propertyName, newValue, false);
+   }
 
-    private String formatDoubleList(List<Double> values) {
-        return values.stream()
-                .map(this::formatDouble)
-                .collect(Collectors.joining(", "));
-    }
+   // ── Formatting helpers ─────────────────────────────────────────────────
 
-    private String formatNestedArray(List<List<Double>> ranges) {
-        String inner = ranges.stream()
-                .map(pair -> "[" + pair.stream().map(this::formatDouble).collect(Collectors.joining(", ")) + "]")
-                .collect(Collectors.joining(", "));
-        return "[" + inner + "]";
-    }
+   private String formatDoubleList(List<Double> values) {
+      return values.stream()
+            .map(this::formatDouble)
+            .collect(Collectors.joining(", "));
+   }
 
-    private String formatDouble(Double d) {
-        if (d == null) return "null";
-        if (d == Math.floor(d) && !Double.isInfinite(d)) {
-            return String.valueOf(d.longValue());
-        }
-        return String.valueOf(d);
-    }
+   private String formatNestedArray(List<List<Double>> ranges) {
+      String inner = ranges.stream()
+            .map(pair -> "[" + pair.stream().map(this::formatDouble).collect(Collectors.joining(", ")) + "]")
+            .collect(Collectors.joining(", "));
+      return "[" + inner + "]";
+   }
+
+   private String formatDouble(Double d) {
+      if (d == null)
+         return "null";
+      if (d == Math.floor(d) && !Double.isInfinite(d)) {
+         return String.valueOf(d.longValue());
+      }
+      return String.valueOf(d);
+   }
 }

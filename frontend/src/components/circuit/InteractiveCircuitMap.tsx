@@ -8,6 +8,7 @@ import SectorPath from './SectorPath';
 import SpeedTrapMarker from './SpeedTrapMarker';
 import { usePathPoint } from './usePathPoint';
 import FinishLineMarker from './FinishLineMarker';
+import PitLaneOverlay from './PitLaneOverlay'
 
 interface InteractiveCircuitMapProps {
    circuit: CircuitData;
@@ -16,6 +17,7 @@ interface InteractiveCircuitMapProps {
 type Tooltip =
    | { kind: 'corner'; title: string; rows: Array<[string, string | number]> }
    | { kind: 'sector'; title: string; rows: Array<[string, string | number]> }
+   | { kind: 'pitlane'; title: string; rows: Array<[string, string | number]> }
    | { kind: 'aero'; title: string; rows: Array<[string, string | number]> }
    | { kind: 'overtake'; title: string; rows: Array<[string, string | number]> }
    | { kind: 'speed'; title: string; rows: Array<[string, string | number]> }
@@ -43,6 +45,7 @@ const OvertakePointMarker: React.FC<{
       </g>
    );
 };
+
 
 const TooltipPanel: React.FC<{ tooltip: Tooltip }> = ({ tooltip }) => {
    if (!tooltip) return null;
@@ -75,6 +78,14 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
    const [hoveredSector, setHoveredSector] = useState<Sector | null>(null);
    const [hoveredZone, setHoveredZone] = useState<ActiveAeroZoneType | null>(null);
    const [tooltip, setTooltip] = useState<Tooltip>(null);
+
+   const handlePitLaneHover = (hovered: boolean) => {
+      setTooltip(hovered ? {
+         kind: 'pitlane',
+         title: 'Pit Lane',
+         rows: [['Speed limit', `${circuit.pitLane.speedLimitKmh} km/h`], ['Side', 'Right of racing line']],
+      } : null);
+   };
 
    const handleFinishLineHover = (hovered: boolean) => {
       setTooltip(
@@ -205,6 +216,8 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                {circuit.cornerMarkers.map((corner) => (
                   <CornerMarker key={corner.number} corner={corner} pathId={pathId} selected={selectedCorner?.number === corner.number} onHover={handleCornerHover} onSelect={setSelectedCorner} />
                ))}
+
+               <PitLaneOverlay pathId={pathId} pitLane={circuit.pitLane} isReversed={circuit.isReversed} onHover={handlePitLaneHover} />
 
                <FinishLineMarker
                   pathId={pathId}

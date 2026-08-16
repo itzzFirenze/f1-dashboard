@@ -16,6 +16,14 @@ export interface Sector {
    isReversed: boolean;
 }
 
+export interface PitLane {
+   entryPercent: number;
+   exitPercent: number;
+   speedLimitKmh: number;
+   offsetPx: number;   // how far right of the racing line the pit lane sits
+   notes: string;
+}
+
 export interface ActiveAeroZone {
    id: string;
    label: string;
@@ -77,5 +85,6 @@ export interface CircuitData {
    activeAeroZones: ActiveAeroZone[];
    overtakeMode: OvertakeMode;
    speedTrap: SpeedTrap;
+   pitLane: PitLane;
    source: string;
 }

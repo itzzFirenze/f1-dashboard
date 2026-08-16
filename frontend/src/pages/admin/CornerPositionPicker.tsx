@@ -17,7 +17,7 @@ import { circuitService, type CircuitPositionsPayload } from '../../services/cir
 
 type SamplePoint = { x: number; y: number; percent: number };
 type CircuitPathKey = keyof typeof circuitSvgPaths;
-type PickerMode = 'corners' | 'sectors' | 'activeAero' | 'overtake' | 'speedTrap';
+type PickerMode = 'corners' | 'sectors' | 'activeAero' | 'overtake' | 'speedTrap' | 'pitLane';
 
 type CircuitOption = { id: string; name: string; pathKey: CircuitPathKey };
 
@@ -47,11 +47,12 @@ const CIRCUITS: CircuitOption[] = circuits.map((c) => ({
 // ── Mode metadata ──────────────────────────────────────────────────────────
 
 const MODES: { key: PickerMode; label: string; color: string }[] = [
-   { key: 'corners',    label: 'Corners',     color: '#E10600' },
-   { key: 'sectors',    label: 'Sectors',     color: '#f59e0b' },
+   { key: 'corners', label: 'Corners', color: '#E10600' },
+   { key: 'sectors', label: 'Sectors', color: '#f59e0b' },
    { key: 'activeAero', label: 'Active Aero', color: '#22c55e' },
-   { key: 'overtake',   label: 'Overtake',    color: '#3b82f6' },
-   { key: 'speedTrap',  label: 'Speed Trap',  color: '#a855f7' },
+   { key: 'overtake', label: 'Overtake', color: '#3b82f6' },
+   { key: 'speedTrap', label: 'Speed Trap', color: '#a855f7' },
+   { key: 'pitLane', label: 'Pit Lane', color: '#facc15' }
 ];
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -70,6 +71,8 @@ export default function CornerPositionPicker() {
    const [sector1, setSector1] = useState<number | null>(null);
    const [sector2, setSector2] = useState<number | null>(null);
    const [sector3, setSector3] = useState<number | null>(null);
+
+   const [pitEntry, setPitEntry] = useState<number | null>(null); const [pitExit, setPitExit] = useState<number | null>(null);
 
    // Active Aero
    const [aeroZones, setAeroZones] = useState<[number, number][]>([]);
@@ -113,11 +116,14 @@ export default function CornerPositionPicker() {
          setOvertakeDetection(c.overtakeMode.detectionPointPercent);
          setOvertakeActivation(c.overtakeMode.activationPointPercent);
          setSpeedTrap(c.speedTrap.positionPercent);
+         setPitEntry(c.pitLane.entryPercent !== c.pitLane.exitPercent ? c.pitLane.entryPercent : null);
+         setPitExit(c.pitLane.entryPercent !== c.pitLane.exitPercent ? c.pitLane.exitPercent : null);
       } else {
          setPoints([]);
          setSector1(null); setSector2(null); setSector3(null);
          setAeroZones([]); setOvertakeDetection(null); setOvertakeActivation(null);
          setSpeedTrap(null);
+         setPitEntry(null); setPitExit(null);
       }
       setAeroZoneStart(null);
       setHover(null);
@@ -203,6 +209,11 @@ export default function CornerPositionPicker() {
             else if (sector3 === null) setSector3(pct);
             break;
 
+         case 'pitLane':
+            if (pitEntry === null) setPitEntry(pct);
+            else setPitExit(pct);
+            break;
+
          case 'activeAero':
             if (aeroZoneStart === null) {
                setAeroZoneStart(pct);
@@ -251,6 +262,8 @@ export default function CornerPositionPicker() {
             overtakeDetectionPercent: overtakeDetection,
             overtakeActivationPercent: overtakeActivation,
             speedTrapPercent: speedTrap,
+            pitLaneEntryPercent: pitEntry,
+            pitLaneExitPercent: pitExit,
          };
          await circuitService.saveCircuitPositions(payload);
          setSaveMessage(`Saved all positions for ${circuitId}!`);
@@ -272,6 +285,8 @@ export default function CornerPositionPicker() {
       activeAeroRanges: aeroZones,
       overtakeDetectionPercent: overtakeDetection, overtakeActivationPercent: overtakeActivation,
       speedTrapPercent: speedTrap,
+      pitLaneEntryPercent: pitEntry,
+      pitLaneExitPercent: pitExit,
    }, null, 2);
 
    const copyOutput = async (): Promise<void> => {
@@ -338,7 +353,7 @@ export default function CornerPositionPicker() {
                               <div className="cpp-num">{i + 1}</div>
                               <input type="number" min="0" max="100" step="0.01" value={pct}
                                  onChange={(e: ChangeEvent<HTMLInputElement>) => editAt(i, e.target.value)} />
-                              <button className="cpp-rm" type="button" onClick={() => removeAt(i)} aria-label={`Remove ${i+1}`}>✕</button>
+                              <button className="cpp-rm" type="button" onClick={() => removeAt(i)} aria-label={`Remove ${i + 1}`}>✕</button>
                            </div>
                         ))}
                      </div>
@@ -418,6 +433,24 @@ export default function CornerPositionPicker() {
                            }} />
                         <button className="cpp-rm" type="button" onClick={() => setSpeedTrap(null)}>✕</button>
                      </div>
+                  </>
+               )}
+
+               {mode === 'pitLane' && (
+                  <>
+                     <div className="cpp-panel-title" style={{ color: '#facc15' }}>Pit Lane</div>
+                     <div className="cpp-hint">Click once for entry, then exit.</div>
+                     {([['Entry', pitEntry, setPitEntry], ['Exit', pitExit, setPitExit]] as const).map(([label, val, setter]) => (
+                        <div className="cpp-item" key={label}>
+                           <span style={{ color: '#facc15', fontWeight: 600, width: 60 }}>{label}</span>
+                           <input type="number" min="0" max="100" step="0.01" value={val ?? ''}
+                              onChange={(e) => {
+                                 const n = Number(e.target.value);
+                                 (setter as React.Dispatch<React.SetStateAction<number | null>>)(Number.isFinite(n) ? n : null);
+                              }} />
+                           <button className="cpp-rm" type="button" onClick={() => (setter as React.Dispatch<React.SetStateAction<number | null>>)(null)}>✕</button>
+                        </div>
+                     ))}
                   </>
                )}
             </div>
@@ -511,6 +544,27 @@ export default function CornerPositionPicker() {
                      <g transform={`translate(${p.x} ${p.y})`}>
                         <polygon points="0,-10 9,6 -9,6" fill="#a855f7" stroke="#0b0e14" strokeWidth="1.5" />
                         <text y="2" textAnchor="middle" fontSize="5" fontWeight="700" fill="#fff">ST</text>
+                     </g>
+                  );
+               })()}
+
+               {/* ── Pit Lane markers ── */}
+               {pitEntry !== null && (() => {
+                  const p = pointAtPercent(pitEntry);
+                  return (
+                     <g transform={`translate(${p.x} ${p.y})`}>
+                        <circle r="6" fill="#facc15" stroke="#0b0e14" strokeWidth="1.5" />
+                        <text y="2.5" textAnchor="middle" fontSize="5" fontWeight="700" fill="#1a1200">IN</text>
+                     </g>
+                  );
+               })()}
+
+               {pitExit !== null && (() => {
+                  const p = pointAtPercent(pitExit);
+                  return (
+                     <g transform={`translate(${p.x} ${p.y})`}>
+                        <circle r="6" fill="#4ade80" stroke="#0b0e14" strokeWidth="1.5" />
+                        <text y="2.5" textAnchor="middle" fontSize="5" fontWeight="700" fill="#0b0e14">OUT</text>
                      </g>
                   );
                })()}

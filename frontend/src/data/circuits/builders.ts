@@ -4,6 +4,7 @@ import type {
    CircuitData,
    OvertakeMode,
    Sector,
+   PitLane
 } from './types';
 
 type CornerSeed = Pick<
@@ -39,6 +40,9 @@ export interface CircuitDefinition {
    sector1StartPercent?: number;
    sector2StartPercent?: number;
    sector3StartPercent?: number;
+   pitLaneEntryPercent?: number;
+   pitLaneExitPercent?: number;
+   pitLaneSpeedLimitKmh?: number;
 }
 
 const difficultyFor = (
@@ -251,6 +255,14 @@ export const buildCircuit = (
       notes: '2026 Overtake Mode detection and activation points.',
    };
 
+   const pitLane: PitLane = {
+      entryPercent: definition.pitLaneEntryPercent ?? sector1Start,
+      exitPercent: definition.pitLaneExitPercent ?? sector1Start,
+      speedLimitKmh: definition.pitLaneSpeedLimitKmh ?? 80,
+      offsetPx: 16,
+      notes: 'Pit lane runs parallel to the main straight, offset to the right of the racing line in the direction of travel.',
+   };
+
    return {
       id: definition.id,
       name: definition.name,
@@ -282,6 +294,7 @@ export const buildCircuit = (
          fastestRecordedSpeedKmh: definition.topSpeedKmh,
          fastestRecordedBy: 'FIA speed trap benchmark',
       },
+      pitLane,
       source:
          'Track geometry from F1DB SVG circuit assets. Calendar checked against Formula1.com 2026 calendar.',
    };
