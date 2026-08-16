@@ -372,27 +372,37 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       [laps, retiredAtByDriver, stalledSinceByDriver, lastLapInfoByDriver, latestLapEndAcrossField],
    );
 
-   // OpenF1's pit `date` marks the pit-stop timestamp (roughly when the car is
-   // stationary in the box) and `pit_duration` is time spent in the box only —
-   // it doesn't cover the pit-lane transit before/after. We pad both sides with
-   // a flat buffer so the "in pits" window roughly covers lane entry -> exit.
-   const PIT_LANE_BUFFER_MS = 8000;
+   // OpenF1 pit records include the pit-lane transit duration. Keep the replay
+   // status window to that duration so it does not outlast the lane movement.
    const DEFAULT_PIT_BOX_SEC = 25;
 
    const getPitWindow = useCallback(
       (pit: OpenF1Pit): { start: number; end: number } | null => {
          if (!pit.date) return null;
-         const startMs = new Date(pit.date).getTime();
-         if (!Number.isFinite(startMs)) return null;
+         const pitMs = new Date(pit.date).getTime();
+         if (!Number.isFinite(pitMs)) return null;
+
+         const nextLap = laps.find(
+            (lap) =>
+               lap.driver_number === pit.driver_number &&
+               lap.lap_number === pit.lap_number + 1 &&
+               lap.date_start,
+         );
+         const nextLapStartMs = nextLap?.date_start
+            ? new Date(nextLap.date_start).getTime()
+            : NaN;
+         const startMs = Number.isFinite(nextLapStartMs) && nextLapStartMs <= pitMs
+            ? nextLapStartMs
+            : pitMs;
 
          const durationSec =
-            pit.pit_duration ?? pit.lane_duration ?? DEFAULT_PIT_BOX_SEC;
+            pit.lane_duration ?? pit.pit_duration ?? DEFAULT_PIT_BOX_SEC;
          return {
-            start: startMs - PIT_LANE_BUFFER_MS,
-            end: startMs + durationSec * 1000 + PIT_LANE_BUFFER_MS,
+            start: startMs,
+            end: startMs + durationSec * 1000,
          };
       },
-      [],
+      [laps],
    );
 
    const getActivePitStop = useCallback(

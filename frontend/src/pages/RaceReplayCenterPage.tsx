@@ -272,7 +272,7 @@ const RaceReplayCenterPage: React.FC = () => {
                               </div>
 
                               <div className="flex-1 overflow-hidden">
-                                 <ReplayFeeds activeTab={activeTab} />
+                                 <ReplayFeeds activeTab={activeTab} circuit={currentCircuit} />
                               </div>
                            </motion.div>
                         ) : (

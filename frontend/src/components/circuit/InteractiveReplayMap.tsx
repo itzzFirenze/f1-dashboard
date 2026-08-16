@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Play, Pause, Square, SkipBack, SkipForward } from 'lucide-react';
 import { useReplay } from '../../context/ReplayContext';
 import { CircuitData, CircuitCornerMarker } from '../../data/circuits';
-import { OpenF1Driver, OpenF1Lap } from '../../services/telemetryService';
+import { OpenF1Driver, OpenF1Lap, OpenF1Pit } from '../../services/telemetryService';
 import CornerMarker from './CornerMarker';
 import ActiveAeroZone from './ActiveAeroZone';
 import SectorPath from './SectorPath';
 import SpeedTrapMarker from './SpeedTrapMarker';
 import FinishLineMarker from './FinishLineMarker';
+import PitLaneOverlay from './PitLaneOverlay';
 import { usePathPoint } from './usePathPoint';
 
 interface InteractiveReplayMapProps {
@@ -25,19 +26,22 @@ const DetectionPoint: React.FC<{ pathId: string; point: { id: string; label: str
    );
 };
 
-const PitMarkerOffset = 22; // px, perpendicular distance off the centerline
+const DEFAULT_PIT_BOX_SEC = 25;
 
 const DriverMarkerOnTrack: React.FC<{
    pathId: string;
    driver: OpenF1Driver;
    percent: number;
+   pitLaneOffsetPx: number;
+   isReversed: boolean;
    isSelected: boolean;
    isPitting: boolean;
    onSelect: () => void;
    onHover: (driverNo: number | null) => void;
-}> = ({ pathId, driver, percent, isSelected, isPitting, onHover, onSelect }) => {
+}> = ({ pathId, driver, percent, pitLaneOffsetPx, isReversed, isSelected, isPitting, onHover, onSelect }) => {
    const pos = usePathPoint(pathId, percent);
-   const posAhead = usePathPoint(pathId, (percent + 0.5) % 100); // tiny step forward, to get tangent
+   const aheadPercent = isReversed ? (percent + 99.5) % 100 : (percent + 0.5) % 100;
+   const posAhead = usePathPoint(pathId, aheadPercent); // tiny step forward, to get tangent
    const teamColor = `#${driver.team_colour || 'ffffff'}`;
 
    // Perpendicular offset so pitting cars render visibly off the racing line
@@ -49,8 +53,8 @@ const DriverMarkerOnTrack: React.FC<{
       const len = Math.hypot(dx, dy) || 1;
       const nx = -dy / len; // perpendicular unit vector
       const ny = dx / len;
-      drawX = pos.x + nx * PitMarkerOffset;
-      drawY = pos.y + ny * PitMarkerOffset;
+      drawX = pos.x + nx * pitLaneOffsetPx;
+      drawY = pos.y + ny * pitLaneOffsetPx;
    }
 
    return (
@@ -92,6 +96,134 @@ const formatElapsed = (ms: number): string => {
    const minutes = Math.floor((totalSeconds % 3600) / 60);
    const seconds = totalSeconds % 60;
    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
+const getPitDurationSec = (pit: OpenF1Pit): number =>
+   pit.lane_duration ?? pit.pit_duration ?? DEFAULT_PIT_BOX_SEC;
+
+const getLapStartMs = (
+   laps: OpenF1Lap[],
+   driverNumber: number,
+   lapNumber: number
+): number | null => {
+   const lap = laps.find(
+      (candidate) =>
+         candidate.driver_number === driverNumber &&
+         candidate.lap_number === lapNumber &&
+         candidate.date_start
+   );
+   if (!lap?.date_start) return null;
+
+   const startMs = new Date(lap.date_start).getTime();
+   return Number.isFinite(startMs) ? startMs : null;
+};
+
+const getLapEndMs = (
+   laps: OpenF1Lap[],
+   driverNumber: number,
+   lapNumber: number
+): number | null => {
+   const lap = laps.find(
+      (candidate) =>
+         candidate.driver_number === driverNumber &&
+         candidate.lap_number === lapNumber &&
+         candidate.date_start &&
+         candidate.lap_duration &&
+         candidate.lap_duration > 0
+   );
+   if (!lap?.date_start || !lap.lap_duration) return null;
+
+   const startMs = new Date(lap.date_start).getTime();
+   if (!Number.isFinite(startMs)) return null;
+
+   return startMs + lap.lap_duration * 1000;
+};
+
+const getPitTimingWindow = (pit: OpenF1Pit | null, laps: OpenF1Lap[]): { start: number; end: number } | null => {
+   if (!pit?.date) return null;
+
+   const pitMs = new Date(pit.date).getTime();
+   if (!Number.isFinite(pitMs)) return null;
+
+   const nextLapStartMs = getLapStartMs(laps, pit.driver_number, pit.lap_number + 1);
+   const startMs = nextLapStartMs !== null && nextLapStartMs <= pitMs
+      ? nextLapStartMs
+      : pitMs;
+
+   return {
+      start: startMs,
+      end: startMs + getPitDurationSec(pit) * 1000,
+   };
+};
+
+const getTravelPercentBetween = (
+   entryPercent: number,
+   exitPercent: number,
+   progress: number,
+   isReversed: boolean
+): number => {
+   const safeProgress = Math.min(1, Math.max(0, progress));
+
+   if (!isReversed) {
+      const forwardDistance = exitPercent >= entryPercent
+         ? exitPercent - entryPercent
+         : exitPercent + 100 - entryPercent;
+      return (entryPercent + forwardDistance * safeProgress) % 100;
+   }
+
+   const backwardDistance = entryPercent >= exitPercent
+      ? entryPercent - exitPercent
+      : entryPercent + 100 - exitPercent;
+   return (entryPercent - backwardDistance * safeProgress + 100) % 100;
+};
+
+const getPitReplayPosition = (
+   driverNumber: number,
+   time: Date | null,
+   pits: OpenF1Pit[],
+   laps: OpenF1Lap[],
+   circuit: CircuitData
+): { isPitting: boolean; percent: number } | null => {
+   if (!time) return null;
+
+   const nowMs = time.getTime();
+   const driverPits = pits
+      .filter((pit) => pit.driver_number === driverNumber)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+   for (const pit of driverPits) {
+      const pitWindow = getPitTimingWindow(pit, laps);
+      if (!pitWindow) continue;
+
+      if (nowMs >= pitWindow.start && nowMs <= pitWindow.end) {
+         const pitProgress = (nowMs - pitWindow.start) / (pitWindow.end - pitWindow.start);
+         return {
+            isPitting: true,
+            percent: getTravelPercentBetween(
+               circuit.pitLane.entryPercent,
+               circuit.pitLane.exitPercent,
+               pitProgress,
+               circuit.isReversed
+            ),
+         };
+      }
+
+      const outLapEndMs = getLapEndMs(laps, driverNumber, pit.lap_number + 1);
+      if (outLapEndMs !== null && nowMs > pitWindow.end && nowMs < outLapEndMs) {
+         const progressAfterPit = (nowMs - pitWindow.end) / (outLapEndMs - pitWindow.end);
+         return {
+            isPitting: false,
+            percent: getTravelPercentBetween(
+               circuit.pitLane.exitPercent,
+               circuit.sectors[0].startPercent,
+               progressAfterPit,
+               circuit.isReversed
+            ),
+         };
+      }
+   }
+
+   return null;
 };
 
 const getDriverRaceFraction = (
@@ -192,9 +324,9 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
       selectedDrivers,
       toggleDriverSelection,
       laps,
+      pits,
       currentTime,
       isDriverOutAt,
-      isDriverPittingAt,
       safetyCarStatus,
       activeSession,
       isPlaying,
@@ -306,6 +438,13 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                <path d={circuit.trackPath} fill="none" stroke="#f8fafc" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" filter={`url(#${pathId}-glow)`} opacity="0.2" />
                <path d={circuit.trackPath} fill="none" stroke="#1e293b" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
 
+               <PitLaneOverlay
+                  pathId={pathId}
+                  pitLane={circuit.pitLane}
+                  isReversed={circuit.isReversed}
+                  onHover={() => { }}
+               />
+
                {circuit.sectors.map((sector) => (
                   <SectorPath key={sector.id} path={circuit.trackPath} pathId={pathId} sector={sector} active={false} onHover={() => { }} />
                ))}
@@ -339,10 +478,15 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                   .filter((driver) => !isDriverOutAt(driver.driver_number, currentTime))
                   .map((driver, index) => {
                      const isSelected = selectedDrivers.includes(driver.driver_number);
-                     const isPitting = isDriverPittingAt(driver.driver_number, currentTime);
-                     const percent = isPitting
-                        ? circuit.sectors[0].startPercent // approx pit entry, near start/finish
-                        : getDriverLapPercent(
+                     const pitReplayPosition = getPitReplayPosition(
+                        driver.driver_number,
+                        currentTime,
+                        pits,
+                        laps,
+                        circuit
+                     );
+                     const percent = pitReplayPosition?.percent ??
+                        getDriverLapPercent(
                            driver.driver_number, index, currentTime, laps,
                            circuit.sectors[0].startPercent, circuit.isReversed
                         );
@@ -352,8 +496,10 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                            pathId={pathId}
                            driver={driver}
                            percent={percent}
+                           pitLaneOffsetPx={circuit.pitLane.offsetPx}
+                           isReversed={circuit.isReversed}
                            isSelected={isSelected}
-                           isPitting={isPitting}
+                           isPitting={pitReplayPosition?.isPitting ?? false}
                            onSelect={() => toggleDriverSelection(driver.driver_number)}
                            onHover={handleHover}
                         />
@@ -394,7 +540,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                {hoveredDriver && (() => {
                   const driver = drivers.find((d) => d.driver_number === hoveredDriver);
                   if (!driver) return null;
-                  const pitting = isDriverPittingAt(hoveredDriver, currentTime);
+                  const pitting = getPitReplayPosition(hoveredDriver, currentTime, pits, laps, circuit)?.isPitting ?? false;
 
                   const index = drivers.findIndex((d) => d.driver_number === hoveredDriver);
                   const raceFraction = getDriverRaceFraction(hoveredDriver, index, currentTime, laps); // <-- was getDriverLapPercent

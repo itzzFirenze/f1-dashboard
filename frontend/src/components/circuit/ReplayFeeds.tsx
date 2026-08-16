@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { useReplay } from '../../context/ReplayContext';
 import { Flag, ShieldAlert, Radio, AlertTriangle, Play, Pause, HelpCircle } from 'lucide-react';
+import type { CircuitData } from '../../data/circuits';
 
 interface ReplayFeedsProps {
    activeTab: 'standings' | 'feeds' | 'radio';
+   circuit: CircuitData;
 }
 
 const CheckeredFlagIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -22,7 +24,42 @@ const CheckeredFlagIcon: React.FC<{ className?: string }> = ({ className }) => (
    </svg>
 );
 
-export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
+const DEFAULT_PIT_BOX_SEC = 25;
+
+const getTravelPercentBetween = (
+   entryPercent: number,
+   exitPercent: number,
+   progress: number,
+   isReversed: boolean
+): number => {
+   const safeProgress = Math.min(1, Math.max(0, progress));
+
+   if (!isReversed) {
+      const forwardDistance = exitPercent >= entryPercent
+         ? exitPercent - entryPercent
+         : exitPercent + 100 - entryPercent;
+      return (entryPercent + forwardDistance * safeProgress) % 100;
+   }
+
+   const backwardDistance = entryPercent >= exitPercent
+      ? entryPercent - exitPercent
+      : entryPercent + 100 - exitPercent;
+   return (entryPercent - backwardDistance * safeProgress + 100) % 100;
+};
+
+const getLapProgressFromTrackPercent = (
+   startPercent: number,
+   percent: number,
+   isReversed: boolean
+): number => {
+   if (!isReversed) {
+      return (percent >= startPercent ? percent - startPercent : percent + 100 - startPercent) / 100;
+   }
+
+   return (startPercent >= percent ? startPercent - percent : startPercent + 100 - percent) / 100;
+};
+
+export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) => {
    const {
       drivers,
       driverLocations,
@@ -82,7 +119,37 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
                activeLapEndMs = lapStartMs + lapDurationSec * 1000;
 
                const elapsedSec = Math.max(0, (nowMs - lapStartMs) / 1000);
-               lapProgress = elapsedSec / (elapsedSec + lapDurationSec);
+               lapProgress = Math.min(1, elapsedSec / lapDurationSec);
+
+               const activePit = pits.find((pit) => pit.driver_number === drv.driver_number && pit.lap_number + 1 === activeLap.lap_number);
+               if (activePit?.date && activeLapHasRealDuration) {
+                  const pitMs = new Date(activePit.date).getTime();
+                  const pitStartMs = lapStartMs <= pitMs ? lapStartMs : pitMs;
+                  const pitDurationSec = activePit.lane_duration ?? activePit.pit_duration ?? DEFAULT_PIT_BOX_SEC;
+                  const pitEndMs = pitStartMs + pitDurationSec * 1000;
+
+                  if (Number.isFinite(pitMs) && nowMs >= pitStartMs && nowMs < activeLapEndMs) {
+                     const markerPercent = nowMs <= pitEndMs
+                        ? getTravelPercentBetween(
+                           circuit.pitLane.entryPercent,
+                           circuit.pitLane.exitPercent,
+                           (nowMs - pitStartMs) / (pitEndMs - pitStartMs),
+                           circuit.isReversed
+                        )
+                        : getTravelPercentBetween(
+                           circuit.pitLane.exitPercent,
+                           circuit.sectors[0].startPercent,
+                           (nowMs - pitEndMs) / (activeLapEndMs - pitEndMs),
+                           circuit.isReversed
+                        );
+
+                     lapProgress = getLapProgressFromTrackPercent(
+                        circuit.sectors[0].startPercent,
+                        markerPercent,
+                        circuit.isReversed
+                     );
+                  }
+               }
             }
 
             const raceDistance = Math.max(0, lapsCompleted - 1) + lapProgress;
@@ -131,7 +198,7 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
             if (b.raceDistance !== a.raceDistance) return b.raceDistance - a.raceDistance;
             return a.activeLapStartMs - b.activeLapStartMs;
          });
-   }, [drivers, laps, stints, currentTime, isDriverOutAt, totalLapsByDriver]);
+   }, [drivers, laps, stints, pits, currentTime, isDriverOutAt, isDriverPittingAt, totalLapsByDriver, circuit]);
 
    const [playingUrl, setPlayingUrl] = useState<string | null>(null);
    const [playbackProgress, setPlaybackProgress] = useState(0);
