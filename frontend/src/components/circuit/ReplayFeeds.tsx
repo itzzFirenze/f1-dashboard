@@ -35,6 +35,7 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
       laps,
       isDriverOutAt,
       isDriverPittingAt,
+      isSafetyCarActiveAt,
    } = useReplay();
 
    const totalLapsByDriver = useMemo(() => {
@@ -44,6 +45,8 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
       }
       return map;
    }, [laps]);
+
+   const SAFETY_CAR_PATTERN = /SAFETY CAR/i;
 
    const liveStandings = useMemo(() => {
       if (!currentTime) return [];
@@ -257,23 +260,39 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab }) => {
             ) : (
                <div className="space-y-2">
                   {activeControlMessages.map((msg, i) => {
+                     const isSafetyCar = isSafetyCarActiveAt(new Date(msg.date));
                      const isWarning = msg.flag === 'YELLOW' || msg.flag === 'RED' || msg.message.includes('INVESTIGATION');
                      return (
                         <div
                            key={i}
-                           className={`rounded-lg border p-3 flex gap-3 items-start transition-all ${isWarning ? 'bg-amber-500/10 border-amber-500/20 text-amber-200' : 'bg-white/[0.02] border-white/5 text-f1-silver'
+                           className={`rounded-lg border p-3 flex gap-3 items-start transition-all ${isSafetyCar
+                              ? 'bg-yellow-400/10 border-yellow-400/30 border-l-4 border-l-yellow-400'
+                              : isWarning
+                                 ? 'bg-amber-500/10 border-amber-500/20 text-amber-200'
+                                 : 'bg-white/[0.02] border-white/5 text-f1-silver'
                               }`}
                         >
-                           {isWarning ? (
+                           {isSafetyCar ? (
+                              <ShieldAlert className="h-4 w-4 shrink-0 text-yellow-400 mt-0.5" />
+                           ) : isWarning ? (
                               <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
                            ) : (
                               <ShieldAlert className="h-4 w-4 shrink-0 text-f1-silver mt-0.5" />
                            )}
                            <div>
-                              <span className="block text-[9px] text-f1-silver/70 font-mono">
-                                 LAP {msg.lap_number} - {new Date(msg.date).toLocaleTimeString()}
-                              </span>
-                              <p className="text-xs mt-1 font-medium leading-relaxed">{msg.message}</p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                 <span className="text-[9px] font-mono text-f1-silver/70">
+                                    LAP {msg.lap_number} - {new Date(msg.date).toLocaleTimeString()}
+                                 </span>
+                                 {isSafetyCar && (
+                                    <span className="rounded bg-yellow-400 px-1.5 py-0.5 text-[8px] font-bold uppercase text-black">
+                                       Safety Car
+                                    </span>
+                                 )}
+                              </div>
+                              <p className={`text-xs mt-1 font-medium leading-relaxed ${isSafetyCar ? 'text-yellow-100' : ''}`}>
+                                 {msg.message}
+                              </p>
                            </div>
                         </div>
                      );

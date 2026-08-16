@@ -195,6 +195,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
       currentTime,
       isDriverOutAt,
       isDriverPittingAt,
+      safetyCarStatus,
       activeSession,
       isPlaying,
       playbackSpeed,
@@ -255,6 +256,11 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
 
             {/* HUD Badges */}
             <div className="absolute right-3 top-3 z-10 flex flex-wrap justify-end gap-1 max-w-[55%]">
+               {safetyCarStatus.active && (
+                  <span className="rounded-md border border-yellow-300 bg-yellow-400 px-1.5 py-0.5 text-[9px] font-bold text-black animate-pulse">
+                     {safetyCarStatus.isVirtual ? 'VSC' : 'Safety Car'}
+                  </span>
+               )}
                <span className="rounded-md border border-red-400/30 bg-red-500/10 px-1.5 py-0.5 text-[9px] text-red-200">S1</span>
                <span className="rounded-md border border-sky-400/30 bg-sky-500/10 px-1.5 py-0.5 text-[9px] text-sky-200">S2</span>
                <span className="rounded-md border border-yellow-300/30 bg-yellow-400/10 px-1.5 py-0.5 text-[9px] text-yellow-100">S3</span>
