@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
    Trophy,
    Zap,
@@ -39,6 +39,16 @@ const CATEGORIES: { id: TriviaCategory; label: string; icon: any; color: string 
 
 const QUESTION_TIMER_SECONDS = 20;
 
+// Fisher-Yates shuffle — returns a new shuffled copy
+function shuffleArray<T>(arr: T[]): T[] {
+   const shuffled = [...arr];
+   for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+   }
+   return shuffled;
+}
+
 const TriviaPage: React.FC = () => {
    // Game configuration state
    const [selectedCategory, setSelectedCategory] = useState<TriviaCategory>('all');
@@ -68,6 +78,14 @@ const TriviaPage: React.FC = () => {
 
    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+   const currentQuestion = questions[currentIndex];
+
+   // Shuffle options randomly per question so the correct answer isn't always the same letter
+   const shuffledOptions = useMemo(() => {
+      if (!currentQuestion) return [];
+      return shuffleArray(currentQuestion.options);
+   }, [currentQuestion?.id ?? currentIndex, currentIndex]);
+
    // Keyboard listeners
    useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -78,23 +96,22 @@ const TriviaPage: React.FC = () => {
                e.preventDefault();
                handleNextQuestion();
             }
-         } else if (questions[currentIndex]) {
-            const currentQ = questions[currentIndex];
+         } else if (shuffledOptions.length > 0) {
             if (e.key === '1' || e.key.toLowerCase() === 'a') {
-               if (currentQ.options[0]) handleSelectOption(currentQ.options[0]);
+               if (shuffledOptions[0]) handleSelectOption(shuffledOptions[0]);
             } else if (e.key === '2' || e.key.toLowerCase() === 'b') {
-               if (currentQ.options[1]) handleSelectOption(currentQ.options[1]);
+               if (shuffledOptions[1]) handleSelectOption(shuffledOptions[1]);
             } else if (e.key === '3' || e.key.toLowerCase() === 'c') {
-               if (currentQ.options[2]) handleSelectOption(currentQ.options[2]);
+               if (shuffledOptions[2]) handleSelectOption(shuffledOptions[2]);
             } else if (e.key === '4' || e.key.toLowerCase() === 'd') {
-               if (currentQ.options[3]) handleSelectOption(currentQ.options[3]);
+               if (shuffledOptions[3]) handleSelectOption(shuffledOptions[3]);
             }
          }
       };
 
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-   }, [gameState, isAnswerSubmitted, currentIndex, questions]);
+   }, [gameState, isAnswerSubmitted, currentIndex, questions, shuffledOptions]);
 
    // Timer countdown during questions
    useEffect(() => {
@@ -243,8 +260,6 @@ const TriviaPage: React.FC = () => {
          setGameState('finished');
       }
    };
-
-   const currentQuestion = questions[currentIndex];
 
    // Driver Tier Assessment based on accuracy
    const getPerformanceRank = () => {
@@ -585,7 +600,7 @@ const TriviaPage: React.FC = () => {
 
                   {/* 4 Large Option Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-2">
-                     {currentQuestion.options.map((opt, idx) => {
+                     {shuffledOptions.map((opt, idx) => {
                         const letter = ['A', 'B', 'C', 'D'][idx] || `${idx + 1}`;
                         const isSelected = selectedAnswer === opt;
                         const isCorrect = opt === currentQuestion.correct_answer;

@@ -49,7 +49,7 @@ const OvertakePointMarker: React.FC<{
 const TooltipPanel: React.FC<{ tooltip: Tooltip }> = ({ tooltip }) => {
    if (!tooltip) return null;
    return (
-      <div className="pointer-events-none absolute left-3 top-14 z-30 w-64 rounded-xl border border-white/20 bg-[#15151e]/95 p-3 shadow-2xl backdrop-blur-xl animate-fade-in">
+      <div className="pointer-events-none absolute left-4 top-20 sm:top-24 z-30 w-64 rounded-xl border border-white/20 bg-[#15151e]/95 p-3 shadow-2xl backdrop-blur-xl animate-fade-in">
          <p className="text-xs font-bold text-white uppercase tracking-wider">{tooltip.title}</p>
          <div className="mt-2 space-y-1">
             {tooltip.rows.map(([label, value]) => (
@@ -90,8 +90,9 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
    const [computedViewBox, setComputedViewBox] = useState<string>(circuit.viewBox || '0 0 500 500');
    const pathRef = React.useRef<SVGPathElement | null>(null);
 
-   // Circuit Facts State
+   // Circuit Facts State & Auto-Rotation
    const [factIndex, setFactIndex] = useState<number>(0);
+   const [isFactHovered, setIsFactHovered] = useState<boolean>(false);
 
    const circuitFacts = useMemo(() => {
       return (
@@ -111,6 +112,17 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
    useEffect(() => {
       setFactIndex(0);
    }, [circuit.id]);
+
+   // Auto-rotate facts every 7.5 seconds (paused when user hovers to read)
+   useEffect(() => {
+      if (circuitFacts.length <= 1 || isFactHovered) return;
+
+      const interval = setInterval(() => {
+         setFactIndex((prev) => (prev + 1) % circuitFacts.length);
+      }, 7500);
+
+      return () => clearInterval(interval);
+   }, [circuitFacts.length, isFactHovered, circuit.id]);
 
    // Dynamically calculate tight bounding box to maximize every circuit's size
    useEffect(() => {
@@ -194,7 +206,6 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
             rows: [
                ['Length', `${sector.lengthKm} km`],
                ['Avg speed', `${sector.averageSpeedKmh} km/h`],
-               ['Fastest holder', sector.fastestSectorHolder],
             ],
          }
       );
@@ -424,25 +435,57 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                </div>
             </div>
 
-            {/* Card 2 (Bottom 50%): Circuit Facts & Lore (100% Focused) */}
-            <div className="rounded-2xl border border-white/10 bg-[#1e1e2e]/95 p-4 shadow-2xl backdrop-blur-xl flex-1 min-h-0 flex flex-col justify-between overflow-hidden relative">
-               {/* Card Header & Shuffle Button */}
+            {/* Card 2 (Bottom 50%): Circuit Facts & Lore (Auto-Rotating) */}
+            <div
+               onMouseEnter={() => setIsFactHovered(true)}
+               onMouseLeave={() => setIsFactHovered(false)}
+               className="rounded-2xl border border-white/10 bg-[#1e1e2e]/95 p-4 shadow-2xl backdrop-blur-xl flex-1 min-h-0 flex flex-col justify-between overflow-hidden relative group"
+            >
+               {/* Animated Auto-Rotation Progress Bar */}
+               {!isFactHovered && circuitFacts.length > 1 && (
+                  <motion.div
+                     key={`progress-${factIndex}`}
+                     initial={{ width: '0%' }}
+                     animate={{ width: '100%' }}
+                     transition={{ duration: 7.5, ease: 'linear' }}
+                     className="absolute top-0 left-0 h-0.5 bg-gradient-to-r from-f1-red via-amber-500 to-f1-red opacity-60 shadow-sm"
+                  />
+               )}
+
+               {/* Card Header & Controls */}
                <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2 flex-shrink-0">
                   <div className="flex items-center gap-1.5 text-white font-bold text-xs">
-                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                     <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
                      <span>Circuit Lore & Trivia</span>
                   </div>
 
-                  {circuitFacts.length > 1 && (
-                     <button
-                        onClick={handleNextFact}
-                        className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 transition-all flex items-center gap-1 text-[10px] font-bold"
-                        title="Roll next random fact"
-                     >
-                        <Shuffle className="w-3 h-3 text-amber-400" />
-                        <span>Next Fact</span>
-                     </button>
-                  )}
+                  {/* Fact Dots & Manual Next Button */}
+                  <div className="flex items-center gap-1.5">
+                     <div className="flex items-center gap-1 mr-1">
+                        {circuitFacts.map((_, idx) => (
+                           <button
+                              key={idx}
+                              onClick={() => setFactIndex(idx)}
+                              className={`h-1.5 rounded-full transition-all duration-300 ${(factIndex % circuitFacts.length) === idx
+                                    ? 'w-4 bg-f1-red shadow-sm'
+                                    : 'w-1.5 bg-white/20 hover:bg-white/40'
+                                 }`}
+                              title={`Jump to fact ${idx + 1}`}
+                           />
+                        ))}
+                     </div>
+
+                     {circuitFacts.length > 1 && (
+                        <button
+                           onClick={handleNextFact}
+                           className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 transition-all flex items-center gap-1 text-[10px] font-bold"
+                           title="Roll next random fact"
+                        >
+                           <Shuffle className="w-3 h-3 text-amber-400" />
+                           <span>Next</span>
+                        </button>
+                     )}
+                  </div>
                </div>
 
                {/* Card Body with Animated Fact */}
@@ -453,7 +496,7 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.25 }}
                         className="flex-1 flex flex-col justify-between min-h-0 overflow-hidden"
                      >
                         <div>
@@ -465,7 +508,7 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                                  {currentFact.tag}
                               </span>
                               <span className="text-[10px] text-white/40 font-mono">
-                                 Fact {(factIndex % circuitFacts.length) + 1} / {circuitFacts.length}
+                                 {isFactHovered ? 'Paused' : `Auto-cycling`} ({(factIndex % circuitFacts.length) + 1}/{circuitFacts.length})
                               </span>
                            </div>
 
