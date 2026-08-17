@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useReplay } from '../../context/ReplayContext';
 import { Flag, ShieldAlert, Radio, AlertTriangle, Play, Pause, HelpCircle } from 'lucide-react';
 import type { CircuitData } from '../../data/circuits';
+import type { OpenF1Lap } from '../../services/telemetryService';
 
 interface ReplayFeedsProps {
    activeTab: 'standings' | 'feeds' | 'radio';
@@ -59,6 +60,45 @@ const getLapProgressFromTrackPercent = (
    return (startPercent >= percent ? startPercent - percent : startPercent + 100 - percent) / 100;
 };
 
+const getTimeAtDistance = (
+   driverNumber: number,
+   laps: OpenF1Lap[],
+   targetDistance: number
+): number | null => {
+   if (targetDistance < 0) return null;
+
+   const lapNumber = Math.floor(targetDistance) + 1;
+   const fraction = targetDistance - Math.floor(targetDistance);
+
+   const lap = laps.find(
+      (l) => l.driver_number === driverNumber && l.lap_number === lapNumber && l.date_start
+   );
+   if (!lap?.date_start) return null;
+
+   const lapStartMs = new Date(lap.date_start).getTime();
+   if (!Number.isFinite(lapStartMs)) return null;
+   if (fraction <= 0) return lapStartMs;
+
+   const nextLap = laps.find(
+      (l) => l.driver_number === driverNumber && l.lap_number === lapNumber + 1 && l.date_start
+   );
+
+   let lapDurationMs: number | null = null;
+   if (nextLap?.date_start) {
+      const nextStartMs = new Date(nextLap.date_start).getTime();
+      if (Number.isFinite(nextStartMs)) lapDurationMs = nextStartMs - lapStartMs;
+   }
+   if (lapDurationMs === null && lap.lap_duration && lap.lap_duration > 0) {
+      lapDurationMs = lap.lap_duration * 1000;
+   }
+   if (lapDurationMs === null) return lapStartMs;
+
+   return lapStartMs + fraction * lapDurationMs;
+};
+
+const formatGap = (gapSeconds: number): string =>
+   `+${gapSeconds < 10 ? gapSeconds.toFixed(3) : gapSeconds.toFixed(1)}s`;
+
 export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) => {
    const {
       drivers,
@@ -83,13 +123,9 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
       return map;
    }, [laps]);
 
-   const SAFETY_CAR_PATTERN = /SAFETY CAR/i;
-
-   const liveStandings = useMemo(() => {
-      if (!currentTime) return [];
-      const nowMs = currentTime.getTime();
-
-      return drivers
+   // Builds the full ranked list (position, tyre, pit/finished flags, gaps) as of `nowMs`.
+   const computeRanked = useCallback((nowMs: number) => {
+      const ranked = drivers
          .map((drv) => {
             const driverLaps = laps.filter(
                (l) =>
@@ -160,8 +196,8 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
                .filter((s) => s.lap_start <= lapsCompleted)
                .pop() ?? driverStints[0];
 
-            const isOut = isDriverOutAt(drv.driver_number, currentTime);
-            const isPitting = !isOut && isDriverPittingAt(drv.driver_number, currentTime);
+            const isOut = isDriverOutAt(drv.driver_number, new Date(nowMs));
+            const isPitting = !isOut && isDriverPittingAt(drv.driver_number, new Date(nowMs));
 
             const completedLapsOnly = driverLaps.filter(
                (l) => l.lap_duration && l.lap_duration > 0
@@ -193,7 +229,70 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
             if (b.raceDistance !== a.raceDistance) return b.raceDistance - a.raceDistance;
             return a.activeLapStartMs - b.activeLapStartMs;
          });
-   }, [drivers, laps, stints, pits, currentTime, isDriverOutAt, isDriverPittingAt, totalLapsByDriver, circuit]);
+
+      let lastRunningIndex = -1;
+      return ranked.map((drv, idx) => {
+         if (drv.isOut) {
+            return { ...drv, gapLabel: 'DNF' };
+         }
+
+         if (lastRunningIndex === -1) {
+            lastRunningIndex = idx;
+            return { ...drv, gapLabel: 'Leader' };
+         }
+
+         const ahead = ranked[lastRunningIndex];
+         lastRunningIndex = idx;
+
+         const lapDiff = Math.floor(ahead.raceDistance) - Math.floor(drv.raceDistance);
+         if (lapDiff >= 1) {
+            return { ...drv, gapLabel: `+${lapDiff} LAP${lapDiff > 1 ? 'S' : ''}` };
+         }
+
+         const aheadTimeAtDistance = getTimeAtDistance(ahead.driver_number, laps, drv.raceDistance);
+         if (aheadTimeAtDistance === null) {
+            return { ...drv, gapLabel: '' };
+         }
+
+         const gapSeconds = (nowMs - aheadTimeAtDistance) / 1000;
+         return { ...drv, gapLabel: gapSeconds >= 0 ? formatGap(gapSeconds) : '' };
+      });
+   }, [drivers, laps, stints, pits, isDriverOutAt, isDriverPittingAt, totalLapsByDriver, circuit]);
+
+   // Real-time ranking: drives position order, tyre badges, PIT/DNF flags, lap counters.
+   const rankedRealtime = useMemo(() => {
+      if (!currentTime) return [];
+      return computeRanked(currentTime.getTime());
+   }, [currentTime, computeRanked]);
+
+   // Gap labels are only recomputed at most every 1.5s so the number doesn't jitter every tick.
+   const [gapCalcTime, setGapCalcTime] = useState<Date | null>(null);
+   const lastGapUpdateRef = useRef<number>(0);
+
+   useEffect(() => {
+      if (!currentTime) return;
+      const nowMs = currentTime.getTime();
+      // abs() so scrubbing/jumping backwards also forces an immediate refresh instead of
+      // waiting for forward playback to close a 1.5s gap that may never come while paused.
+      if (Math.abs(nowMs - lastGapUpdateRef.current) >= 1500) {
+         lastGapUpdateRef.current = nowMs;
+         setGapCalcTime(currentTime);
+      }
+   }, [currentTime]);
+
+   const rankedForGaps = useMemo(() => {
+      if (!gapCalcTime) return [];
+      return computeRanked(gapCalcTime.getTime());
+   }, [gapCalcTime, computeRanked]);
+
+   // Merge: real-time position/tyre/pit data + throttled gap labels.
+   const liveStandings = useMemo(() => {
+      const gapMap = new Map(rankedForGaps.map((d) => [d.driver_number, d.gapLabel]));
+      return rankedRealtime.map((d) => ({
+         ...d,
+         gapLabel: gapMap.get(d.driver_number) ?? d.gapLabel,
+      }));
+   }, [rankedRealtime, rankedForGaps]);
 
    const [playingUrl, setPlayingUrl] = useState<string | null>(null);
    const [playbackProgress, setPlaybackProgress] = useState(0);
@@ -289,6 +388,9 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
                               </span>
                            )}
                            <span className="text-[10px] text-f1-silver font-mono">L{drv.lapsCompleted}</span>
+                           <span className="text-[10px] text-f1-silver font-mono w-14 text-right shrink-0">
+                              {drv.gapLabel}
+                           </span>
                            {/* Tyre badge */}
                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${drv.tyre === 'DNF'
                               ? 'bg-red-500/25 text-red-500'
