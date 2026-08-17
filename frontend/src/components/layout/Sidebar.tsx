@@ -47,7 +47,7 @@ const navItems: NavItem[] = [
          { path: '/compare/constructors', label: 'Constructors' },
       ]
    },
-   { path: '/predictor', label: 'Predictor', icon: Wand2 },
+   // { path: '/predictor', label: 'Predictor', icon: Wand2 },
 ];
 
 const Sidebar: React.FC = () => {

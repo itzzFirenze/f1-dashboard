@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import EasterEggPlayer from '../ui/EasterEggPlayer';
 
 const Layout: React.FC = () => {
    return (
@@ -12,6 +13,9 @@ const Layout: React.FC = () => {
                   <Outlet />
                </div>
             </main>
+            {/* Easter Egg Audio Player */}
+            <EasterEggPlayer />
+
             {/* Footer */}
             <footer className="border-t border-white/5 mt-auto">
                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
