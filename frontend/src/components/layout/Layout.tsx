@@ -18,7 +18,7 @@ const Layout: React.FC = () => {
 
             {/* Footer */}
             <footer className="border-t border-white/5 mt-auto">
-               <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+               <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                      <p className="text-f1-silver text-sm">
                         © 2026 F1 Dashboard — Premium Analytics Platform
