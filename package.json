@@ -3,15 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build:frontend": "cd frontend && npm install && npm run build",
-    "build:backend": "cd backend && mvn clean package -DskipTests",
-    "electron-dev": "cd electron && npm install && npm start",
-    "electron-build": "npm run build:frontend && npm run build:backend && cd electron && npm install && npm run build",
-    "package": "npm run electron-build",
-    "make-installer": "npm run electron-build",
     "frontend": "cd frontend && npm run dev",
     "backend": "cd backend && mvn spring-boot:run",
-    "dev": "concurrently \"npm run frontend\" \"npm run backend\""
+    "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "build:backend": "cd backend && mvn clean package -DskipTests",
+    "build": "npm run build:frontend && npm run build:backend"
   },
   "devDependencies": {
     "concurrently": "^10.0.4"
