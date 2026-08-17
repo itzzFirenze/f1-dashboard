@@ -20,7 +20,7 @@ export interface PitLane {
    entryPercent: number;
    exitPercent: number;
    speedLimitKmh: number;
-   offsetPx: number;   // how far right of the racing line the pit lane sits
+   offsetPx: number;
    notes: string;
 }
 

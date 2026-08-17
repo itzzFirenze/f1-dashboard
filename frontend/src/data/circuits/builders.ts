@@ -251,7 +251,7 @@ export const buildCircuit = (
 
    const overtakeMode: OvertakeMode = {
       detectionPointPercent: definition.overtakeDetectionPercent,
-      activationPointPercent: definition.overtakeActivationPercent ?? definition.overtakeDetectionPercent, // Fallback
+      activationPointPercent: definition.overtakeActivationPercent ?? definition.overtakeDetectionPercent,
       notes: '2026 Overtake Mode detection and activation points.',
    };
 

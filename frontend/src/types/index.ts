@@ -1,7 +1,3 @@
-// ============================================
-// F1 Dashboard — TypeScript Type Definitions
-// ============================================
-
 /** Standardized API response wrapper */
 export interface ApiResponse<T> {
    success: boolean;

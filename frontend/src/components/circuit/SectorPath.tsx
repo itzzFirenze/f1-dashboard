@@ -20,9 +20,6 @@ const SectorPath: React.FC<SectorPathProps> = ({ path, pathId, sector, active, o
    const totalLength = usePathLength(pathId);
    if (!totalLength) return null;
 
-   // When the sector's numbering runs "backwards" relative to the SVG's own
-   // path direction, the true forward-arc start is the sector's endPercent,
-   // not its startPercent.
    const arcStartPercent = sector.isReversed ? sector.endPercent : sector.startPercent;
 
    const onLen = (sector.lengthPercent / 100) * totalLength;

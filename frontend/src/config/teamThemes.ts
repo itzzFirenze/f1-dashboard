@@ -1,18 +1,9 @@
-// ============================================================
-// F1 Dashboard — Team Themes Configuration
-// Controls hero background gradients, images & brand colors
-// ============================================================
-
 export interface TeamTheme {
-   /** Primary team color */
    primary: string;
-   /** Dark left color for hero background gradient */
    bgFrom: string;
-   /** Vivid right color for hero background gradient */
    bgTo: string;
    carImageUrl: string;
    teamLogoUrl: string;
-   /** driver slug → Supabase image URL */
    driverImages: Record<string, string>;
 }
 

@@ -14,22 +14,23 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Sync", description = "Manual data synchronization endpoints")
 public class SyncController {
 
-    private final DataSyncService dataSyncService;
+   private final DataSyncService dataSyncService;
 
-    @PostMapping
-    @Operation(summary = "Manually trigger 2026 season data sync", description = "Fetches latest driver standings, constructor standings, and race results from external APIs.")
-    public ResponseEntity<ApiResponse<String>> triggerSync() {
-        try {
-            dataSyncService.syncRaceCalendar();
-            dataSyncService.syncDriverStandings();
-            dataSyncService.syncConstructorStandings();
-            dataSyncService.syncRaceResults();
-            dataSyncService.syncSprintResults();
-            dataSyncService.syncQualifyingResults();
-            dataSyncService.updateRaceStatusesByDate();
-            return ResponseEntity.ok(ApiResponse.success("Synchronization successful! Live 2026 standings, calendar, and results updated."));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(ApiResponse.error("Failed to sync data: " + e.getMessage()));
-        }
-    }
+   @PostMapping
+   @Operation(summary = "Manually trigger 2026 season data sync", description = "Fetches latest driver standings, constructor standings, and race results from external APIs.")
+   public ResponseEntity<ApiResponse<String>> triggerSync() {
+      try {
+         dataSyncService.syncRaceCalendar();
+         dataSyncService.syncDriverStandings();
+         dataSyncService.syncConstructorStandings();
+         dataSyncService.syncRaceResults();
+         dataSyncService.syncSprintResults();
+         dataSyncService.syncQualifyingResults();
+         dataSyncService.updateRaceStatusesByDate();
+         return ResponseEntity.ok(
+               ApiResponse.success("Synchronization successful! Live 2026 standings, calendar, and results updated."));
+      } catch (Exception e) {
+         return ResponseEntity.status(500).body(ApiResponse.error("Failed to sync data: " + e.getMessage()));
+      }
+   }
 }

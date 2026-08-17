@@ -127,8 +127,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       return new Date(activeSession.date_end);
    }, [activeSession]);
 
-   // Earliest known start time for each lap number, used to figure out when a
-   // lap referenced by a race-control message ("...IN THIS LAP") actually ends.
    const lapStartTimes = useMemo(() => {
       const map: Record<number, number> = {};
       for (const l of laps) {
@@ -145,9 +143,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
    const SAFETY_CAR_PATTERN = /(VIRTUAL )?SAFETY CAR/i;
    const SAFETY_CAR_END_PATTERN = /(IN THIS LAP|ENDING|WILL END|TRACK CLEAR)/i;
 
-   // Builds [deploy -> end] windows so we can tell whether the SC/VSC was on
-   // track at any given replay time, not just whether a single message
-   // happens to mention it.
    const safetyCarPeriods = useMemo(() => {
       const events = raceControl
          .filter((msg) => msg.message && SAFETY_CAR_PATTERN.test(msg.message))
@@ -173,10 +168,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
             openStart = e.date;
             openIsVirtual = e.isVirtual;
          } else if (e.isEnd && openStart !== null) {
-            // "ending this lap" means the SC is still out for the rest of the lap
-            // it's called on — extend the window to the start of the next lap
-            // rather than cutting it off at the message's own timestamp. If we
-            // don't yet know when the next lap starts, keep it open until we do.
             const nextLapStart = lapStartTimes[e.lapNumber + 1];
             const periodEnd = nextLapStart !== undefined ? nextLapStart : Infinity;
             periods.push({ start: openStart, end: periodEnd, isVirtual: openIsVirtual });
@@ -372,8 +363,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       [laps, retiredAtByDriver, stalledSinceByDriver, lastLapInfoByDriver, latestLapEndAcrossField],
    );
 
-   // OpenF1 pit records include the pit-lane transit duration. Keep the replay
-   // status window to that duration so it does not outlast the lane movement.
    const DEFAULT_PIT_BOX_SEC = 25;
 
    const getPitWindow = useCallback(
@@ -497,8 +486,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
          const loadedLaps = await telemetryService.getLaps(session.session_key);
          setLaps(loadedLaps);
 
-         // A session with no drivers AND no laps has no real timing data —
-         // treat it as cancelled rather than rendering an empty replay.
          if (loadedDrivers.length === 0 && loadedLaps.length === 0) {
             setCancelledSessions((prev) => new Set(prev).add(session.session_key));
          } else {
@@ -689,10 +676,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
          }
       }
 
-      // Nothing at-or-before timeMs in this chunk (e.g. we just crossed a
-      // chunk boundary and the new chunk's first real frame is still ahead of
-      // us) — fall back to the tail of the previous chunk instead of going
-      // stale until this chunk catches up.
       if (!best && fallbackLocations) {
          for (const location of fallbackLocations) {
             if (location.driver_number !== driverNumber) continue;
@@ -737,8 +720,8 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       return best;
    };
 
-   const STALL_POSITION_EPSILON = 10; // OpenF1 location units treated as "not moving"
-   const STALL_CONFIRM_MS = 12_000; // must sit still this long to count as stopped
+   const STALL_POSITION_EPSILON = 10;
+   const STALL_CONFIRM_MS = 12_000;
 
    function findStallStart(
       points: OpenF1Location[],
@@ -842,8 +825,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       [sessionStart],
    );
 
-   // Fetches whatever chunks are missing for the given time. This is the
-   // expensive part and stays throttled to real wall-clock time.
    const ensureChunksLoaded = useCallback(
       async (time: Date) => {
          if (!sessionStart || !activeSession) return;
@@ -910,8 +891,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
             return changed ? next : previous;
          });
 
-         // Refresh the display against wherever playback actually is now
-         // (it may have moved on while this fetch was in flight).
          applyCachedFrames(currentTimeRef.current ?? time);
       },
       [
@@ -977,8 +956,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       applyCachedFrames(currentTime);
    }, [currentTime, applyCachedFrames]);
 
-   // Fetch trigger while playing — throttled to real time, since this is the
-   // costly network-bound part.
+   // Fetch trigger while playing — throttled to real time
    useEffect(() => {
       if (!isPlaying || !currentTime) return;
 
@@ -1116,7 +1094,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
             next = [...previous, driverNumber];
          }
 
-         // Update synchronously instead of waiting for useEffect.
          selectedDriversRef.current = next;
          return next;
       });

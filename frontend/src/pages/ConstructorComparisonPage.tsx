@@ -40,7 +40,6 @@ const ConstructorComparisonPage: React.FC = () => {
       setTeamB(temp);
    };
 
-   // Stacked bar chart data: per-round driver contributions
    const stackedBarData = useMemo(() => {
       if (!data) return [];
       return data.rounds

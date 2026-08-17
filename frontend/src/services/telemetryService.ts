@@ -79,8 +79,6 @@ const getCarData = async (
          url += `&date<${encodeURIComponent(endDate)}`;
       }
 
-
-
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -142,12 +140,11 @@ export interface OpenF1TeamRadio {
    recording_url: string;
 }
 
-// --- simple serialized request queue with spacing, to avoid OpenF1 429s ---
 let queueTail: Promise<void> = Promise.resolve();
 const MIN_GAP_MS = 250;
 
 function enqueue<T>(fn: () => Promise<T>): Promise<T> {
-   const run = queueTail.then(fn, fn); // run after previous settles, regardless of its outcome
+   const run = queueTail.then(fn, fn);
    queueTail = run.then(
       () => new Promise<void>((res) => setTimeout(res, MIN_GAP_MS)),
       () => new Promise<void>((res) => setTimeout(res, MIN_GAP_MS))
@@ -156,7 +153,6 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 export const telemetryService = {
-
 
    getSessions: async (year: number, location?: string): Promise<OpenF1Session[]> => {
       const params: Record<string, string | number> = { year, session_name: 'Race' };

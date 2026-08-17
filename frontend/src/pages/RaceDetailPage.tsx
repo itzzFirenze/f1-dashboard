@@ -19,7 +19,6 @@ const RaceDetailPage: React.FC = () => {
          raceService.getById(Number(id))
             .then((data) => {
                setRace(data);
-               // Auto-select a tab that has data
                if (data.results.length > 0) setActiveTab('race');
                else if (data.qualifyingResults.length > 0) setActiveTab('qualifying');
                else if (data.sprintResults.length > 0) setActiveTab('sprint');

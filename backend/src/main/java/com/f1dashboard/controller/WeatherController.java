@@ -15,19 +15,19 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Weather", description = "Race weather data")
 public class WeatherController {
 
-    private final WeatherService weatherService;
+   private final WeatherService weatherService;
 
-    @GetMapping("/race/{raceId}")
-    @Operation(summary = "Get weather for a race weekend")
-    public ResponseEntity<ApiResponse<WeatherDto>> getWeatherForRace(@PathVariable Long raceId) {
-        WeatherDto weather = weatherService.getWeatherForRace(raceId);
-        return ResponseEntity.ok(ApiResponse.success(weather));
-    }
+   @GetMapping("/race/{raceId}")
+   @Operation(summary = "Get weather for a race weekend")
+   public ResponseEntity<ApiResponse<WeatherDto>> getWeatherForRace(@PathVariable Long raceId) {
+      WeatherDto weather = weatherService.getWeatherForRace(raceId);
+      return ResponseEntity.ok(ApiResponse.success(weather));
+   }
 
-    @GetMapping("/forecasts")
-    @Operation(summary = "Get weekend forecast for upcoming races")
-    public ResponseEntity<ApiResponse<java.util.List<com.f1dashboard.dto.WeekendWeatherDto>>> getUpcomingForecasts(
-            @RequestParam(defaultValue = "2026") Integer season) {
-        return ResponseEntity.ok(ApiResponse.success(weatherService.getUpcomingWeekendForecasts(season)));
-    }
+   @GetMapping("/forecasts")
+   @Operation(summary = "Get weekend forecast for upcoming races")
+   public ResponseEntity<ApiResponse<java.util.List<com.f1dashboard.dto.WeekendWeatherDto>>> getUpcomingForecasts(
+         @RequestParam(defaultValue = "2026") Integer season) {
+      return ResponseEntity.ok(ApiResponse.success(weatherService.getUpcomingWeekendForecasts(season)));
+   }
 }

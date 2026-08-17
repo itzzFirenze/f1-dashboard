@@ -2,9 +2,6 @@ package com.f1dashboard.dto;
 
 import java.util.List;
 
-/**
- * Response payload echoing the updated circuit position data.
- */
 public record CircuitPositionsResponse(
       String circuitId,
       List<Double> cornerPositions,

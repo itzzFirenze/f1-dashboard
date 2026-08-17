@@ -7,7 +7,7 @@ import { dashboardService } from '../services/dashboardService';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import WeatherCard from '../components/ui/WeatherCard';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
-import { resolveTheme, getDriverImage } from '../config/teamThemes'; // adjust path to wherever teamThemes.ts lives
+import { resolveTheme, getDriverImage } from '../config/teamThemes';
 import type { DashboardData } from '../types';
 
 const DashboardPage: React.FC = () => {
@@ -26,7 +26,6 @@ const DashboardPage: React.FC = () => {
    if (loading) return <PageSkeleton />;
    if (!data) return null;
 
-   // Resolve themes once data is available
    const driverTheme = data.driverChampionshipLeader
       ? resolveTheme(data.driverChampionshipLeader.constructorName)
       : null;

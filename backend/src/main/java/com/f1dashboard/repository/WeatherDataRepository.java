@@ -9,6 +9,5 @@ import java.util.Optional;
 @Repository
 public interface WeatherDataRepository extends JpaRepository<WeatherData, Long> {
 
-    /** Find weather data for a specific race */
-    Optional<WeatherData> findByRaceId(Long raceId);
+   Optional<WeatherData> findByRaceId(Long raceId);
 }

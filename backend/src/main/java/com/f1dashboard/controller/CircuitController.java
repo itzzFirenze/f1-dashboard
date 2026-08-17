@@ -17,21 +17,21 @@ import java.util.List;
 @Tag(name = "Circuits", description = "Circuit database and details")
 public class CircuitController {
 
-    private final CircuitService circuitService;
+   private final CircuitService circuitService;
 
-    @GetMapping
-    @Operation(summary = "Get all circuits", description = "Supports search via ?search= query param")
-    public ResponseEntity<ApiResponse<List<CircuitDto>>> getAllCircuits(
-            @RequestParam(required = false) String search) {
-        List<CircuitDto> circuits = (search != null && !search.isBlank())
-                ? circuitService.searchCircuits(search)
-                : circuitService.getAllCircuits();
-        return ResponseEntity.ok(ApiResponse.success(circuits));
-    }
+   @GetMapping
+   @Operation(summary = "Get all circuits", description = "Supports search via ?search= query param")
+   public ResponseEntity<ApiResponse<List<CircuitDto>>> getAllCircuits(
+         @RequestParam(required = false) String search) {
+      List<CircuitDto> circuits = (search != null && !search.isBlank())
+            ? circuitService.searchCircuits(search)
+            : circuitService.getAllCircuits();
+      return ResponseEntity.ok(ApiResponse.success(circuits));
+   }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get circuit details")
-    public ResponseEntity<ApiResponse<CircuitDto>> getCircuitById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(circuitService.getCircuitById(id)));
-    }
+   @GetMapping("/{id}")
+   @Operation(summary = "Get circuit details")
+   public ResponseEntity<ApiResponse<CircuitDto>> getCircuitById(@PathVariable Long id) {
+      return ResponseEntity.ok(ApiResponse.success(circuitService.getCircuitById(id)));
+   }
 }

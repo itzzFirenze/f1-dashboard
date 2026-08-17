@@ -12,24 +12,19 @@ import java.util.List;
 @Repository
 public interface RaceRepository extends JpaRepository<Race, Long> {
 
-    /** Find all races in a season ordered by round */
-    List<Race> findBySeasonOrderByRoundAsc(Integer season);
+   List<Race> findBySeasonOrderByRoundAsc(Integer season);
 
-    /** Find races by status */
-    List<Race> findBySeasonAndStatusOrderByRoundAsc(Integer season, RaceStatus status);
+   List<Race> findBySeasonAndStatusOrderByRoundAsc(Integer season, RaceStatus status);
 
-    /** Find the next upcoming race (date-based: first race on or after today) */
-    @Query("SELECT r FROM Race r WHERE r.raceDate >= CURRENT_DATE ORDER BY r.raceDate ASC LIMIT 1")
-    Race findNextUpcomingRace();
+   @Query("SELECT r FROM Race r WHERE r.raceDate >= CURRENT_DATE ORDER BY r.raceDate ASC LIMIT 1")
+   Race findNextUpcomingRace();
 
-    /** Count completed races in a season */
-    long countBySeasonAndStatus(Integer season, RaceStatus status);
+   long countBySeasonAndStatus(Integer season, RaceStatus status);
 
-    /** Search races by name or country */
-    @Query("SELECT r FROM Race r JOIN r.circuit c WHERE r.season = :season AND (" +
-           "LOWER(r.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(c.country) LIKE LOWER(CONCAT('%', :query, '%')))")
-    List<Race> searchRaces(@Param("season") Integer season, @Param("query") String query);
-    /** Find a specific race by season and round */
-    java.util.Optional<Race> findBySeasonAndRound(Integer season, Integer round);
+   @Query("SELECT r FROM Race r JOIN r.circuit c WHERE r.season = :season AND (" +
+         "LOWER(r.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+         "LOWER(c.country) LIKE LOWER(CONCAT('%', :query, '%')))")
+   List<Race> searchRaces(@Param("season") Integer season, @Param("query") String query);
+
+   java.util.Optional<Race> findBySeasonAndRound(Integer season, Integer round);
 }

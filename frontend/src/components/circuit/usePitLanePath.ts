@@ -26,7 +26,6 @@ export function usePitLanePath(
       const track: PitLanePt[] = [];
 
       if (!isReversed) {
-         // Direction of travel is increasing percent
          const forward = exitPercent >= entryPercent ? exitPercent - entryPercent : exitPercent + 100 - entryPercent;
          for (let i = 0; i <= SAMPLES; i++) {
             const pct = (entryPercent + (forward * i) / SAMPLES) % 100;
@@ -34,7 +33,6 @@ export function usePitLanePath(
             track.push({ x: pt.x, y: pt.y });
          }
       } else {
-         // Direction of travel is decreasing percent
          const backward = entryPercent >= exitPercent ? entryPercent - exitPercent : entryPercent + 100 - exitPercent;
          for (let i = 0; i <= SAMPLES; i++) {
             let pct = entryPercent - (backward * i) / SAMPLES;

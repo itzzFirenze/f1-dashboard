@@ -2,9 +2,6 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 
-/**
- * Main layout wrapper with sidebar and scrollable content.
- */
 const Layout: React.FC = () => {
    return (
       <div className="min-h-screen bg-f1-black flex">

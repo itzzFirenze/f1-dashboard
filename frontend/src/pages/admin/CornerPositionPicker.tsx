@@ -18,7 +18,6 @@ import { circuitService, type CircuitPositionsPayload } from '../../services/cir
 type SamplePoint = { x: number; y: number; percent: number };
 type CircuitPathKey = keyof typeof circuitSvgPaths;
 type PickerMode = 'corners' | 'sectors' | 'activeAero' | 'overtake' | 'speedTrap' | 'pitLane';
-
 type CircuitOption = { id: string; name: string; pathKey: CircuitPathKey };
 
 // ── SVG key ↔ circuit ID mapping ───────────────────────────────────────────
@@ -72,6 +71,7 @@ export default function CornerPositionPicker() {
    const [sector2, setSector2] = useState<number | null>(null);
    const [sector3, setSector3] = useState<number | null>(null);
 
+   // Pit Lane
    const [pitEntry, setPitEntry] = useState<number | null>(null); const [pitExit, setPitExit] = useState<number | null>(null);
 
    // Active Aero
@@ -102,8 +102,6 @@ export default function CornerPositionPicker() {
    const selectedCircuit = circuits.find((c) => c.id === circuitId);
    const currentPathKey = selectedCircuit ? CIRCUIT_ID_TO_SVG_KEY[selectedCircuit.id] : null;
    const currentD = currentPathKey ? circuitSvgPaths[currentPathKey] : '';
-
-   // ── Initialize state from circuit data ──────────────────────────────────
 
    useEffect(() => {
       const c = selectedCircuit;
@@ -145,8 +143,6 @@ export default function CornerPositionPicker() {
       return () => cancelAnimationFrame(raf);
    }, [circuitId, currentD, selectedCircuit]);
 
-   // ── SVG helpers ─────────────────────────────────────────────────────────
-
    const nearestOnPath = useCallback((x: number, y: number): SamplePoint | null => {
       let best: SamplePoint | null = null;
       let bestD = Infinity;
@@ -174,8 +170,6 @@ export default function CornerPositionPicker() {
       if (!path || !totalLength) return { x: 0, y: 0 };
       return path.getPointAtLength((pct / 100) * totalLength);
    };
-
-   // ── Mouse handlers ──────────────────────────────────────────────────────
 
    const handleMouseMove = (evt: ReactMouseEvent<SVGSVGElement>): void => {
       if (!totalLength) return;
@@ -234,8 +228,6 @@ export default function CornerPositionPicker() {
       }
    };
 
-   // ── Corner helpers ──────────────────────────────────────────────────────
-
    const undo = (): void => { setPoints((p) => p.slice(0, -1)); setSaveMessage(''); };
    const clearCorners = (): void => { setPoints([]); setSaveMessage(''); };
    const removeAt = (i: number): void => { setPoints((p) => p.filter((_, j) => j !== i)); setSaveMessage(''); };
@@ -245,8 +237,6 @@ export default function CornerPositionPicker() {
       setPoints((p) => p.map((x, j) => (j === i ? Math.min(100, Math.max(0, n)) : x)));
       setSaveMessage('');
    };
-
-   // ── Save ────────────────────────────────────────────────────────────────
 
    const saveAll = async (): Promise<void> => {
       if (!circuitId) return;
@@ -277,8 +267,6 @@ export default function CornerPositionPicker() {
       } finally { setIsSaving(false); }
    };
 
-   // ── Copy ────────────────────────────────────────────────────────────────
-
    const outputText = JSON.stringify({
       cornerPositions: points,
       sector1StartPercent: sector1, sector2StartPercent: sector2, sector3StartPercent: sector3,
@@ -295,12 +283,8 @@ export default function CornerPositionPicker() {
       window.setTimeout(() => setCopied(false), 1200);
    };
 
-   // ── Derived ─────────────────────────────────────────────────────────────
-
    const expectedCorners = selectedCircuit?.corners ?? 0;
    const activeColor = MODES.find((m) => m.key === mode)?.color ?? '#fff';
-
-   // ── Render ──────────────────────────────────────────────────────────────
 
    return (
       <div className="cpp-root">
@@ -488,7 +472,6 @@ export default function CornerPositionPicker() {
                {aeroZones.map(([s, e], i) => {
                   const ps = pointAtPercent(s);
                   const pe = pointAtPercent(e);
-                  // Draw a line segment between start and end points as a visual indicator
                   return (
                      <g key={`aero-arc-${i}`}>
                         <circle cx={ps.x} cy={ps.y} r="5" fill="#22c55e" stroke="#0b0e14" strokeWidth="1.5" opacity="0.7" />
@@ -599,8 +582,6 @@ export default function CornerPositionPicker() {
       </div>
    );
 }
-
-// ── CSS ────────────────────────────────────────────────────────────────────
 
 const CSS = `
 .cpp-root{ display:flex; height:100vh; overflow:hidden; background:#0b0e14; color:#e7ebf3; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }

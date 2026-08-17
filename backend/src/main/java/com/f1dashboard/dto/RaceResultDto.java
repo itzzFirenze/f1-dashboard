@@ -1,8 +1,5 @@
 package com.f1dashboard.dto;
 
-/**
- * Race result DTO for a single driver's finish.
- */
 public record RaceResultDto(
       Long id,
       Integer position,

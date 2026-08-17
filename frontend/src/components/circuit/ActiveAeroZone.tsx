@@ -20,8 +20,6 @@ const ActiveAeroZone: React.FC<ActiveAeroZoneProps> = ({
 }) => {
    const totalLength = usePathLength(pathId);
 
-   // Fall back to a no-op (invisible) dash until the real length is known,
-   // rather than rendering against a wrong guessed length.
    if (!totalLength) return null;
 
    const span = zone.endPercent - zone.startPercent;

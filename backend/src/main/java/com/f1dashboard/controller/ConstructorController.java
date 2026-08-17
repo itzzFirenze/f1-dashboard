@@ -18,17 +18,17 @@ import java.util.List;
 @Tag(name = "Constructors", description = "Constructor standings and team details")
 public class ConstructorController {
 
-    private final ConstructorService constructorService;
+   private final ConstructorService constructorService;
 
-    @GetMapping
-    @Operation(summary = "Get constructor standings")
-    public ResponseEntity<ApiResponse<List<ConstructorDto>>> getAllConstructors() {
-        return ResponseEntity.ok(ApiResponse.success(constructorService.getAllConstructors()));
-    }
+   @GetMapping
+   @Operation(summary = "Get constructor standings")
+   public ResponseEntity<ApiResponse<List<ConstructorDto>>> getAllConstructors() {
+      return ResponseEntity.ok(ApiResponse.success(constructorService.getAllConstructors()));
+   }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get constructor details with driver lineup")
-    public ResponseEntity<ApiResponse<ConstructorDetailDto>> getConstructorById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(constructorService.getConstructorById(id)));
-    }
+   @GetMapping("/{id}")
+   @Operation(summary = "Get constructor details with driver lineup")
+   public ResponseEntity<ApiResponse<ConstructorDetailDto>> getConstructorById(@PathVariable Long id) {
+      return ResponseEntity.ok(ApiResponse.success(constructorService.getConstructorById(id)));
+   }
 }

@@ -19,41 +19,41 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AnalyticsController {
 
-    private final AnalyticsService analyticsService;
+   private final AnalyticsService analyticsService;
 
-    @GetMapping("/compare/drivers")
-    public ResponseEntity<ApiResponse<DriverComparisonDto>> compareDrivers(
-            @RequestParam Long driverA,
-            @RequestParam Long driverB,
-            @RequestParam(defaultValue = "2026") Integer season) {
-        return ResponseEntity.ok(ApiResponse.success(analyticsService.compareDrivers(driverA, driverB, season)));
-    }
+   @GetMapping("/compare/drivers")
+   public ResponseEntity<ApiResponse<DriverComparisonDto>> compareDrivers(
+         @RequestParam Long driverA,
+         @RequestParam Long driverB,
+         @RequestParam(defaultValue = "2026") Integer season) {
+      return ResponseEntity.ok(ApiResponse.success(analyticsService.compareDrivers(driverA, driverB, season)));
+   }
 
-    @GetMapping("/momentum")
-    public ResponseEntity<ApiResponse<MomentumDto>> getMomentum(
-            @RequestParam Long driverId,
-            @RequestParam(defaultValue = "5") Integer window,
-            @RequestParam(defaultValue = "2026") Integer season) {
-        return ResponseEntity.ok(ApiResponse.success(analyticsService.getDriverMomentum(driverId, window, season)));
-    }
+   @GetMapping("/momentum")
+   public ResponseEntity<ApiResponse<MomentumDto>> getMomentum(
+         @RequestParam Long driverId,
+         @RequestParam(defaultValue = "5") Integer window,
+         @RequestParam(defaultValue = "2026") Integer season) {
+      return ResponseEntity.ok(ApiResponse.success(analyticsService.getDriverMomentum(driverId, window, season)));
+   }
 
-    @GetMapping("/consistency")
-    public ResponseEntity<ApiResponse<ConsistencyDto>> getConsistency(
-            @RequestParam(defaultValue = "2026") Integer season) {
-        return ResponseEntity.ok(ApiResponse.success(analyticsService.getConsistencyAnalytics(season)));
-    }
+   @GetMapping("/consistency")
+   public ResponseEntity<ApiResponse<ConsistencyDto>> getConsistency(
+         @RequestParam(defaultValue = "2026") Integer season) {
+      return ResponseEntity.ok(ApiResponse.success(analyticsService.getConsistencyAnalytics(season)));
+   }
 
-    @GetMapping("/compare/constructors")
-    public ResponseEntity<ApiResponse<ConstructorComparisonDto>> compareConstructors(
-            @RequestParam Long teamA,
-            @RequestParam Long teamB,
-            @RequestParam(defaultValue = "2026") Integer season) {
-        return ResponseEntity.ok(ApiResponse.success(analyticsService.getConstructorComparison(teamA, teamB, season)));
-    }
+   @GetMapping("/compare/constructors")
+   public ResponseEntity<ApiResponse<ConstructorComparisonDto>> compareConstructors(
+         @RequestParam Long teamA,
+         @RequestParam Long teamB,
+         @RequestParam(defaultValue = "2026") Integer season) {
+      return ResponseEntity.ok(ApiResponse.success(analyticsService.getConstructorComparison(teamA, teamB, season)));
+   }
 
-    @GetMapping("/timeline")
-    public ResponseEntity<ApiResponse<TimelineDto>> getTimeline(
-            @RequestParam(defaultValue = "2026") Integer season) {
-        return ResponseEntity.ok(ApiResponse.success(analyticsService.getSeasonTimeline(season)));
-    }
+   @GetMapping("/timeline")
+   public ResponseEntity<ApiResponse<TimelineDto>> getTimeline(
+         @RequestParam(defaultValue = "2026") Integer season) {
+      return ResponseEntity.ok(ApiResponse.success(analyticsService.getSeasonTimeline(season)));
+   }
 }

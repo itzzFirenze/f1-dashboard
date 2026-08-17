@@ -163,11 +163,6 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
             const isOut = isDriverOutAt(drv.driver_number, currentTime);
             const isPitting = !isOut && isDriverPittingAt(drv.driver_number, currentTime);
 
-            // Once a driver is out, "laps completed" should only count laps
-            // that actually finished (have a recorded lap_duration) — not the
-            // trailing lap they started but never crossed the line to close
-            // out. Otherwise a driver who DNFs mid-lap-42 gets shown as L42
-            // instead of the correct L41.
             const completedLapsOnly = driverLaps.filter(
                (l) => l.lap_duration && l.lap_duration > 0
             ).length;
@@ -252,7 +247,7 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
       return raceControl
          .filter((msg) => new Date(msg.date) <= currentTime)
          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-         .slice(0, 20); // Show last 20 messages
+         .slice(0, 20);
    }, [raceControl, currentTime]);
 
    // 3. Audio radios up to currentTime

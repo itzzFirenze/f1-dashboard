@@ -10,24 +10,18 @@ import java.util.List;
 @Repository
 public interface RaceResultRepository extends JpaRepository<RaceResult, Long> {
 
-    /** Find results for a race and session, ordered by position */
-    List<RaceResult> findByRaceIdAndSessionTypeOrderByPositionAsc(Long raceId, SessionType sessionType);
+   List<RaceResult> findByRaceIdAndSessionTypeOrderByPositionAsc(Long raceId, SessionType sessionType);
 
-    /** Find all results for a specific driver */
-    List<RaceResult> findByDriverIdOrderByRaceRaceDateDesc(Long driverId);
-    
-    /** Count top N finishes for a driver in a specific session type */
-    int countByDriverIdAndPositionLessThanEqualAndSessionType(Long driverId, Integer position, SessionType sessionType);
-    
-    /** Delete all results for a specific race */
-    void deleteByRaceId(Long raceId);
+   List<RaceResult> findByDriverIdOrderByRaceRaceDateDesc(Long driverId);
 
-    /** Delete results for a specific race and session type */
-    void deleteByRaceIdAndSessionType(Long raceId, SessionType sessionType);
-    
-    /** Find all results for a season and session type */
-    List<RaceResult> findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(Integer season, SessionType sessionType);
-    
-    /** Find results for a driver in a season and session type */
-    List<RaceResult> findByDriverIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(Long driverId, Integer season, SessionType sessionType);
+   int countByDriverIdAndPositionLessThanEqualAndSessionType(Long driverId, Integer position, SessionType sessionType);
+
+   void deleteByRaceId(Long raceId);
+
+   void deleteByRaceIdAndSessionType(Long raceId, SessionType sessionType);
+
+   List<RaceResult> findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(Integer season, SessionType sessionType);
+
+   List<RaceResult> findByDriverIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(Long driverId, Integer season,
+         SessionType sessionType);
 }

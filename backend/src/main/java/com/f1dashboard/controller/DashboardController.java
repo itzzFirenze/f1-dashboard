@@ -17,11 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Dashboard", description = "Aggregated dashboard data")
 public class DashboardController {
 
-    private final DashboardService dashboardService;
+   private final DashboardService dashboardService;
 
-    @GetMapping
-    @Operation(summary = "Get dashboard data", description = "Returns season overview, next race, and championship leaders")
-    public ResponseEntity<ApiResponse<DashboardDto>> getDashboard() {
-        return ResponseEntity.ok(ApiResponse.success(dashboardService.getDashboardData()));
-    }
+   @GetMapping
+   @Operation(summary = "Get dashboard data", description = "Returns season overview, next race, and championship leaders")
+   public ResponseEntity<ApiResponse<DashboardDto>> getDashboard() {
+      return ResponseEntity.ok(ApiResponse.success(dashboardService.getDashboardData()));
+   }
 }

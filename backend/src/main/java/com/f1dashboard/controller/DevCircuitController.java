@@ -12,10 +12,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Controller providing developer-only endpoints for updating circuit position
- * data.
- */
 @RestController
 @RequestMapping("/api/dev/circuits")
 @RequiredArgsConstructor

@@ -19,29 +19,29 @@ import java.util.List;
 @Tag(name = "Races", description = "Race schedule and results")
 public class RaceController {
 
-    private final RaceService raceService;
+   private final RaceService raceService;
 
-    @GetMapping
-    @Operation(summary = "Get season race calendar", description = "Supports filtering by status and search")
-    public ResponseEntity<ApiResponse<List<RaceDto>>> getRaces(
-            @RequestParam(defaultValue = "2026") Integer season,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String search) {
+   @GetMapping
+   @Operation(summary = "Get season race calendar", description = "Supports filtering by status and search")
+   public ResponseEntity<ApiResponse<List<RaceDto>>> getRaces(
+         @RequestParam(defaultValue = "2026") Integer season,
+         @RequestParam(required = false) String status,
+         @RequestParam(required = false) String search) {
 
-        List<RaceDto> races;
-        if (search != null && !search.isBlank()) {
-            races = raceService.searchRaces(season, search);
-        } else if (status != null && !status.isBlank()) {
-            races = raceService.getRacesByStatus(season, RaceStatus.valueOf(status.toUpperCase()));
-        } else {
-            races = raceService.getRacesBySeason(season);
-        }
-        return ResponseEntity.ok(ApiResponse.success(races));
-    }
+      List<RaceDto> races;
+      if (search != null && !search.isBlank()) {
+         races = raceService.searchRaces(season, search);
+      } else if (status != null && !status.isBlank()) {
+         races = raceService.getRacesByStatus(season, RaceStatus.valueOf(status.toUpperCase()));
+      } else {
+         races = raceService.getRacesBySeason(season);
+      }
+      return ResponseEntity.ok(ApiResponse.success(races));
+   }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get race details", description = "Returns race detail with sessions, results, and weather")
-    public ResponseEntity<ApiResponse<RaceDetailDto>> getRaceById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(raceService.getRaceById(id)));
-    }
+   @GetMapping("/{id}")
+   @Operation(summary = "Get race details", description = "Returns race detail with sessions, results, and weather")
+   public ResponseEntity<ApiResponse<RaceDetailDto>> getRaceById(@PathVariable Long id) {
+      return ResponseEntity.ok(ApiResponse.success(raceService.getRaceById(id)));
+   }
 }

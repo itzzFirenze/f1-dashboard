@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class RecordsController {
 
-    private final RecordsService recordsService;
+   private final RecordsService recordsService;
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<RecordsDto>> getRecords() {
-        return ResponseEntity.ok(ApiResponse.success(recordsService.getHistoricalRecords()));
-    }
+   @GetMapping
+   public ResponseEntity<ApiResponse<RecordsDto>> getRecords() {
+      return ResponseEntity.ok(ApiResponse.success(recordsService.getHistoricalRecords()));
+   }
 }

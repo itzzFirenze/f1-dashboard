@@ -41,17 +41,16 @@ const DriverMarkerOnTrack: React.FC<{
 }> = ({ pathId, driver, percent, pitLaneOffsetPx, isReversed, isSelected, isPitting, onHover, onSelect }) => {
    const pos = usePathPoint(pathId, percent);
    const aheadPercent = isReversed ? (percent + 99.5) % 100 : (percent + 0.5) % 100;
-   const posAhead = usePathPoint(pathId, aheadPercent); // tiny step forward, to get tangent
+   const posAhead = usePathPoint(pathId, aheadPercent);
    const teamColor = `#${driver.team_colour || 'ffffff'}`;
 
-   // Perpendicular offset so pitting cars render visibly off the racing line
    let drawX = pos.x;
    let drawY = pos.y;
    if (isPitting) {
       const dx = posAhead.x - pos.x;
       const dy = posAhead.y - pos.y;
       const len = Math.hypot(dx, dy) || 1;
-      const nx = -dy / len; // perpendicular unit vector
+      const nx = -dy / len;
       const ny = dx / len;
       drawX = pos.x + nx * pitLaneOffsetPx;
       drawY = pos.y + ny * pitLaneOffsetPx;
@@ -543,7 +542,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                   const pitting = getPitReplayPosition(hoveredDriver, currentTime, pits, laps, circuit)?.isPitting ?? false;
 
                   const index = drivers.findIndex((d) => d.driver_number === hoveredDriver);
-                  const raceFraction = getDriverRaceFraction(hoveredDriver, index, currentTime, laps); // <-- was getDriverLapPercent
+                  const raceFraction = getDriverRaceFraction(hoveredDriver, index, currentTime, laps);
 
                   return (
                      <motion.div
