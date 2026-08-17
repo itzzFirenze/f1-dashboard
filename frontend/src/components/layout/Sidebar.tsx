@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
    LayoutDashboard, Trophy, Calendar, Map,
-   Menu, X, Flag, ChevronDown, ChevronRight, Activity, GitCompare, Award, Wand2, Tv, Sparkles
+   Menu, X, Flag, ChevronDown, ChevronRight, Activity, GitCompare, Tv, Sparkles,
+   ChevronsLeft, ChevronsRight
 } from 'lucide-react';
 
 interface NavItem {
@@ -48,15 +49,49 @@ const navItems: NavItem[] = [
          { path: '/compare/constructors', label: 'Constructors' },
       ]
    },
-   // { path: '/predictor', label: 'Predictor', icon: Wand2 },
 ];
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+   isCollapsed?: boolean;
+   onToggleCollapse?: (collapsed: boolean) => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({
+   isCollapsed = false,
+   onToggleCollapse
+}) => {
    const [mobileOpen, setMobileOpen] = useState(false);
+   const [collapsed, setCollapsed] = useState(isCollapsed);
    const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
    const location = useLocation();
 
+   useEffect(() => {
+      setCollapsed(isCollapsed);
+   }, [isCollapsed]);
+
+   const handleCollapseToggle = () => {
+      const next = !collapsed;
+      setCollapsed(next);
+      onToggleCollapse?.(next);
+      window.dispatchEvent(new CustomEvent('f1-sidebar-toggle', { detail: { collapsed: next } }));
+   };
+
+   // Auto-expand sections that contain the active route
+   useEffect(() => {
+      navItems.forEach(item => {
+         if (item.subItems?.some(sub => location.pathname === sub.path)) {
+            setOpenSections(prev => ({ ...prev, [item.label]: true }));
+         }
+      });
+   }, [location.pathname]);
+
    const toggleSection = (label: string) => {
+      if (collapsed) {
+         handleCollapseToggle();
+         setOpenSections(prev => ({ ...prev, [label]: true }));
+         return;
+      }
       setOpenSections(prev => ({ ...prev, [label]: !prev[label] }));
    };
 
@@ -68,108 +103,209 @@ const Sidebar: React.FC = () => {
       return false;
    };
 
-   const SidebarContent = () => (
-      <div className="flex flex-col h-full bg-f1-black/90 backdrop-blur-xl border-r border-white/5">
-         {/* Logo */}
-         <Link to="/" className="flex items-center gap-3 p-6 group">
-            <div className="w-10 h-10 bg-f1-red rounded-xl flex items-center justify-center
-                        group-hover:shadow-lg group-hover:shadow-f1-red/30 transition-all">
-               <Flag className="w-5 h-5 text-white" />
-            </div>
-            <div>
-               <span className="font-display font-bold text-lg tracking-tight">F1</span>
-               <span className="font-display text-f1-silver text-lg ml-1">Dashboard</span>
-            </div>
-         </Link>
+   const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => {
+      const isExpanded = isMobile || !collapsed;
 
-         {/* Navigation */}
-         <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-1">
-            {navItems.map((item) => (
-               <div key={item.label}>
-                  {item.subItems ? (
-                     <div>
-                        <button
-                           onClick={() => toggleSection(item.label)}
-                           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive(item)
-                              ? 'bg-f1-red/10 text-f1-red-light'
-                              : 'text-f1-silver hover:text-f1-white hover:bg-f1-mid-gray'
-                              }`}
-                        >
-                           <div className="flex items-center gap-3">
-                              <item.icon className="w-5 h-5" />
-                              {item.label}
-                           </div>
-                           {openSections[item.label] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                        </button>
-                        {openSections[item.label] && (
-                           <div className="mt-1 ml-4 pl-4 border-l border-white/10 space-y-1">
-                              {item.subItems.map((sub) => (
-                                 <Link
-                                    key={sub.path}
-                                    to={sub.path}
-                                    onClick={() => setMobileOpen(false)}
-                                    className={`block px-3 py-2 rounded-lg text-sm transition-all duration-200 ${location.pathname === sub.path
-                                       ? 'bg-f1-red/10 text-f1-red-light'
-                                       : 'text-f1-silver hover:text-f1-white hover:bg-f1-mid-gray'
-                                       }`}
-                                 >
-                                    {sub.label}
-                                 </Link>
-                              ))}
-                           </div>
-                        )}
+      return (
+         <div className="flex flex-col h-full bg-f1-abyss/95 backdrop-blur-2xl border-r border-white/[0.05] relative select-none">
+            {/* Top Logo and Collapse Switch */}
+            <div className={`flex items-center ${isExpanded ? 'justify-between p-4' : 'justify-center py-4'} pb-2 transition-all`}>
+               <Link
+                  to="/"
+                  className="flex items-center gap-3 group"
+                  onClick={() => setMobileOpen(false)}
+               >
+                  <div className="relative w-10 h-10 bg-gradient-to-br from-f1-red via-f1-red-dark to-red-900 rounded-xl flex items-center justify-center animate-logo-pulse shrink-0 border border-f1-red/30 shadow-[0_0_15px_rgba(225,6,0,0.3)]">
+                     <Flag className="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
+                     <div className="absolute inset-0 rounded-xl bg-f1-red/25 blur-md -z-10" />
+                  </div>
+                  {isExpanded && (
+                     <div className="animate-fade-in flex flex-col">
+                        <div className="flex items-baseline">
+                           <span className="font-display font-black text-xl tracking-tight text-f1-white">F1</span>
+                           <span className="font-display font-medium text-f1-red-light text-xl ml-1">HUD</span>
+                        </div>
+                        <span className="text-[9px] font-mono tracking-[0.2em] text-f1-silver/50 uppercase -mt-0.5">
+                           Telemetry Deck
+                        </span>
                      </div>
-                  ) : (
-                     <Link
-                        to={item.path!}
-                        onClick={() => setMobileOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${location.pathname === item.path
-                           ? 'bg-f1-red/10 text-f1-red-light'
-                           : 'text-f1-silver hover:text-f1-white hover:bg-f1-mid-gray'
-                           }`}
-                     >
-                        <item.icon className="w-5 h-5" />
-                        {item.label}
-                     </Link>
                   )}
+               </Link>
+               {!isMobile && isExpanded && (
+                  <button
+                     onClick={handleCollapseToggle}
+                     className="p-1.5 rounded-lg text-f1-silver/50 hover:text-f1-white hover:bg-white/[0.05] transition-all hidden md:flex"
+                     title="Collapse navigation"
+                  >
+                     <ChevronsLeft className="w-4 h-4" />
+                  </button>
+               )}
+            </div>
+
+            {/* Collapse button for when collapsed */}
+            {!isMobile && !isExpanded && (
+               <div className="flex justify-center pb-2">
+                  <button
+                     onClick={handleCollapseToggle}
+                     className="p-1.5 rounded-lg text-f1-silver/50 hover:text-f1-white hover:bg-white/[0.05] transition-all hidden md:flex"
+                     title="Expand navigation"
+                  >
+                     <ChevronsRight className="w-4 h-4" />
+                  </button>
                </div>
-            ))}
+            )}
+
+            {/* Carbon divider */}
+            <div className="mx-3 carbon-divider" />
+
+            {/* Navigation links */}
+            <div className={`flex-1 overflow-y-auto px-2.5 pb-6 pt-3 space-y-1 ${isExpanded ? 'circuit-line' : ''}`}>
+               {navItems.map((item, idx) => (
+                  <div key={item.label} className="relative">
+                     {item.subItems ? (
+                        <div>
+                           <button
+                              onClick={() => toggleSection(item.label)}
+                              onMouseEnter={() => !isExpanded && setHoveredItem(item.label)}
+                              onMouseLeave={() => setHoveredItem(null)}
+                              className={`w-full sidebar-item ${isActive(item)
+                                 ? 'sidebar-item-active'
+                                 : 'sidebar-item-inactive'
+                                 } ${!isExpanded ? 'justify-center px-0 h-11' : 'justify-between'}`}
+                           >
+                              <div className="flex items-center gap-3">
+                                 <item.icon className={`w-5 h-5 shrink-0 transition-colors ${isActive(item) ? 'text-f1-red' : 'text-f1-silver/70'}`} />
+                                 {isExpanded && <span className="font-medium text-sm">{item.label}</span>}
+                              </div>
+                              {isExpanded && (
+                                 openSections[item.label]
+                                    ? <ChevronDown className="w-3.5 h-3.5 text-f1-silver/60" />
+                                    : <ChevronRight className="w-3.5 h-3.5 text-f1-silver/60" />
+                              )}
+
+                              {/* Tooltip for collapsed state */}
+                              {!isExpanded && hoveredItem === item.label && (
+                                 <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-[100]
+                                                 bg-f1-carbon/95 border border-white/[0.1] rounded-lg px-3 py-1.5
+                                                 text-xs font-mono font-medium text-f1-white shadow-2xl whitespace-nowrap
+                                                 animate-fade-in pointer-events-none backdrop-blur-xl">
+                                    {item.label}
+                                    <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0
+                                                    border-t-4 border-b-4 border-r-4
+                                                    border-t-transparent border-b-transparent border-r-f1-carbon/95" />
+                                 </div>
+                              )}
+                           </button>
+                           {isExpanded && openSections[item.label] && (
+                              <div className="mt-1 ml-5 pl-3 border-l border-f1-red/20 space-y-0.5 animate-fade-in">
+                                 {item.subItems.map((sub) => (
+                                    <Link
+                                       key={sub.path}
+                                       to={sub.path}
+                                       onClick={() => setMobileOpen(false)}
+                                       className={`block px-3 py-2 rounded-lg text-xs font-mono transition-all duration-200 ${location.pathname === sub.path
+                                          ? 'text-f1-red-light bg-f1-red/[0.08] font-bold shadow-[inset_2px_0_0_#E10600]'
+                                          : 'text-f1-silver/60 hover:text-f1-white hover:bg-white/[0.03]'
+                                          }`}
+                                    >
+                                       {sub.label}
+                                    </Link>
+                                 ))}
+                              </div>
+                           )}
+                        </div>
+                     ) : (
+                        <div className="relative">
+                           <Link
+                              to={item.path!}
+                              onClick={() => setMobileOpen(false)}
+                              onMouseEnter={() => !isExpanded && setHoveredItem(item.label)}
+                              onMouseLeave={() => setHoveredItem(null)}
+                              className={`sidebar-item ${location.pathname === item.path
+                                 ? 'sidebar-item-active'
+                                 : 'sidebar-item-inactive'
+                                 } ${!isExpanded ? 'justify-center px-0 h-11' : ''}`}
+                           >
+                              <item.icon className={`w-5 h-5 shrink-0 transition-colors ${location.pathname === item.path ? 'text-f1-red' : 'text-f1-silver/70'}`} />
+                              {isExpanded && <span className="font-medium text-sm">{item.label}</span>}
+                           </Link>
+
+                           {/* Tooltip for collapsed state */}
+                           {!isExpanded && hoveredItem === item.label && (
+                              <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-[100]
+                                              bg-f1-carbon/95 border border-white/[0.1] rounded-lg px-3 py-1.5
+                                              text-xs font-mono font-medium text-f1-white shadow-2xl whitespace-nowrap
+                                              animate-fade-in pointer-events-none backdrop-blur-xl">
+                                 {item.label}
+                                 <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0
+                                                 border-t-4 border-b-4 border-r-4
+                                                 border-t-transparent border-b-transparent border-r-f1-carbon/95" />
+                              </div>
+                           )}
+                        </div>
+                     )}
+
+                     {/* Section dividers */}
+                     {(idx === 1 || idx === 5) && (
+                        <div className="mx-2 my-2.5 carbon-divider" />
+                     )}
+                  </div>
+               ))}
+            </div>
+
+            {/* Bottom telemetry status indicator */}
+            <div className="p-3 border-t border-white/[0.04]">
+               {isExpanded ? (
+                  <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-f1-carbon/50 border border-white/[0.04]">
+                     <div className="flex items-center gap-2 text-f1-silver/60 text-[10px] uppercase font-mono tracking-widest">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                        <span>Telemetry Sync</span>
+                     </div>
+                     <span className="text-[9px] font-mono text-emerald-400 font-bold">2026.1</span>
+                  </div>
+               ) : (
+                  <div className="flex justify-center" title="Telemetry Sync Online">
+                     <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
+                  </div>
+               )}
+            </div>
          </div>
-      </div>
-   );
+      );
+   };
 
    return (
       <>
          {/* Mobile Top Bar */}
-         <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-f1-black/90 backdrop-blur-xl border-b border-white/5 px-4 h-16 flex items-center justify-between">
+         <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-f1-abyss/95 backdrop-blur-xl border-b border-white/[0.05] px-4 h-14 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
-               <div className="w-8 h-8 bg-f1-red rounded-lg flex items-center justify-center">
+               <div className="w-8 h-8 bg-gradient-to-br from-f1-red to-f1-red-dark rounded-lg flex items-center justify-center animate-logo-pulse border border-f1-red/30 shadow-[0_0_10px_rgba(225,6,0,0.3)]">
                   <Flag className="w-4 h-4 text-white" />
                </div>
-               <span className="font-display font-bold tracking-tight">F1 Dashboard</span>
+               <span className="font-display font-black tracking-tight text-f1-white">F1 HUD</span>
             </Link>
             <button
                onClick={() => setMobileOpen(!mobileOpen)}
-               className="p-2 rounded-lg text-f1-silver hover:text-f1-white hover:bg-f1-mid-gray"
+               className="p-2 rounded-lg text-f1-silver hover:text-f1-white hover:bg-white/[0.05]"
             >
-               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
          </div>
 
          {/* Mobile Overlay */}
          {mobileOpen && (
             <div
-               className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+               className="md:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
                onClick={() => setMobileOpen(false)}
             />
          )}
 
          {/* Sidebar Container */}
          <nav
-            className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'
-               }`}
+            className={`fixed inset-y-0 left-0 z-50 transform transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+               md:translate-x-0 ${mobileOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
+               ${collapsed ? 'md:w-[72px]' : 'md:w-64'}`}
          >
-            <SidebarContent />
+            <SidebarContent isMobile={mobileOpen} />
          </nav>
       </>
    );

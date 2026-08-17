@@ -2,134 +2,409 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+   --color-f1-abyss: #0B0B12;
+   --color-f1-carbon: #161622;
+   --color-f1-graphite: #202030;
+   --color-f1-red: #E10600;
+   --color-f1-red-dark: #B30500;
+   --color-f1-red-light: #FF1801;
+   --color-f1-silver: #9B9BAD;
+   --color-f1-white: #F5F5F5;
+}
+
 @layer base {
    body {
-      @apply bg-f1-black text-f1-white;
+      background-color: #0B0B12;
+      color: #F5F5F5;
       font-family: 'Inter', system-ui, sans-serif;
    }
 
    /* Custom scrollbar */
    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
    }
 
    ::-webkit-scrollbar-track {
-      @apply bg-f1-black;
+      background: transparent;
    }
 
    ::-webkit-scrollbar-thumb {
-      @apply bg-f1-light-gray rounded-full;
+      background: rgba(56, 56, 79, 0.6);
+      border-radius: 9999px;
    }
 
    ::-webkit-scrollbar-thumb:hover {
-      @apply bg-f1-silver;
+      background: rgba(155, 155, 173, 0.6);
    }
 }
 
 @layer components {
 
-   /* Glassmorphism card */
+   /* ─── Background & Surface Utility Helpers ─── */
+   .bg-f1-abyss {
+      background-color: #0B0B12;
+   }
+
+   .bg-f1-carbon {
+      background-color: #161622;
+   }
+
+   .bg-f1-graphite {
+      background-color: #202030;
+   }
+
+   /* ─── Glass Card ─── */
    .glass-card {
-      @apply bg-f1-dark-gray/80 backdrop-blur-md border border-white/5 rounded-2xl shadow-lg transition-all duration-300;
+      background-color: rgba(22, 22, 34, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 1rem;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background-image: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 60%);
    }
 
    .glass-card:hover {
-      @apply border-white/10 shadow-xl;
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
       transform: translateY(-2px);
    }
 
    /* Red-accented glass card */
    .glass-card-red {
-      @apply glass-card border-f1-red/20;
+      background-color: rgba(22, 22, 34, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(225, 6, 0, 0.2);
+      border-radius: 1rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
    }
 
    .glass-card-red:hover {
-      @apply border-f1-red/40;
-      box-shadow: 0 0 30px rgba(225, 6, 0, 0.1);
+      border-color: rgba(225, 6, 0, 0.4);
+      box-shadow: 0 0 40px rgba(225, 6, 0, 0.12), 0 10px 30px rgba(0, 0, 0, 0.4);
    }
 
-   /* Skeleton loading animation */
+   /* ─── Telemetry Card (futuristic HUD stat card) ─── */
+   .telemetry-card {
+      position: relative;
+      background-color: rgba(22, 22, 34, 0.9);
+      backdrop-filter: blur(16px);
+      border-radius: 1rem;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+   }
+
+   .telemetry-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(225, 6, 0, 0.08);
+   }
+
+   /* ─── Scanline Overlay ─── */
+   .scanline-overlay {
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      z-index: 1;
+   }
+
+   .scanline-overlay::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 200%;
+      background: repeating-linear-gradient(
+         transparent 0px,
+         transparent 2px,
+         rgba(255,255,255,0.008) 2px,
+         rgba(255,255,255,0.008) 4px
+      );
+      animation: scanline 8s linear infinite;
+   }
+
+   /* ─── Dot Grid Pattern ─── */
+   .dot-grid {
+      background-image: radial-gradient(circle, rgba(225, 6, 0, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+   }
+
+   /* ─── Circuit Line (sidebar decoration) ─── */
+   .circuit-line {
+      position: relative;
+   }
+
+   .circuit-line::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: linear-gradient(
+         to bottom,
+         transparent 0%,
+         rgba(225, 6, 0, 0.2) 15%,
+         rgba(225, 6, 0, 0.08) 50%,
+         rgba(225, 6, 0, 0.2) 85%,
+         transparent 100%
+      );
+      pointer-events: none;
+   }
+
+   /* ─── Carbon Fiber Divider ─── */
+   .carbon-divider {
+      height: 1px;
+      background: repeating-linear-gradient(
+         90deg,
+         rgba(255,255,255,0.06) 0px,
+         rgba(255,255,255,0.06) 3px,
+         transparent 3px,
+         transparent 6px
+      );
+      margin: 4px 0;
+   }
+
+   /* ─── LED Digit Display ─── */
+   .led-digit {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #F5F5F5;
+      text-shadow: 0 0 12px rgba(225, 6, 0, 0.5), 0 0 30px rgba(225, 6, 0, 0.2);
+      font-variant-numeric: tabular-nums;
+   }
+
+   .led-digit-box {
+      background-color: rgba(11, 11, 18, 0.85);
+      border-radius: 0.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.6), 0 0 1px rgba(225, 6, 0, 0.3);
+   }
+
+   /* ─── Diagonal Split Card ─── */
+   .diagonal-card {
+      position: relative;
+      background-color: rgba(22, 22, 34, 0.9);
+      backdrop-filter: blur(16px);
+      border-radius: 1rem;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+   }
+
+   .diagonal-card:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+   }
+
+   /* ─── Gauge Arc (SVG-based progress) ─── */
+   .gauge-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.06);
+      stroke-width: 4;
+      stroke-linecap: round;
+   }
+
+   .gauge-fill {
+      fill: none;
+      stroke-width: 4;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1.5s ease-out;
+   }
+
+   /* ─── Sidebar Nav Item ─── */
+   .sidebar-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.625rem 0.75rem;
+      border-radius: 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+   }
+
+   .sidebar-item-active {
+      background-color: rgba(225, 6, 0, 0.1);
+      color: #FF1801;
+      box-shadow: -2px 0 12px rgba(225, 6, 0, 0.15);
+   }
+
+   .sidebar-item-active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 60%;
+      background: #E10600;
+      border-radius: 0 4px 4px 0;
+      box-shadow: 0 0 8px rgba(225, 6, 0, 0.5);
+   }
+
+   .sidebar-item-inactive {
+      color: rgba(155, 155, 173, 0.8);
+   }
+
+   .sidebar-item-inactive:hover {
+      color: #F5F5F5;
+      background-color: rgba(255, 255, 255, 0.04);
+   }
+
+   /* ─── Pill Button (quick links) ─── */
+   .pill-button {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      background-color: rgba(22, 22, 34, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      background-image: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+   }
+
+   .pill-button:hover {
+      border-color: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+   }
+
+   /* ─── Skeleton ─── */
    .skeleton {
-      @apply bg-f1-mid-gray rounded animate-pulse;
+      background-color: rgba(32, 32, 48, 0.8);
+      border-radius: 0.5rem;
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
    }
 
    /* Shimmer effect for loading */
    .shimmer {
       background: linear-gradient(90deg,
             rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.05) 50%,
+            rgba(255, 255, 255, 0.03) 50%,
             rgba(255, 255, 255, 0) 100%);
       background-size: 200% 100%;
       animation: shimmer 2s linear infinite;
    }
 
-   /* Badge styles */
+   /* ─── Badge styles ─── */
    .badge {
-      @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+      display: inline-flex;
+      align-items: center;
+      padding: 0.125rem 0.625rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
    }
 
    .badge-completed {
-      @apply badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
    }
 
    .badge-upcoming {
-      @apply badge bg-f1-red/20 text-f1-red-light border border-f1-red/30;
+      background-color: rgba(225, 6, 0, 0.15);
+      color: #FF1801;
+      border: 1px solid rgba(225, 6, 0, 0.3);
    }
 
    .badge-live {
-      @apply badge bg-f1-red text-white;
+      background-color: #E10600;
+      color: #ffffff;
    }
 
-   /* Gradient text */
+   /* ─── Gradient text ─── */
    .gradient-text {
-      @apply bg-clip-text text-transparent bg-gradient-to-r from-f1-red to-orange-500;
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      background-image: linear-gradient(to right, #E10600, #ff5722);
    }
 
-   /* Stat card */
+   /* ─── Stat card ─── */
    .stat-value {
-      @apply text-3xl font-bold font-display tracking-tight;
+      font-size: 1.875rem;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.025em;
    }
 
    .stat-label {
-      @apply text-sm text-f1-silver uppercase tracking-wider;
+      font-size: 0.875rem;
+      color: #9B9BAD;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
    }
 
-   /* Navigation link */
+   /* ─── Navigation link ─── */
    .nav-link {
-      @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-f1-silver transition-all duration-200 hover:bg-f1-mid-gray hover:text-f1-white;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.625rem 1rem;
+      border-radius: 0.75rem;
+      color: #9B9BAD;
+      transition: all 0.2s ease;
+   }
+
+   .nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.04);
+      color: #F5F5F5;
    }
 
    .nav-link.active {
-      @apply bg-f1-red/10 text-f1-red-light border-l-2 border-f1-red;
+      background-color: rgba(225, 6, 0, 0.1);
+      color: #FF1801;
+      border-left: 2px solid #E10600;
    }
 
-   /* Search input */
+   /* ─── Search input ─── */
    .search-input {
-      @apply w-full bg-f1-mid-gray/50 border border-white/5 rounded-xl px-4 py-2.5 pl-10 text-f1-white placeholder-f1-silver/50 focus:outline-none focus:border-f1-red/50 focus:ring-1 focus:ring-f1-red/30 transition-all duration-200;
+      width: 100%;
+      background-color: rgba(22, 22, 34, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 0.75rem;
+      padding: 0.625rem 1rem 0.625rem 2.5rem;
+      color: #F5F5F5;
+      transition: all 0.2s ease;
+   }
+
+   .search-input:focus {
+      outline: none;
+      border-color: rgba(225, 6, 0, 0.5);
+      box-shadow: 0 0 0 1px rgba(225, 6, 0, 0.3);
+   }
+
+   /* ─── 3D Tilt on hover ─── */
+   .hover-tilt {
+      transition: transform 0.3s ease;
+   }
+
+   .hover-tilt:hover {
+      transform: perspective(800px) rotateY(-2deg) rotateX(2deg) translateY(-4px);
    }
 }
 
 @layer utilities {
-
-   /* Delay animation utilities */
-   .delay-100 {
-      animation-delay: 100ms;
-   }
-
-   .delay-200 {
-      animation-delay: 200ms;
-   }
-
-   .delay-300 {
-      animation-delay: 300ms;
-   }
-
-   .delay-400 {
-      animation-delay: 400ms;
-   }
-
-   .delay-500 {
-      animation-delay: 500ms;
-   }
+   .delay-100 { animation-delay: 100ms; }
+   .delay-200 { animation-delay: 200ms; }
+   .delay-300 { animation-delay: 300ms; }
+   .delay-400 { animation-delay: 400ms; }
+   .delay-500 { animation-delay: 500ms; }
+   .delay-600 { animation-delay: 600ms; }
+   .delay-700 { animation-delay: 700ms; }
 }

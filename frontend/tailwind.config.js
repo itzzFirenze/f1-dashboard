@@ -15,6 +15,12 @@ export default {
           'light-gray': '#38384F',
           white: '#F5F5F5',
           silver: '#9B9BAD',
+          // New deeper tones for futuristic look
+          'abyss': '#0B0B12',
+          'carbon': '#1A1A26',
+          'graphite': '#24243A',
+          'ember': '#FF2D20',
+          'ember-glow': 'rgba(225, 6, 0, 0.15)',
         },
         // Team colors
         team: {
@@ -33,6 +39,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',
@@ -42,6 +49,15 @@ export default {
         'count-up': 'countUp 1s ease-out',
         shimmer: 'shimmer 2s linear infinite',
         glow: 'glow 2s ease-in-out infinite alternate',
+        // New futuristic animations
+        'scanline': 'scanline 8s linear infinite',
+        'float': 'float 6s ease-in-out infinite',
+        'border-glow': 'borderGlow 3s ease-in-out infinite',
+        'blink': 'blink 1s steps(1) infinite',
+        'logo-pulse': 'logoPulse 3s ease-in-out infinite',
+        'stagger-in': 'staggerIn 0.6s ease-out both',
+        'gauge-fill': 'gaugeFill 1.5s ease-out both',
+        'slide-in-left': 'slideInLeft 0.3s ease-out',
       },
       keyframes: {
         fadeIn: {
@@ -56,6 +72,10 @@ export default {
           '0%': { opacity: '0', transform: 'translateX(20px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
+        slideInLeft: {
+          '0%': { opacity: '0', transform: 'translateX(-20px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
@@ -63,6 +83,34 @@ export default {
         glow: {
           '0%': { boxShadow: '0 0 5px rgba(225, 6, 0, 0.2)' },
           '100%': { boxShadow: '0 0 20px rgba(225, 6, 0, 0.4)' },
+        },
+        scanline: {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100%)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
+        borderGlow: {
+          '0%, 100%': { opacity: '0.4' },
+          '50%': { opacity: '1' },
+        },
+        blink: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.3' },
+        },
+        logoPulse: {
+          '0%, 100%': { boxShadow: '0 0 8px rgba(225, 6, 0, 0.3), inset 0 0 8px rgba(225, 6, 0, 0.1)' },
+          '50%': { boxShadow: '0 0 20px rgba(225, 6, 0, 0.5), inset 0 0 15px rgba(225, 6, 0, 0.2)' },
+        },
+        staggerIn: {
+          '0%': { opacity: '0', transform: 'translateY(16px) scale(0.96)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        gaugeFill: {
+          '0%': { strokeDashoffset: '251' },
+          '100%': { strokeDashoffset: 'var(--gauge-offset, 251)' },
         },
       },
       backgroundImage: {

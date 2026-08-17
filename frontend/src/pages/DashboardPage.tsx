@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-   Trophy, Flag, Users, Calendar, Timer, ChevronRight, TrendingUp, Zap
+   Trophy, Flag, Users, Calendar, Timer, ChevronRight, TrendingUp, Zap,
+   Radio, Activity, Compass, Shield, ArrowUpRight, Gauge
 } from 'lucide-react';
 import { dashboardService } from '../services/dashboardService';
 import CountdownTimer from '../components/ui/CountdownTimer';
@@ -9,6 +10,105 @@ import WeatherCard from '../components/ui/WeatherCard';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import { resolveTheme, getDriverImage } from '../config/teamThemes';
 import type { DashboardData } from '../types';
+
+/** Gauge stat card with animated circular telemetry arc */
+interface StatGaugeCardProps {
+   title: string;
+   value: number | string;
+   unit: string;
+   icon: React.ElementType;
+   percent: number;
+   colorHex: string;
+   glowClass: string;
+   badgeText?: string;
+}
+
+const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
+   title,
+   value,
+   unit,
+   icon: Icon,
+   percent,
+   colorHex,
+   glowClass,
+   badgeText
+}) => {
+   // SVG Arc calculations (r=38, circum=238.76)
+   const radius = 36;
+   const circumference = 2 * Math.PI * radius;
+   const strokeDashoffset = circumference - (Math.min(Math.max(percent, 0), 100) / 100) * circumference;
+
+   return (
+      <div className="telemetry-card p-5 group flex flex-col justify-between relative overflow-hidden">
+         {/* Subtle top indicator bar */}
+         <div
+            className="absolute top-0 inset-x-0 h-[2px] opacity-75 transition-opacity group-hover:opacity-100"
+            style={{ background: `linear-gradient(90deg, transparent, ${colorHex}, transparent)` }}
+         />
+
+         {/* Header */}
+         <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+               <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] transition-transform group-hover:scale-105"
+                  style={{ backgroundColor: `${colorHex}15` }}
+               >
+                  <Icon className="w-4 h-4" style={{ color: colorHex }} />
+               </div>
+               <span className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">
+                  {title}
+               </span>
+            </div>
+            {badgeText && (
+               <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white/[0.04] text-f1-silver/60 border border-white/[0.06]">
+                  {badgeText}
+               </span>
+            )}
+         </div>
+
+         {/* Center Gauge & Value */}
+         <div className="flex items-center justify-between mt-2">
+            <div>
+               <div className="text-3xl sm:text-4xl font-black font-display tracking-tight text-f1-white flex items-baseline gap-1">
+                  <span>{value}</span>
+               </div>
+               <p className="text-[11px] font-mono text-f1-silver/50 tracking-widest uppercase mt-0.5">
+                  {unit}
+               </p>
+            </div>
+
+            {/* Circular HUD Dial */}
+            <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
+               <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
+                  {/* Outer track */}
+                  <circle
+                     cx="44"
+                     cy="44"
+                     r={radius}
+                     className="gauge-track"
+                  />
+                  {/* Animated value track */}
+                  <circle
+                     cx="44"
+                     cy="44"
+                     r={radius}
+                     className="gauge-fill"
+                     style={{
+                        stroke: colorHex,
+                        strokeDasharray: circumference,
+                        strokeDashoffset: strokeDashoffset,
+                        filter: `drop-shadow(0 0 6px ${colorHex}80)`,
+                     }}
+                  />
+               </svg>
+               <span className="absolute font-mono text-[11px] font-bold text-f1-white/90">
+                  {Math.round(percent)}%
+               </span>
+            </div>
+         </div>
+      </div>
+   );
+};
 
 const DashboardPage: React.FC = () => {
    const [data, setData] = useState<DashboardData | null>(null);
@@ -41,129 +141,206 @@ const DashboardPage: React.FC = () => {
       ? resolveTheme(data.constructorChampionshipLeader.name)
       : null;
 
+   const seasonProgress = data.totalRaces > 0
+      ? Math.round((data.racesCompleted / data.totalRaces) * 100)
+      : 0;
+
    return (
-      <div className="space-y-8 animate-fade-in">
-         {/* Hero Section */}
-         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-f1-red/20 via-f1-dark-gray to-f1-black p-8 sm:p-10 border border-f1-red/10">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-f1-red/5 rounded-full blur-3xl" />
-            <div className="relative z-10">
-               <div className="flex items-center gap-2 mb-2">
-                  <Zap className="w-5 h-5 text-f1-red" />
-                  <span className="text-f1-red-light text-sm font-semibold uppercase tracking-wider">
-                     Formula 1
-                  </span>
+      <div className="space-y-7 animate-fade-in">
+         {/* ─── Hero Section: Mission Control HUD ─── */}
+         <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 shadow-2xl dot-grid">
+            {/* Scanline texture */}
+            <div className="scanline-overlay" />
+
+            {/* Futuristic ambient glows */}
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Diagonal accent slash line */}
+            <div className="absolute top-0 right-0 w-48 h-full bg-gradient-to-l from-f1-red/[0.04] to-transparent transform skew-x-12 pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+               <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <span className="w-2 h-2 rounded-full bg-f1-red animate-ping" />
+                     <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                        FIA FORMULA 1 WORLD CHAMPIONSHIP
+                     </span>
+                  </div>
+
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black tracking-tight text-f1-white uppercase">
+                     {data.currentSeason} <span className="gradient-text">SEASON</span>
+                  </h1>
+
+                  <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                     Pit wall telemetry, live session status & real-time championship engineering intelligence.
+                  </p>
                </div>
-               <h1 className="text-4xl sm:text-5xl font-display font-black tracking-tight mb-2">
-                  {data.currentSeason} Season
-               </h1>
-               <p className="text-f1-silver text-lg">
-                  Race Weekend Dashboard
-               </p>
+
+               {/* Live Session Radar Pill */}
+               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-f1-abyss/80 border border-white/[0.08] rounded-2xl p-4 sm:p-5 backdrop-blur-xl shrink-0">
+                  <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-f1-red/10 border border-f1-red/20 shrink-0">
+                     <Radio className="w-6 h-6 text-f1-red animate-pulse" />
+                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                     </span>
+                  </div>
+                  <div>
+                     <div className="text-[10px] font-mono text-f1-silver/60 uppercase tracking-widest">
+                        Command Status
+                     </div>
+                     <div className="font-display font-bold text-base text-f1-white mt-0.5">
+                        Telemetry Online
+                     </div>
+                     <div className="text-xs font-mono text-emerald-400 font-semibold flex items-center gap-1.5 mt-0.5">
+                        <span>●</span> {data.racesRemaining} Rounds in Championship
+                     </div>
+                  </div>
+               </div>
             </div>
          </div>
 
-         {/* Stats Cards */}
-         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="glass-card p-5">
-               <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
-                     <Flag className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <span className="text-sm text-f1-silver">Completed</span>
-               </div>
-               <p className="stat-value text-emerald-400">{data.racesCompleted}</p>
-               <p className="stat-label mt-1">races</p>
-            </div>
-
-            <div className="glass-card p-5">
-               <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-f1-red/10 rounded-xl flex items-center justify-center">
-                     <Calendar className="w-5 h-5 text-f1-red" />
-                  </div>
-                  <span className="text-sm text-f1-silver">Remaining</span>
-               </div>
-               <p className="stat-value text-f1-red-light">{data.racesRemaining}</p>
-               <p className="stat-label mt-1">races</p>
-            </div>
-
-            <div className="glass-card p-5">
-               <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center">
-                     <Trophy className="w-5 h-5 text-amber-400" />
-                  </div>
-                  <span className="text-sm text-f1-silver">Total Races</span>
-               </div>
-               <p className="stat-value text-amber-400">{data.totalRaces}</p>
-               <p className="stat-label mt-1">Grand Prix</p>
-            </div>
-
-            <div className="glass-card p-5">
-               <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
-                     <TrendingUp className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <span className="text-sm text-f1-silver">Progress</span>
-               </div>
-               <p className="stat-value text-blue-400">
-                  {Math.round((data.racesCompleted / data.totalRaces) * 100)}%
-               </p>
-               <p className="stat-label mt-1">season</p>
-            </div>
+         {/* ─── Telemetry HUD Stats Grid ─── */}
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatGaugeCard
+               title="Rounds Completed"
+               value={data.racesCompleted}
+               unit="Grand Prix Cleared"
+               icon={Flag}
+               percent={seasonProgress}
+               colorHex="#10b981"
+               glowClass="emerald"
+               badgeText="PASSED"
+            />
+            <StatGaugeCard
+               title="Rounds Remaining"
+               value={data.racesRemaining}
+               unit="Grand Prix Ahead"
+               icon={Calendar}
+               percent={100 - seasonProgress}
+               colorHex="#E10600"
+               glowClass="red"
+               badgeText="PENDING"
+            />
+            <StatGaugeCard
+               title="Total Calendar"
+               value={data.totalRaces}
+               unit="Championship Stages"
+               icon={Trophy}
+               percent={100}
+               colorHex="#f59e0b"
+               glowClass="amber"
+               badgeText="OFFICIAL"
+            />
+            <StatGaugeCard
+               title="Season Trajectory"
+               value={`${seasonProgress}%`}
+               unit="Campaign Elapsed"
+               icon={TrendingUp}
+               percent={seasonProgress}
+               colorHex="#38bdf8"
+               glowClass="sky"
+               badgeText="LIVE RATIO"
+            />
          </div>
 
-         {/* Next Race + Weather */}
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Next Race / Session Countdown */}
-            {data.nextRaceName && (
-               <Link to={`/races/${data.nextRaceId}`} className="lg:col-span-2">
-                  <div className="glass-card-red p-6 sm:p-8 h-full group cursor-pointer">
-                     <div className="flex items-center justify-between mb-4">
+         {/* ─── Next Grand Prix Telemetry Strip ─── */}
+         {data.nextRaceName && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+               {/* Cinematic Next Race Banner */}
+               <Link
+                  to={`/races/${data.nextRaceId}`}
+                  className="lg:col-span-2 group block outline-none"
+               >
+                  <div className="telemetry-card h-full p-6 sm:p-8 flex flex-col justify-between border border-f1-red/20 group-hover:border-f1-red/40 transition-all duration-300 relative overflow-hidden">
+                     {/* Background circuit ambient glow */}
+                     <div className="absolute -right-16 -top-16 w-64 h-64 bg-f1-red/10 rounded-full blur-3xl pointer-events-none group-hover:bg-f1-red/20 transition-all" />
+
+                     {/* Top banner tag */}
+                     <div className="flex items-center justify-between mb-4 relative z-10">
                         <div className="flex items-center gap-2">
-                           <Timer className="w-5 h-5 text-f1-red" />
-                           <span className="text-sm font-semibold text-f1-red-light uppercase tracking-wider">
-                              Next: {data.nextSessionName || 'Race'}
+                           <div className="w-2.5 h-2.5 rounded-full bg-f1-red animate-ping" />
+                           <span className="text-xs font-mono font-bold text-f1-red-light tracking-[0.2em] uppercase">
+                              Upcoming: {data.nextSessionName || 'Grand Prix Weekend'}
                            </span>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-f1-silver group-hover:text-f1-red transition-colors" />
+                        <div className="flex items-center gap-1 text-xs font-mono text-f1-silver/70 group-hover:text-f1-white transition-colors bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06]">
+                           <span>TELEMETRY DECK</span>
+                           <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        </div>
                      </div>
-                     <h2 className="text-2xl sm:text-3xl font-display font-bold mb-1">
-                        {data.nextRaceName}
-                     </h2>
-                     <p className="text-f1-silver mb-6">
-                        {data.nextRaceCircuit} — {data.nextRaceCountry}
-                     </p>
-                     <CountdownTimer targetDate={
-                        data.nextSessionTime
-                           ? `${data.nextSessionDate}T${data.nextSessionTime}Z`
-                           : data.nextSessionDate || ''
-                     } />
+
+                     {/* Race Name & Circuit Info */}
+                     <div className="my-3 relative z-10">
+                        <h2 className="text-3xl sm:text-4xl font-display font-black text-f1-white tracking-tight uppercase group-hover:text-f1-red-light transition-colors">
+                           {data.nextRaceName}
+                        </h2>
+                        <p className="text-f1-silver/90 text-sm sm:text-base font-mono mt-1.5 flex items-center gap-2">
+                           <Compass className="w-4 h-4 text-f1-red" />
+                           <span>{data.nextRaceCircuit}</span>
+                           <span className="text-f1-silver/40">|</span>
+                           <span className="text-f1-white font-semibold">{data.nextRaceCountry}</span>
+                        </p>
+                     </div>
+
+                     {/* LED Countdown Block */}
+                     <div className="mt-6 pt-5 border-t border-white/[0.06] relative z-10">
+                        <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-3">
+                           Session Countdown Timer
+                        </div>
+                        <CountdownTimer
+                           targetDate={
+                              data.nextSessionTime
+                                 ? `${data.nextSessionDate}T${data.nextSessionTime}Z`
+                                 : data.nextSessionDate || ''
+                           }
+                        />
+                     </div>
                   </div>
                </Link>
-            )}
 
-            {/* Weather */}
-            {data.nextRaceWeather && <WeatherCard weather={data.nextRaceWeather} />}
-         </div>
+               {/* Atmospheric Weather Card */}
+               {data.nextRaceWeather && (
+                  <div className="h-full">
+                     <WeatherCard weather={data.nextRaceWeather} />
+                  </div>
+               )}
+            </div>
+         )}
 
-         {/* Championship Leaders */}
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+         {/* ─── Championship Leaders: Telemetry Standings ─── */}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Driver Championship Leader */}
             {data.driverChampionshipLeader && (
-               <Link to={`/drivers/${data.driverChampionshipLeader.id}`}>
-                  <div className="glass-card p-6 group cursor-pointer hover:border-amber-500/30">
-                     <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                           <Trophy className="w-5 h-5 text-amber-400" />
-                           <span className="text-sm font-semibold text-f1-silver uppercase tracking-wider">
-                              Driver Championship Leader
+               <Link
+                  to={`/drivers/${data.driverChampionshipLeader.id}`}
+                  className="group block outline-none"
+               >
+                  <div className="diagonal-card p-6 relative group cursor-pointer transition-all duration-300">
+                     {/* Dynamic Team Color Accent Line */}
+                     <div
+                        className="absolute left-0 top-0 bottom-0 w-1.5 transition-all group-hover:w-2"
+                        style={{ backgroundColor: data.driverChampionshipLeader.constructorColor || '#E10600' }}
+                     />
+
+                     <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/[0.04]">
+                        <div className="flex items-center gap-2.5">
+                           <div className="p-1.5 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-400">
+                              <Trophy className="w-4 h-4" />
+                           </div>
+                           <span className="text-xs font-mono font-bold text-f1-silver/80 uppercase tracking-widest">
+                              Driver Leaderboard #01
                            </span>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-f1-silver group-hover:text-amber-400 transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-f1-silver/40 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
                      </div>
-                     <div className="flex items-center gap-4">
+
+                     <div className="flex items-center gap-4 sm:gap-5">
+                        {/* Driver Portrait Frame */}
                         <div
-                           className="w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center font-display font-bold text-xl text-white shrink-0"
-                           style={{ backgroundColor: data.driverChampionshipLeader.constructorColor }}
+                           className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden flex items-center justify-center font-display font-black text-2xl text-white shrink-0 border border-white/[0.08] shadow-lg relative group-hover:scale-105 transition-transform"
+                           style={{ backgroundColor: `${data.driverChampionshipLeader.constructorColor}30` }}
                         >
                            {driverImgUrl && !driverImgError ? (
                               <img
@@ -173,20 +350,38 @@ const DashboardPage: React.FC = () => {
                                  onError={() => setDriverImgError(true)}
                               />
                            ) : (
-                              data.driverChampionshipLeader.code
+                              <span className="font-mono">{data.driverChampionshipLeader.code}</span>
                            )}
+                           <div
+                              className="absolute bottom-0 inset-x-0 h-1"
+                              style={{ backgroundColor: data.driverChampionshipLeader.constructorColor }}
+                           />
                         </div>
-                        <div>
-                           <h3 className="text-xl font-bold">
+
+                        {/* Driver Meta */}
+                        <div className="flex-1 min-w-0">
+                           <div className="text-xs font-mono font-semibold text-f1-silver/60 uppercase tracking-wider">
+                              P1 Standings Leader
+                           </div>
+                           <h3 className="text-xl sm:text-2xl font-black font-display text-f1-white truncate mt-0.5">
                               {data.driverChampionshipLeader.firstName} {data.driverChampionshipLeader.lastName}
                            </h3>
-                           <p className="text-f1-silver text-sm">{data.driverChampionshipLeader.constructorName}</p>
-                        </div>
-                        <div className="ml-auto text-right">
-                           <p className="text-2xl font-display font-bold text-amber-400">
-                              {data.driverChampionshipLeader.points}
+                           <p
+                              className="text-xs sm:text-sm font-mono font-medium truncate mt-0.5"
+                              style={{ color: data.driverChampionshipLeader.constructorColor }}
+                           >
+                              {data.driverChampionshipLeader.constructorName}
                            </p>
-                           <p className="text-xs text-f1-silver">PTS</p>
+                        </div>
+
+                        {/* Points Scoreboard */}
+                        <div className="text-right shrink-0 pl-2">
+                           <div className="text-3xl sm:text-4xl font-display font-black text-amber-400 leading-none">
+                              {data.driverChampionshipLeader.points}
+                           </div>
+                           <span className="text-[10px] font-mono tracking-widest text-f1-silver/50 uppercase block mt-1">
+                              POINTS
+                           </span>
                         </div>
                      </div>
                   </div>
@@ -195,42 +390,71 @@ const DashboardPage: React.FC = () => {
 
             {/* Constructor Championship Leader */}
             {data.constructorChampionshipLeader && (
-               <Link to={`/constructors/${data.constructorChampionshipLeader.id}`}>
-                  <div className="glass-card p-6 group cursor-pointer hover:border-amber-500/30">
-                     <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                           <Users className="w-5 h-5 text-amber-400" />
-                           <span className="text-sm font-semibold text-f1-silver uppercase tracking-wider">
-                              Constructor Championship Leader
+               <Link
+                  to={`/constructors/${data.constructorChampionshipLeader.id}`}
+                  className="group block outline-none"
+               >
+                  <div className="diagonal-card p-6 relative group cursor-pointer transition-all duration-300">
+                     {/* Dynamic Team Color Accent Line */}
+                     <div
+                        className="absolute left-0 top-0 bottom-0 w-1.5 transition-all group-hover:w-2"
+                        style={{ backgroundColor: data.constructorChampionshipLeader.color || '#E10600' }}
+                     />
+
+                     <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/[0.04]">
+                        <div className="flex items-center gap-2.5">
+                           <div className="p-1.5 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-400">
+                              <Shield className="w-4 h-4" />
+                           </div>
+                           <span className="text-xs font-mono font-bold text-f1-silver/80 uppercase tracking-widest">
+                              Constructor Leaderboard #01
                            </span>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-f1-silver group-hover:text-amber-400 transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-f1-silver/40 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
                      </div>
-                     <div className="flex items-center gap-4">
+
+                     <div className="flex items-center gap-4 sm:gap-5">
+                        {/* Constructor Logo Frame */}
                         <div
-                           className="w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center shrink-0"
-                           style={{ backgroundColor: data.constructorChampionshipLeader.color }}
+                           className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 border border-white/[0.08] shadow-lg relative group-hover:scale-105 transition-transform bg-f1-abyss/80 p-2.5"
                         >
                            {constructorTheme?.teamLogoUrl && !logoError ? (
                               <img
                                  src={constructorTheme.teamLogoUrl}
                                  alt={data.constructorChampionshipLeader.name}
-                                 className="w-full h-full object-contain p-2"
+                                 className="w-full h-full object-contain"
                                  onError={() => setLogoError(true)}
                               />
                            ) : (
-                              <Trophy className="w-6 h-6 text-white" />
+                              <Trophy className="w-8 h-8 text-amber-400" />
                            )}
+                           <div
+                              className="absolute bottom-0 inset-x-0 h-1"
+                              style={{ backgroundColor: data.constructorChampionshipLeader.color }}
+                           />
                         </div>
-                        <div>
-                           <h3 className="text-xl font-bold">{data.constructorChampionshipLeader.name}</h3>
-                           <p className="text-f1-silver text-sm">{data.constructorChampionshipLeader.nationality}</p>
-                        </div>
-                        <div className="ml-auto text-right">
-                           <p className="text-2xl font-display font-bold text-amber-400">
-                              {data.constructorChampionshipLeader.points}
+
+                        {/* Constructor Meta */}
+                        <div className="flex-1 min-w-0">
+                           <div className="text-xs font-mono font-semibold text-f1-silver/60 uppercase tracking-wider">
+                              World Champions Leading
+                           </div>
+                           <h3 className="text-xl sm:text-2xl font-black font-display text-f1-white truncate mt-0.5">
+                              {data.constructorChampionshipLeader.name}
+                           </h3>
+                           <p className="text-xs sm:text-sm font-mono text-f1-silver/60 truncate mt-0.5">
+                              {data.constructorChampionshipLeader.nationality} Heritage
                            </p>
-                           <p className="text-xs text-f1-silver">PTS</p>
+                        </div>
+
+                        {/* Points Scoreboard */}
+                        <div className="text-right shrink-0 pl-2">
+                           <div className="text-3xl sm:text-4xl font-display font-black text-amber-400 leading-none">
+                              {data.constructorChampionshipLeader.points}
+                           </div>
+                           <span className="text-[10px] font-mono tracking-widest text-f1-silver/50 uppercase block mt-1">
+                              POINTS
+                           </span>
                         </div>
                      </div>
                   </div>
@@ -238,24 +462,41 @@ const DashboardPage: React.FC = () => {
             )}
          </div>
 
-         {/* Quick Links */}
-         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-               { to: '/drivers', label: 'Driver Standings', icon: Users, color: 'text-blue-400' },
-               { to: '/constructors', label: 'Team Standings', icon: Trophy, color: 'text-amber-400' },
-               { to: '/races', label: 'Race Schedule', icon: Calendar, color: 'text-emerald-400' },
-               { to: '/statistics', label: 'Statistics', icon: TrendingUp, color: 'text-purple-400' },
-            ].map(({ to, label, icon: Icon, color }) => (
-               <Link key={to} to={to}>
-                  <div className="glass-card p-4 flex items-center gap-3 group cursor-pointer">
-                     <Icon className={`w-5 h-5 ${color}`} />
-                     <span className="text-sm font-medium text-f1-silver group-hover:text-f1-white transition-colors">
-                        {label}
-                     </span>
-                     <ChevronRight className="w-4 h-4 text-f1-silver/50 ml-auto group-hover:text-f1-white transition-colors" />
-                  </div>
-               </Link>
-            ))}
+         {/* ─── Fast Telemetry Navigation Quick Links ─── */}
+         <div className="pt-2">
+            <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-3 px-1">
+               Engineering Command Shortcuts
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+               {[
+                  { to: '/drivers', label: 'Driver Standings', icon: Users, accent: '#38bdf8', tag: 'DRV' },
+                  { to: '/constructors', label: 'Constructor Table', icon: Shield, accent: '#f59e0b', tag: 'CON' },
+                  { to: '/races', label: 'Grand Prix Calendar', icon: Calendar, accent: '#10b981', tag: 'CAL' },
+                  { to: '/momentum', label: 'Momentum Analytics', icon: Activity, accent: '#a855f7', tag: 'MOM' },
+               ].map(({ to, label, icon: Icon, accent, tag }) => (
+                  <Link key={to} to={to} className="group outline-none">
+                     <div className="pill-button justify-between py-3.5 group-hover:border-white/[0.12] transition-all">
+                        <div className="flex items-center gap-3">
+                           <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/[0.04]"
+                              style={{ backgroundColor: `${accent}15` }}
+                           >
+                              <Icon className="w-4 h-4" style={{ color: accent }} />
+                           </div>
+                           <div>
+                              <span className="text-xs font-mono font-semibold text-f1-white group-hover:text-f1-red-light transition-colors block">
+                                 {label}
+                              </span>
+                              <span className="text-[9px] font-mono text-f1-silver/40 uppercase">
+                                 TELEMETRY /{tag}
+                              </span>
+                           </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-f1-silver/30 group-hover:text-f1-white group-hover:translate-x-0.5 transition-all" />
+                     </div>
+                  </Link>
+               ))}
+            </div>
          </div>
       </div>
    );
