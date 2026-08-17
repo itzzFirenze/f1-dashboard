@@ -9,7 +9,8 @@ export interface EasterEggTrack {
    emoji: string;
 }
 
-export const SUPABASE_STORAGE_BASE = 'https://jnqvjtwyqzqifwdxktml.supabase.co/storage/v1/object/public';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+export const SUPABASE_STORAGE_BASE = `${SUPABASE_URL}/storage/v1/object/public`;
 
 export const EASTER_EGGS: Record<string, EasterEggTrack> = {
    max: {

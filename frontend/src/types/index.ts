@@ -331,3 +331,33 @@ export interface CircuitCharacteristics {
    overtakingDifficulty: number;
    streetCircuit: boolean;
 }
+
+/** F1 Trivia types */
+export interface TriviaQuestion {
+   id: string;
+   question: string;
+   options: string[];
+   correct_answer: string;
+   explanation: string;
+   category: string;
+   difficulty: 'easy' | 'medium' | 'hard';
+   season: number | null;
+   source: string;
+   created_at?: string;
+}
+
+export type TriviaCategory =
+   | 'all'
+   | 'drivers'
+   | 'teams'
+   | 'circuits'
+   | 'race_results'
+   | 'championships'
+   | 'pit_stops'
+   | 'tyres'
+   | 'team_radio'
+   | 'historical'
+   | 'records'
+   | 'rules';
+
+export type TriviaGameMode = 'sprint' | 'gp' | 'survival' | 'category';

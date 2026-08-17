@@ -18,6 +18,9 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    include: ['@supabase/supabase-js'],
+  },
   build: {
     outDir: '../backend/src/main/resources/static',
     emptyOutDir: true,

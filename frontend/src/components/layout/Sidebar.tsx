@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
    LayoutDashboard, Trophy, Calendar, Map,
-   Menu, X, Flag, ChevronDown, ChevronRight, Activity, GitCompare, Award, Wand2, Tv
+   Menu, X, Flag, ChevronDown, ChevronRight, Activity, GitCompare, Award, Wand2, Tv, Sparkles
 } from 'lucide-react';
 
 interface NavItem {
@@ -31,6 +31,7 @@ const navItems: NavItem[] = [
       ]
    },
    { path: '/circuits', label: 'Circuits', icon: Map },
+   { path: '/trivia', label: 'Trivia Quiz', icon: Sparkles },
    {
       label: 'Analytics', icon: Activity,
       subItems: [

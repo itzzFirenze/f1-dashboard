@@ -22,6 +22,7 @@ import SeasonTimelinePage from './pages/SeasonTimelinePage';
 import RecordsPage from './pages/RecordsPage';
 import WeatherForecastPage from './pages/WeatherForecastPage';
 import RaceReplayCenterPage from './pages/RaceReplayCenterPage';
+import TriviaPage from './pages/TriviaPage';
 import CornerPositionPicker from './pages/admin/CornerPositionPicker';
 
 const App: React.FC = () => {
@@ -39,6 +40,7 @@ const App: React.FC = () => {
                      <Route path="/races" element={<RaceSchedulePage />} />
                      <Route path="/races/:id" element={<RaceDetailPage />} />
                      <Route path="/circuits" element={<CircuitExplorerPage />} />
+                     <Route path="/trivia" element={<TriviaPage />} />
                      <Route path="/statistics" element={<StatisticsPage />} />
                      <Route path="/compare/drivers" element={<DriverComparisonPage />} />
                      <Route path="/momentum" element={<MomentumTrackerPage />} />

@@ -7,7 +7,8 @@ export interface TeamTheme {
    driverImages: Record<string, string>;
 }
 
-const BASE = 'https://jnqvjtwyqzqifwdxktml.supabase.co/storage/v1/object/public';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const BASE = `${SUPABASE_URL}/storage/v1/object/public`;
 
 export const TEAM_THEMES: Record<string, TeamTheme> = {
    mercedes: {
