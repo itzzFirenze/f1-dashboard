@@ -66,11 +66,10 @@ const ConsistencyPage: React.FC = () => {
    return (
       <div className="space-y-7 animate-fade-in">
          {/* ─── Hero Header: Mission Control HUD ─── */}
-         <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 shadow-2xl dot-grid">
+         <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-5 sm:p-8 shadow-2xl dot-grid">
             <div className="scanline-overlay" />
-            <div className="absolute -top-24 -right-24 w-96 h-96 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-0 right-0 w-48 h-full bg-gradient-to-l from-f1-red/[0.04] to-transparent transform skew-x-12 pointer-events-none" />
+            <div className="absolute -top-24 -right-24 w-80 h-80 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10 space-y-2">
                <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
@@ -80,8 +79,8 @@ const ConsistencyPage: React.FC = () => {
                   </span>
                </div>
 
-               <h1 className="text-4xl sm:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
-                  <Grid3x3 className="w-9 h-9 text-f1-red" />
+               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
+                  <Grid3x3 className="w-8 h-8 text-f1-red" />
                   Consistency <span className="gradient-text">Analysis</span>
                </h1>
 

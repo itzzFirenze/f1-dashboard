@@ -27,27 +27,46 @@ const ConstructorsPage: React.FC = () => {
    return (
       <div className="space-y-7 animate-fade-in">
          {/* ─── Hero Section: Mission Control HUD ─── */}
-         <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 shadow-2xl dot-grid">
+         <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-5 sm:p-8 shadow-2xl dot-grid">
             <div className="scanline-overlay" />
-            <div className="absolute -top-24 -right-24 w-96 h-96 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-0 right-0 w-48 h-full bg-gradient-to-l from-f1-red/[0.04] to-transparent transform skew-x-12 pointer-events-none" />
+            <div className="absolute -top-24 -right-24 w-80 h-80 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative z-10 space-y-2">
-               <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
-                  <Shield className="w-3.5 h-3.5 text-f1-red-light" />
-                  <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
-                     CONSTRUCTOR TELEMETRY
-                  </span>
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+               <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <Shield className="w-3.5 h-3.5 text-f1-red-light" />
+                     <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                        CONSTRUCTOR TELEMETRY
+                     </span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
+                     TEAM <span className="gradient-text">STANDINGS</span>
+                  </h1>
+
+                  <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                     Constructor championship rankings & real-time points telemetry across the grid.
+                  </p>
                </div>
 
-               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black tracking-tight text-f1-white uppercase">
-                  TEAM <span className="gradient-text">STANDINGS</span>
-               </h1>
-
-               <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
-                  Constructor championship rankings & real-time points telemetry across the grid.
-               </p>
+               {/* Live Grid Radar Pill */}
+               <div className="flex items-center gap-4 bg-f1-abyss/80 border border-white/[0.08] rounded-2xl p-4 sm:p-5 backdrop-blur-xl shrink-0">
+                  <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-f1-red/10 border border-f1-red/20 shrink-0">
+                     <Shield className="w-6 h-6 text-f1-red" />
+                  </div>
+                  <div>
+                     <div className="text-[10px] font-mono text-f1-silver/60 uppercase tracking-widest">
+                        Grid Size
+                     </div>
+                     <div className="font-display font-bold text-base text-f1-white mt-0.5">
+                        {constructors.length} Teams
+                     </div>
+                     <div className="text-xs font-mono text-emerald-400 font-semibold flex items-center gap-1.5 mt-0.5">
+                        <span>●</span> Live Standings
+                     </div>
+                  </div>
+               </div>
             </div>
          </div>
 
@@ -77,9 +96,9 @@ const ConstructorsPage: React.FC = () => {
                            {/* Position Badge */}
                            <div
                               className={`w-11 h-11 rounded-xl flex items-center justify-center font-display font-black text-lg shrink-0 border ${i === 0 ? 'bg-amber-400/10 text-amber-400 border-amber-400/20' :
-                                    i === 1 ? 'bg-gray-300/10 text-gray-300 border-gray-300/20' :
-                                       i === 2 ? 'bg-orange-600/10 text-orange-400 border-orange-600/20' :
-                                          'bg-white/[0.04] text-f1-silver/70 border-white/[0.06]'
+                                 i === 1 ? 'bg-gray-300/10 text-gray-300 border-gray-300/20' :
+                                    i === 2 ? 'bg-orange-600/10 text-orange-400 border-orange-600/20' :
+                                       'bg-white/[0.04] text-f1-silver/70 border-white/[0.06]'
                                  }`}
                            >
                               P{team.championshipPosition}

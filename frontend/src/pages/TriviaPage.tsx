@@ -50,7 +50,6 @@ function shuffleArray<T>(arr: T[]): T[] {
    return shuffled;
 }
 
-/** Circular HUD gauge — shared visual language with the dashboard's telemetry stat cards */
 interface ResultGaugeCardProps {
    title: string;
    value: number | string;
@@ -350,18 +349,15 @@ const TriviaPage: React.FC = () => {
    const scorePct = Math.min(100, Math.round((score / ((userAnswers.length || 1) * 300)) * 100));
 
    return (
-      <div className="w-full max-w-6xl mx-auto flex flex-col justify-start animate-fade-in space-y-7">
-         {/* ------------------------------------------------------------------- */}
-         {/* 1. LOBBY VIEW                                                       */}
-         {/* ------------------------------------------------------------------- */}
+      <div className="space-y-7 animate-fade-in">
+         {/* 1. LOBBY VIEW  */}
          {gameState === 'lobby' && (
             <div className="space-y-5">
-               {/* Hero: Mission Control HUD, matching dashboard */}
-               <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 shadow-2xl dot-grid">
+               {/* Hero: Mission Control HUD */}
+               <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-5 sm:p-8 shadow-2xl dot-grid">
                   <div className="scanline-overlay" />
-                  <div className="absolute -top-24 -right-24 w-96 h-96 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
-                  <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
-                  <div className="absolute top-0 right-0 w-48 h-full bg-gradient-to-l from-f1-red/[0.04] to-transparent transform skew-x-12 pointer-events-none" />
+                  <div className="absolute -top-24 -right-24 w-80 h-80 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
                   <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                      <div className="space-y-2">
@@ -372,7 +368,7 @@ const TriviaPage: React.FC = () => {
                            </span>
                         </div>
 
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black tracking-tight text-f1-white uppercase">
+                        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
                            Trivia <span className="gradient-text">Circuit</span>
                         </h1>
 
@@ -414,8 +410,8 @@ const TriviaPage: React.FC = () => {
                                     key={mode.id}
                                     onClick={() => setGameMode(mode.id)}
                                     className={`relative overflow-hidden p-3.5 rounded-xl border text-left transition-all ${isActive
-                                          ? 'bg-white/[0.06] border-white/[0.14] shadow-lg'
-                                          : 'bg-white/[0.02] border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.04]'
+                                       ? 'bg-white/[0.06] border-white/[0.14] shadow-lg'
+                                       : 'bg-white/[0.02] border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.04]'
                                        }`}
                                     style={isActive ? { boxShadow: `0 0 0 1px ${mode.color}40, 0 10px 30px -10px ${mode.color}30` } : undefined}
                                  >
@@ -497,8 +493,8 @@ const TriviaPage: React.FC = () => {
                                     key={diff}
                                     onClick={() => setDifficultyFilter(diff)}
                                     className={`py-1.5 text-[11px] font-mono font-bold rounded-lg uppercase tracking-wide transition-all ${difficultyFilter === diff
-                                          ? 'bg-f1-red text-white shadow-md'
-                                          : 'text-f1-silver/60 hover:text-f1-white'
+                                       ? 'bg-f1-red text-white shadow-md'
+                                       : 'text-f1-silver/60 hover:text-f1-white'
                                        }`}
                                  >
                                     {diff}
@@ -559,9 +555,7 @@ const TriviaPage: React.FC = () => {
             </div>
          )}
 
-         {/* ------------------------------------------------------------------- */}
-         {/* 2. START LIGHTS COUNTDOWN                                           */}
-         {/* ------------------------------------------------------------------- */}
+         {/* 2. START LIGHTS COUNTDOWN */}
          {gameState === 'starting' && (
             <div className="relative overflow-hidden w-full min-h-[55vh] flex flex-col items-center justify-center p-8 rounded-3xl bg-f1-carbon/90 border border-white/[0.06] dot-grid shadow-2xl">
                <div className="scanline-overlay" />
@@ -581,8 +575,8 @@ const TriviaPage: React.FC = () => {
                         <div
                            key={lightIndex}
                            className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full transition-all duration-150 ${isLit
-                                 ? 'bg-f1-red shadow-[0_0_30px_#e10600] border-2 border-white'
-                                 : 'bg-zinc-900 border border-white/10'
+                              ? 'bg-f1-red shadow-[0_0_30px_#e10600] border-2 border-white'
+                              : 'bg-zinc-900 border border-white/10'
                               }`}
                         />
                      );
@@ -595,9 +589,7 @@ const TriviaPage: React.FC = () => {
             </div>
          )}
 
-         {/* ------------------------------------------------------------------- */}
-         {/* 3. ACTIVE QUIZ PLAYING VIEW                                         */}
-         {/* ------------------------------------------------------------------- */}
+         {/* 3. ACTIVE QUIZ PLAYING VIEW */}
          {gameState === 'playing' && currentQuestion && (
             <div className="w-full flex flex-col gap-3.5">
                {/* Race HUD Header */}
@@ -723,10 +715,10 @@ const TriviaPage: React.FC = () => {
                            >
                               <span
                                  className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-bold text-xs sm:text-sm flex-shrink-0 transition-transform group-hover:scale-105 ${isAnswerSubmitted && isCorrect
-                                       ? 'bg-emerald-500 text-black shadow-md'
-                                       : isAnswerSubmitted && isSelected && !isCorrect
-                                          ? 'bg-rose-500 text-white shadow-md'
-                                          : 'bg-white/[0.06] text-f1-white/90 border border-white/[0.06]'
+                                    ? 'bg-emerald-500 text-black shadow-md'
+                                    : isAnswerSubmitted && isSelected && !isCorrect
+                                       ? 'bg-rose-500 text-white shadow-md'
+                                       : 'bg-white/[0.06] text-f1-white/90 border border-white/[0.06]'
                                     }`}
                               >
                                  {letter}
@@ -742,8 +734,8 @@ const TriviaPage: React.FC = () => {
                      <div className="mt-4 pt-4 border-t border-white/[0.06] animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                         <div
                            className={`p-3.5 rounded-2xl border flex items-center gap-3 flex-1 ${selectedAnswer === currentQuestion.correct_answer
-                                 ? 'bg-emerald-950/40 border-emerald-800/40 text-emerald-200'
-                                 : 'bg-rose-950/40 border-rose-800/40 text-rose-200'
+                              ? 'bg-emerald-950/40 border-emerald-800/40 text-emerald-200'
+                              : 'bg-rose-950/40 border-rose-800/40 text-rose-200'
                               }`}
                         >
                            {selectedAnswer === currentQuestion.correct_answer ? (
@@ -782,9 +774,7 @@ const TriviaPage: React.FC = () => {
             </div>
          )}
 
-         {/* ------------------------------------------------------------------- */}
-         {/* 4. RACE RESULTS & PODIUM SUMMARY VIEW                               */}
-         {/* ------------------------------------------------------------------- */}
+         {/* 4. RACE RESULTS & PODIUM SUMMARY VIEW */}
          {gameState === 'finished' && (
             <div className="w-full space-y-5 animate-slide-up">
                {/* Podium Banner — Mission Control HUD style */}
@@ -803,7 +793,7 @@ const TriviaPage: React.FC = () => {
                      </h2>
                      <p className="text-f1-silver/70 text-sm mt-1 max-w-md mx-auto">{getPerformanceRank().desc}</p>
 
-                     {/* Telemetry gauge grid — same signature dial as the dashboard */}
+                     {/* Telemetry gauge grid */}
                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-7 text-left">
                         <ResultGaugeCard
                            title="Total Score"
