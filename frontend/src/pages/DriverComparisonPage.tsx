@@ -98,11 +98,11 @@ const DriverComparisonPage: React.FC = () => {
       return (
          <div className="mb-4">
             <div className="flex items-center justify-between mb-1.5">
-               <span className="text-sm font-semibold" style={{ color: colorA }}>{valueA}</span>
-               <span className="text-xs text-f1-silver uppercase tracking-wider">{label}</span>
-               <span className="text-sm font-semibold" style={{ color: colorB }}>{valueB}</span>
+               <span className="text-sm font-mono font-bold" style={{ color: colorA }}>{valueA}</span>
+               <span className="text-[10px] font-mono text-f1-silver/50 uppercase tracking-[0.2em]">{label}</span>
+               <span className="text-sm font-mono font-bold" style={{ color: colorB }}>{valueB}</span>
             </div>
-            <div className="w-full h-2.5 rounded-full bg-f1-mid-gray overflow-hidden flex">
+            <div className="w-full h-2 rounded-full bg-white/[0.04] overflow-hidden flex border border-white/[0.04]">
                <div className="h-full rounded-l-full transition-all duration-700" style={{ width: `${pctA}%`, backgroundColor: colorA }} />
                <div className="h-full rounded-r-full transition-all duration-700 ml-0.5" style={{ width: `${100 - pctA}%`, backgroundColor: colorB }} />
             </div>
@@ -111,17 +111,33 @@ const DriverComparisonPage: React.FC = () => {
    };
 
    return (
-      <div className="space-y-8 animate-fade-in">
-         {/* Header */}
-         <div>
-            <h1 className="text-3xl font-display font-bold flex items-center gap-3">
-               <GitCompare className="w-8 h-8 text-f1-red" />
-               Driver Comparison Center
-            </h1>
-            <p className="text-f1-silver mt-1">Compare any two drivers head-to-head</p>
+      <div className="space-y-7 animate-fade-in">
+         {/* ─── Hero Section: Mission Control HUD (mirrors Dashboard) ─── */}
+         <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 shadow-2xl dot-grid">
+            <div className="scanline-overlay" />
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-48 h-full bg-gradient-to-l from-f1-red/[0.04] to-transparent transform skew-x-12 pointer-events-none" />
+
+            <div className="relative z-10 space-y-2">
+               <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                  <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                     Head-to-Head Telemetry
+                  </span>
+               </div>
+
+               <h1 className="text-4xl sm:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
+                  <GitCompare className="w-9 h-9 sm:w-10 sm:h-10 text-f1-red shrink-0" />
+                  Driver <span className="gradient-text">Comparison</span>
+               </h1>
+
+               <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                  Compare any two drivers head-to-head across points, pace and race craft.
+               </p>
+            </div>
          </div>
 
-         {/* Driver Selectors */}
+         {/* ─── Driver Selectors ─── */}
          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-end">
             <DriverSelector
                drivers={drivers}
@@ -132,10 +148,10 @@ const DriverComparisonPage: React.FC = () => {
             />
             <button
                onClick={swapDrivers}
-               className="hidden md:flex w-12 h-12 rounded-xl bg-f1-mid-gray items-center justify-center hover:bg-f1-red/20 transition-colors self-end mb-1"
+               className="hidden md:flex w-12 h-12 rounded-xl bg-white/[0.03] border border-white/[0.06] items-center justify-center hover:bg-f1-red/10 hover:border-f1-red/30 transition-colors self-end mb-1 group"
                title="Swap drivers"
             >
-               <ArrowLeftRight className="w-5 h-5 text-f1-silver" />
+               <ArrowLeftRight className="w-5 h-5 text-f1-silver/60 group-hover:text-f1-red-light transition-colors" />
             </button>
             <DriverSelector
                drivers={drivers}
@@ -154,10 +170,16 @@ const DriverComparisonPage: React.FC = () => {
             <div className="space-y-6">
 
                {/* Head-to-Head Stats */}
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   {/* Radar Chart */}
-                  <div className="glass-card p-6">
-                     <h3 className="text-sm font-semibold text-f1-silver uppercase tracking-wider mb-4">Performance Profile</h3>
+                  <div className="telemetry-card p-6 relative overflow-hidden">
+                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
+                     <div className="flex items-center gap-2.5 mb-4">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-sky-400/10">
+                           <Users className="w-4 h-4 text-sky-400" />
+                        </div>
+                        <h3 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Performance Profile</h3>
+                     </div>
                      <div className="h-80">
                         <ResponsiveRadar
                            data={radarData}
@@ -202,24 +224,30 @@ const DriverComparisonPage: React.FC = () => {
                   </div>
 
                   {/* Stats Bars */}
-                  <div className="glass-card p-6">
-                     <h3 className="text-sm font-semibold text-f1-silver uppercase tracking-wider mb-6">Head-to-Head</h3>
+                  <div className="telemetry-card p-6 relative overflow-hidden">
+                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+                     <div className="flex items-center gap-2.5 mb-6">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-amber-400/10">
+                           <GitCompare className="w-4 h-4 text-amber-400" />
+                        </div>
+                        <h3 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Head-to-Head</h3>
+                     </div>
                      <StatBar label="Points" valueA={data.statsA.points} valueB={data.statsB.points} colorA={data.driverA.constructorColor} colorB={data.driverB.constructorColor} />
                      <StatBar label="Wins" valueA={data.statsA.wins} valueB={data.statsB.wins} colorA={data.driverA.constructorColor} colorB={data.driverB.constructorColor} />
                      <StatBar label="Podiums" valueA={data.statsA.podiums} valueB={data.statsB.podiums} colorA={data.driverA.constructorColor} colorB={data.driverB.constructorColor} />
                      <StatBar label="Race H2H" valueA={data.headToHeadRaceA} valueB={data.headToHeadRaceB} colorA={data.driverA.constructorColor} colorB={data.driverB.constructorColor} />
                      <StatBar label="DNFs" valueA={data.statsA.dnfs} valueB={data.statsB.dnfs} colorA={data.driverA.constructorColor} colorB={data.driverB.constructorColor} />
 
-                     <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-white/5">
+                     <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-white/[0.06]">
                         <div className="text-center">
-                           <p className="text-xs text-f1-silver mb-1">Avg Grid</p>
-                           <p className="text-xl font-display font-bold" style={{ color: data.driverA.constructorColor }}>
+                           <p className="text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest mb-1">Avg Grid</p>
+                           <p className="text-xl font-display font-black" style={{ color: data.driverA.constructorColor }}>
                               P{data.statsA.avgGrid.toFixed(1)}
                            </p>
                         </div>
                         <div className="text-center">
-                           <p className="text-xs text-f1-silver mb-1">Avg Grid</p>
-                           <p className="text-xl font-display font-bold" style={{ color: data.driverB.constructorColor }}>
+                           <p className="text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest mb-1">Avg Grid</p>
+                           <p className="text-xl font-display font-black" style={{ color: data.driverB.constructorColor }}>
                               P{data.statsB.avgGrid.toFixed(1)}
                            </p>
                         </div>
@@ -229,8 +257,14 @@ const DriverComparisonPage: React.FC = () => {
 
                {/* Cumulative Points Line Chart */}
                {cumulativeLineData.length > 0 && cumulativeLineData[0].data.length > 0 && (
-                  <div className="glass-card p-6">
-                     <h3 className="text-sm font-semibold text-f1-silver uppercase tracking-wider mb-4">Points Progression</h3>
+                  <div className="telemetry-card p-6 relative overflow-hidden">
+                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
+                     <div className="flex items-center gap-2.5 mb-4">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-emerald-400/10">
+                           <ArrowLeftRight className="w-4 h-4 text-emerald-400 rotate-90" />
+                        </div>
+                        <h3 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Points Progression</h3>
+                     </div>
                      <div className="h-72">
                         <ResponsiveLine
                            data={cumulativeLineData}
@@ -275,8 +309,14 @@ const DriverComparisonPage: React.FC = () => {
 
                {/* Position Bump Chart */}
                {bumpData.length > 0 && bumpData[0].data.length > 1 && (
-                  <div className="glass-card p-6">
-                     <h3 className="text-sm font-semibold text-f1-silver uppercase tracking-wider mb-4">Position History</h3>
+                  <div className="telemetry-card p-6 relative overflow-hidden">
+                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
+                     <div className="flex items-center gap-2.5 mb-4">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-f1-red/10">
+                           <GitCompare className="w-4 h-4 text-f1-red-light" />
+                        </div>
+                        <h3 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Position History</h3>
+                     </div>
                      <div className="h-72">
                         <ResponsiveBump
                            data={bumpData}
@@ -309,10 +349,11 @@ const DriverComparisonPage: React.FC = () => {
 
          {/* Empty State */}
          {!data && !loading && (
-            <div className="glass-card p-12 text-center">
-               <Users className="w-16 h-16 text-f1-silver/30 mx-auto mb-4" />
-               <h3 className="text-xl font-semibold text-f1-silver mb-2">Select Two Drivers</h3>
-               <p className="text-sm text-f1-silver/60">Choose drivers above to see their head-to-head comparison</p>
+            <div className="telemetry-card p-12 text-center dot-grid relative overflow-hidden">
+               <div className="absolute -top-16 -right-16 w-64 h-64 bg-f1-red/10 rounded-full blur-3xl pointer-events-none" />
+               <Users className="w-16 h-16 text-f1-silver/30 mx-auto mb-4 relative z-10" />
+               <h3 className="text-xl font-display font-bold text-f1-white mb-2 relative z-10">Select Two Drivers</h3>
+               <p className="text-sm font-mono text-f1-silver/50 relative z-10">Choose drivers above to see their head-to-head comparison</p>
             </div>
          )}
       </div>

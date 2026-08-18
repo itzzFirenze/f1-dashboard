@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Swords, ArrowLeftRight } from 'lucide-react';
+import { Swords, ArrowLeftRight, Zap, Trophy, Gauge } from 'lucide-react';
 import { ResponsiveBar } from '@nivo/bar';
 import { ResponsiveLine } from '@nivo/line';
 import { ResponsivePie } from '@nivo/pie';
@@ -109,25 +109,41 @@ const ConstructorComparisonPage: React.FC = () => {
    if (constructorsLoading) return <PageSkeleton />;
 
    return (
-      <div className="space-y-8 animate-fade-in">
-         {/* Header */}
-         <div>
-            <h1 className="text-3xl font-display font-bold flex items-center gap-3">
-               <Swords className="w-8 h-8 text-f1-red" />
-               Constructor Battle Center
-            </h1>
-            <p className="text-f1-silver mt-1">Team rivalries, point splits, and championship gap evolution</p>
+      <div className="space-y-7 animate-fade-in">
+         {/* ─── Hero Section: Mission Control HUD (mirrors Dashboard) ─── */}
+         <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 shadow-2xl dot-grid">
+            <div className="scanline-overlay" />
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-48 h-full bg-gradient-to-l from-f1-red/[0.04] to-transparent transform skew-x-12 pointer-events-none" />
+
+            <div className="relative z-10 space-y-2">
+               <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                  <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                     Constructor Battle Telemetry
+                  </span>
+               </div>
+
+               <h1 className="text-4xl sm:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
+                  <Swords className="w-9 h-9 sm:w-10 sm:h-10 text-f1-red shrink-0" />
+                  Constructor <span className="gradient-text">Battle</span>
+               </h1>
+
+               <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                  Team rivalries, point splits, and championship gap evolution.
+               </p>
+            </div>
          </div>
 
-         {/* Team Selectors */}
+         {/* ─── Team Selectors ─── */}
          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-end">
             <TeamSelector teams={constructors} selected={teamA} onSelect={setTeamA} label="Team A" />
             <button
                onClick={swapTeams}
-               className="glass-card p-3 hover:bg-f1-red/20 transition-colors self-center"
+               className="hidden md:flex w-12 h-12 rounded-xl bg-white/[0.03] border border-white/[0.06] items-center justify-center hover:bg-f1-red/10 hover:border-f1-red/30 transition-colors self-end mb-1 group"
                title="Swap teams"
             >
-               <ArrowLeftRight className="w-5 h-5 text-f1-silver" />
+               <ArrowLeftRight className="w-5 h-5 text-f1-silver/60 group-hover:text-f1-red-light transition-colors" />
             </button>
             <TeamSelector teams={constructors} selected={teamB} onSelect={setTeamB} label="Team B" />
          </div>
@@ -143,34 +159,52 @@ const ConstructorComparisonPage: React.FC = () => {
          {data && !loading && (
             <>
                {/* Head-to-Head Summary Cards */}
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="glass-card p-6 text-center">
-                     <div className="text-xs text-f1-silver uppercase tracking-wider mb-2">Total Points</div>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  <div className="telemetry-card p-6 text-center relative overflow-hidden">
+                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+                     <div className="flex items-center justify-center gap-2 mb-3">
+                        <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                        <div className="text-[10px] font-mono text-f1-silver/50 uppercase tracking-[0.2em]">Total Points</div>
+                     </div>
                      <div className="flex items-center justify-center gap-4">
-                        <span className="text-2xl font-bold" style={{ color: data.teamA.color || '#3B82F6' }}>{data.teamA.points}</span>
-                        <span className="text-f1-silver text-sm">vs</span>
-                        <span className="text-2xl font-bold" style={{ color: data.teamB.color || '#A855F7' }}>{data.teamB.points}</span>
+                        <span className="text-2xl sm:text-3xl font-display font-black" style={{ color: data.teamA.color || '#3B82F6' }}>{data.teamA.points}</span>
+                        <span className="text-f1-silver/40 text-xs font-mono uppercase">vs</span>
+                        <span className="text-2xl sm:text-3xl font-display font-black" style={{ color: data.teamB.color || '#A855F7' }}>{data.teamB.points}</span>
                      </div>
                   </div>
-                  <div className="glass-card p-6 text-center">
-                     <div className="text-xs text-f1-silver uppercase tracking-wider mb-2">Total Wins</div>
+                  <div className="telemetry-card p-6 text-center relative overflow-hidden">
+                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
+                     <div className="flex items-center justify-center gap-2 mb-3">
+                        <Zap className="w-3.5 h-3.5 text-emerald-400" />
+                        <div className="text-[10px] font-mono text-f1-silver/50 uppercase tracking-[0.2em]">Total Wins</div>
+                     </div>
                      <div className="flex items-center justify-center gap-4">
-                        <span className="text-2xl font-bold" style={{ color: data.teamA.color || '#3B82F6' }}>{data.teamA.wins}</span>
-                        <span className="text-f1-silver text-sm">vs</span>
-                        <span className="text-2xl font-bold" style={{ color: data.teamB.color || '#A855F7' }}>{data.teamB.wins}</span>
+                        <span className="text-2xl sm:text-3xl font-display font-black" style={{ color: data.teamA.color || '#3B82F6' }}>{data.teamA.wins}</span>
+                        <span className="text-f1-silver/40 text-xs font-mono uppercase">vs</span>
+                        <span className="text-2xl sm:text-3xl font-display font-black" style={{ color: data.teamB.color || '#A855F7' }}>{data.teamB.wins}</span>
                      </div>
                   </div>
-                  <div className="glass-card p-6 text-center">
-                     <div className="text-xs text-f1-silver uppercase tracking-wider mb-2">Championship Gap</div>
-                     <div className="text-2xl font-bold text-white">
-                        {Math.abs((data.teamA.points || 0) - (data.teamB.points || 0))} pts
+                  <div className="telemetry-card p-6 text-center relative overflow-hidden">
+                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
+                     <div className="flex items-center justify-center gap-2 mb-3">
+                        <Gauge className="w-3.5 h-3.5 text-f1-red-light" />
+                        <div className="text-[10px] font-mono text-f1-silver/50 uppercase tracking-[0.2em]">Championship Gap</div>
+                     </div>
+                     <div className="text-2xl sm:text-3xl font-display font-black text-f1-white">
+                        {Math.abs((data.teamA.points || 0) - (data.teamB.points || 0))} <span className="text-sm font-mono text-f1-silver/50 uppercase">pts</span>
                      </div>
                   </div>
                </div>
 
                {/* Stacked Bar Chart — Driver Point Contributions */}
-               <div className="glass-card p-6">
-                  <h2 className="text-xl font-display font-semibold mb-6">Points Per Round — Driver Contributions</h2>
+               <div className="telemetry-card p-6 relative overflow-hidden">
+                  <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-sky-400 to-transparent" />
+                  <div className="flex items-center gap-2.5 mb-6">
+                     <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-sky-400/10">
+                        <Zap className="w-4 h-4 text-sky-400" />
+                     </div>
+                     <h2 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Points Per Round — Driver Contributions</h2>
+                  </div>
                   <div style={{ height: 350 }}>
                      {stackedBarData.length > 0 ? (
                         <ResponsiveBar
@@ -204,14 +238,20 @@ const ConstructorComparisonPage: React.FC = () => {
                            motionConfig="gentle"
                         />
                      ) : (
-                        <div className="flex items-center justify-center h-full text-f1-silver">No race data available yet</div>
+                        <div className="flex items-center justify-center h-full text-sm font-mono text-f1-silver/50">No race data available yet</div>
                      )}
                   </div>
                </div>
 
                {/* Gap Evolution Area/Line Chart */}
-               <div className="glass-card p-6">
-                  <h2 className="text-xl font-display font-semibold mb-6">Championship Gap Evolution</h2>
+               <div className="telemetry-card p-6 relative overflow-hidden">
+                  <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
+                  <div className="flex items-center gap-2.5 mb-6">
+                     <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-f1-red/10">
+                        <ArrowLeftRight className="w-4 h-4 text-f1-red-light rotate-90" />
+                     </div>
+                     <h2 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Championship Gap Evolution</h2>
+                  </div>
                   <div style={{ height: 350 }}>
                      {gapLineData.length > 0 && gapLineData[0].data.length > 0 ? (
                         <ResponsiveLine
@@ -250,17 +290,21 @@ const ConstructorComparisonPage: React.FC = () => {
                            ]}
                         />
                      ) : (
-                        <div className="flex items-center justify-center h-full text-f1-silver">No race data available yet</div>
+                        <div className="flex items-center justify-center h-full text-sm font-mono text-f1-silver/50">No race data available yet</div>
                      )}
                   </div>
                </div>
 
                {/* Driver Splits — Donut Charts */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Team A Donut */}
-                  <div className="glass-card p-6">
-                     <h2 className="text-lg font-display font-semibold mb-2 flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.teamA.color || '#3B82F6' }} />
+                  <div className="telemetry-card p-6 relative overflow-hidden">
+                     <div
+                        className="absolute top-0 inset-x-0 h-[2px] opacity-75"
+                        style={{ background: `linear-gradient(90deg, transparent, ${data.teamA.color || '#3B82F6'}, transparent)` }}
+                     />
+                     <h2 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase mb-2 flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.teamA.color || '#3B82F6' }} />
                         {data.teamA.name} — Driver Split
                      </h2>
                      <div style={{ height: 260 }}>
@@ -284,11 +328,11 @@ const ConstructorComparisonPage: React.FC = () => {
                      <div className="space-y-2 mt-2">
                         {data.driverSplitA.map(d => (
                            <div key={d.driver.id} className="flex items-center justify-between text-sm">
-                              <span className="text-f1-silver">{d.driver.code}</span>
-                              <div className="flex gap-4">
-                                 <span>{d.points} pts ({d.percentage.toFixed(0)}%)</span>
-                                 <span className="text-f1-silver">Q: P{d.avgQuali.toFixed(1)}</span>
-                                 <span className="text-f1-silver">R: P{d.avgRace.toFixed(1)}</span>
+                              <span className="text-f1-silver/70 font-mono text-xs">{d.driver.code}</span>
+                              <div className="flex gap-4 font-mono text-xs text-f1-silver/70">
+                                 <span className="text-f1-white font-semibold">{d.points} pts ({d.percentage.toFixed(0)}%)</span>
+                                 <span>Q: P{d.avgQuali.toFixed(1)}</span>
+                                 <span>R: P{d.avgRace.toFixed(1)}</span>
                               </div>
                            </div>
                         ))}
@@ -296,9 +340,13 @@ const ConstructorComparisonPage: React.FC = () => {
                   </div>
 
                   {/* Team B Donut */}
-                  <div className="glass-card p-6">
-                     <h2 className="text-lg font-display font-semibold mb-2 flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.teamB.color || '#A855F7' }} />
+                  <div className="telemetry-card p-6 relative overflow-hidden">
+                     <div
+                        className="absolute top-0 inset-x-0 h-[2px] opacity-75"
+                        style={{ background: `linear-gradient(90deg, transparent, ${data.teamB.color || '#A855F7'}, transparent)` }}
+                     />
+                     <h2 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase mb-2 flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.teamB.color || '#A855F7' }} />
                         {data.teamB.name} — Driver Split
                      </h2>
                      <div style={{ height: 260 }}>
@@ -321,11 +369,11 @@ const ConstructorComparisonPage: React.FC = () => {
                      <div className="space-y-2 mt-2">
                         {data.driverSplitB.map(d => (
                            <div key={d.driver.id} className="flex items-center justify-between text-sm">
-                              <span className="text-f1-silver">{d.driver.code}</span>
-                              <div className="flex gap-4">
-                                 <span>{d.points} pts ({d.percentage.toFixed(0)}%)</span>
-                                 <span className="text-f1-silver">Q: P{d.avgQuali.toFixed(1)}</span>
-                                 <span className="text-f1-silver">R: P{d.avgRace.toFixed(1)}</span>
+                              <span className="text-f1-silver/70 font-mono text-xs">{d.driver.code}</span>
+                              <div className="flex gap-4 font-mono text-xs text-f1-silver/70">
+                                 <span className="text-f1-white font-semibold">{d.points} pts ({d.percentage.toFixed(0)}%)</span>
+                                 <span>Q: P{d.avgQuali.toFixed(1)}</span>
+                                 <span>R: P{d.avgRace.toFixed(1)}</span>
                               </div>
                            </div>
                         ))}
@@ -334,12 +382,18 @@ const ConstructorComparisonPage: React.FC = () => {
                </div>
 
                {/* Gap Table */}
-               <div className="glass-card p-6">
-                  <h2 className="text-xl font-display font-semibold mb-4">Round-by-Round Breakdown</h2>
+               <div className="telemetry-card p-6 relative overflow-hidden">
+                  <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+                  <div className="flex items-center gap-2.5 mb-4">
+                     <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-amber-400/10">
+                        <Gauge className="w-4 h-4 text-amber-400" />
+                     </div>
+                     <h2 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Round-by-Round Breakdown</h2>
+                  </div>
                   <div className="overflow-x-auto">
                      <table className="w-full text-sm">
                         <thead>
-                           <tr className="border-b border-f1-mid-gray text-f1-silver text-xs uppercase tracking-wider">
+                           <tr className="border-b border-white/[0.06] text-f1-silver/50 text-[10px] font-mono uppercase tracking-[0.2em]">
                               <th className="text-left py-3 px-2">Round</th>
                               <th className="text-center py-3 px-2" style={{ color: data.teamA.color || '#3B82F6' }}>{data.teamA.name}</th>
                               <th className="text-center py-3 px-2" style={{ color: data.teamB.color || '#A855F7' }}>{data.teamB.name}</th>
@@ -350,11 +404,11 @@ const ConstructorComparisonPage: React.FC = () => {
                            {data.rounds
                               .filter(r => r.pointsA > 0 || r.pointsB > 0)
                               .map(r => (
-                                 <tr key={r.round} className="border-b border-f1-dark-gray/50 hover:bg-white/5 transition-colors">
-                                    <td className="py-2.5 px-2 text-f1-silver">{r.raceName}</td>
-                                    <td className="py-2.5 px-2 text-center font-semibold">{r.pointsA}</td>
-                                    <td className="py-2.5 px-2 text-center font-semibold">{r.pointsB}</td>
-                                    <td className={`py-2.5 px-2 text-center font-semibold ${r.gap > 0 ? 'text-emerald-400' : r.gap < 0 ? 'text-red-400' : 'text-f1-silver'}`}>
+                                 <tr key={r.round} className="border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors">
+                                    <td className="py-2.5 px-2 text-f1-silver/70 font-mono text-xs">{r.raceName}</td>
+                                    <td className="py-2.5 px-2 text-center font-mono font-semibold text-f1-white">{r.pointsA}</td>
+                                    <td className="py-2.5 px-2 text-center font-mono font-semibold text-f1-white">{r.pointsB}</td>
+                                    <td className={`py-2.5 px-2 text-center font-mono font-semibold ${r.gap > 0 ? 'text-emerald-400' : r.gap < 0 ? 'text-red-400' : 'text-f1-silver/50'}`}>
                                        {r.gap > 0 ? '+' : ''}{r.gap.toFixed(0)}
                                     </td>
                                  </tr>
@@ -368,10 +422,11 @@ const ConstructorComparisonPage: React.FC = () => {
 
          {/* Empty state */}
          {!data && !loading && (
-            <div className="glass-card p-12 text-center">
-               <Swords className="w-16 h-16 text-f1-mid-gray mx-auto mb-4" />
-               <h3 className="text-xl font-display font-semibold mb-2">Select Two Teams</h3>
-               <p className="text-f1-silver">Choose two constructors above to see their head-to-head battle analysis</p>
+            <div className="telemetry-card p-12 text-center dot-grid relative overflow-hidden">
+               <div className="absolute -top-16 -right-16 w-64 h-64 bg-f1-red/10 rounded-full blur-3xl pointer-events-none" />
+               <Swords className="w-16 h-16 text-f1-silver/30 mx-auto mb-4 relative z-10" />
+               <h3 className="text-xl font-display font-bold text-f1-white mb-2 relative z-10">Select Two Teams</h3>
+               <p className="text-sm font-mono text-f1-silver/50 relative z-10">Choose two constructors above to see their head-to-head battle analysis</p>
             </div>
          )}
       </div>

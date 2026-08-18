@@ -1,12 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Trophy, Medal } from 'lucide-react';
+import { Star, Trophy, Users, Radio, ChevronRight } from 'lucide-react';
 import { driverService } from '../services/driverService';
 import { useFavorites } from '../context/FavoritesContext';
 import SearchInput from '../components/ui/SearchInput';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import EmptyState from '../components/ui/EmptyState';
 import type { Driver } from '../types';
+
+const PositionBadge: React.FC<{ position: number }> = ({ position }) => {
+   const tier =
+      position === 1
+         ? { bg: 'bg-amber-400/10', border: 'border-amber-400/25', text: 'text-amber-400' }
+         : position === 2
+            ? { bg: 'bg-gray-300/10', border: 'border-gray-300/25', text: 'text-gray-300' }
+            : position === 3
+               ? { bg: 'bg-orange-500/10', border: 'border-orange-500/25', text: 'text-orange-400' }
+               : { bg: 'bg-white/[0.04]', border: 'border-white/[0.06]', text: 'text-f1-silver/70' };
+
+   return (
+      <div
+         className={`w-9 h-9 rounded-lg flex items-center justify-center font-display font-black text-sm border ${tier.bg} ${tier.border} ${tier.text}`}
+      >
+         {position}
+      </div>
+   );
+};
 
 const DriversPage: React.FC = () => {
    const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -27,12 +46,55 @@ const DriversPage: React.FC = () => {
    if (loading) return <PageSkeleton />;
 
    return (
-      <div className="space-y-6 animate-fade-in">
-         {/* Header */}
+      <div className="space-y-7 animate-fade-in">
+         {/* ─── Header: Mission Control HUD banner ─── */}
+         <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-5 sm:p-8 shadow-2xl dot-grid">
+            <div className="scanline-overlay" />
+            <div className="absolute -top-24 -right-24 w-80 h-80 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+               <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <span className="w-2 h-2 rounded-full bg-f1-red animate-ping" />
+                     <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                        Driver Championship
+                     </span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
+                     Driver <span className="gradient-text">Standings</span>
+                  </h1>
+
+                  <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                     2026 FIA Formula One World Championship — full grid telemetry, ranked by points.
+                  </p>
+               </div>
+
+               {/* Live Grid Radar Pill */}
+               <div className="flex items-center gap-4 bg-f1-abyss/80 border border-white/[0.08] rounded-2xl p-4 sm:p-5 backdrop-blur-xl shrink-0">
+                  <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-f1-red/10 border border-f1-red/20 shrink-0">
+                     <Users className="w-6 h-6 text-f1-red" />
+                  </div>
+                  <div>
+                     <div className="text-[10px] font-mono text-f1-silver/60 uppercase tracking-widest">
+                        Grid Size
+                     </div>
+                     <div className="font-display font-bold text-base text-f1-white mt-0.5">
+                        {drivers.length} Drivers
+                     </div>
+                     <div className="text-xs font-mono text-emerald-400 font-semibold flex items-center gap-1.5 mt-0.5">
+                        <span>●</span> Live Standings
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         {/* ─── Search Strip ─── */}
          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-               <h1 className="text-3xl font-display font-bold">Driver Standings</h1>
-               <p className="text-f1-silver mt-1">2026 FIA Formula One World Championship</p>
+            <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 px-1">
+               Engineering Search
             </div>
             <div className="w-full sm:w-72">
                <SearchInput
@@ -46,17 +108,18 @@ const DriversPage: React.FC = () => {
          {drivers.length === 0 ? (
             <EmptyState title="No drivers found" message="Try adjusting your search." />
          ) : (
-            <div className="glass-card overflow-hidden">
+            <div className="telemetry-card overflow-hidden relative">
+               <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
                <div className="overflow-x-auto">
                   <table className="w-full">
                      <thead>
-                        <tr className="border-b border-white/5">
-                           <th className="text-left text-xs text-f1-silver uppercase tracking-wider px-4 py-3 w-12">Pos</th>
-                           <th className="text-left text-xs text-f1-silver uppercase tracking-wider px-4 py-3">Driver</th>
-                           <th className="text-left text-xs text-f1-silver uppercase tracking-wider px-4 py-3 hidden sm:table-cell">Team</th>
-                           <th className="text-left text-xs text-f1-silver uppercase tracking-wider px-4 py-3 hidden md:table-cell">Nationality</th>
-                           <th className="text-right text-xs text-f1-silver uppercase tracking-wider px-4 py-3">Points</th>
-                           <th className="text-right text-xs text-f1-silver uppercase tracking-wider px-4 py-3 hidden sm:table-cell">Wins</th>
+                        <tr className="border-b border-white/[0.06]">
+                           <th className="text-left text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3 w-12">Pos</th>
+                           <th className="text-left text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3">Driver</th>
+                           <th className="text-left text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3 hidden sm:table-cell">Team</th>
+                           <th className="text-left text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3 hidden md:table-cell">Nationality</th>
+                           <th className="text-right text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3">Points</th>
+                           <th className="text-right text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3 hidden sm:table-cell">Wins</th>
                            <th className="w-12 px-4 py-3"></th>
                         </tr>
                      </thead>
@@ -64,62 +127,60 @@ const DriversPage: React.FC = () => {
                         {drivers.map((driver, i) => (
                            <tr
                               key={driver.id}
-                              className="border-b border-white/5 hover:bg-f1-mid-gray/30 transition-colors group"
+                              className="border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors group relative"
                               style={{ animationDelay: `${i * 30}ms` }}
                            >
                               <td className="px-4 py-4">
-                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${driver.championshipPosition === 1
-                                    ? 'bg-amber-500/20 text-amber-400'
-                                    : driver.championshipPosition === 2
-                                       ? 'bg-gray-400/20 text-gray-300'
-                                       : driver.championshipPosition === 3
-                                          ? 'bg-orange-700/20 text-orange-400'
-                                          : 'bg-f1-mid-gray text-f1-silver'
-                                    }`}>
-                                    {driver.championshipPosition}
-                                 </div>
+                                 <PositionBadge position={driver.championshipPosition} />
                               </td>
                               <td className="px-4 py-4">
                                  <Link
                                     to={`/drivers/${driver.id}`}
-                                    className="flex items-center gap-3 group-hover:text-f1-white"
+                                    className="flex items-center gap-3"
                                  >
                                     <div
-                                       className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs text-white"
-                                       style={{ backgroundColor: driver.constructorColor }}
+                                       className="w-10 h-10 rounded-xl flex items-center justify-center font-mono font-bold text-xs text-white border border-white/[0.08] shrink-0 relative overflow-hidden group-hover:scale-105 transition-transform"
+                                       style={{ backgroundColor: `${driver.constructorColor}30` }}
                                     >
                                        {driver.code}
+                                       <div
+                                          className="absolute bottom-0 inset-x-0 h-0.5"
+                                          style={{ backgroundColor: driver.constructorColor }}
+                                       />
                                     </div>
                                     <div>
-                                       <p className="font-semibold">{driver.firstName} <span className="font-bold">{driver.lastName}</span></p>
-                                       <p className="text-xs text-f1-silver sm:hidden">{driver.constructorName}</p>
+                                       <p className="font-display font-bold text-f1-white group-hover:text-f1-red-light transition-colors">
+                                          {driver.firstName} <span className="font-black">{driver.lastName}</span>
+                                       </p>
+                                       <p className="text-xs font-mono text-f1-silver/60 sm:hidden">{driver.constructorName}</p>
                                     </div>
                                  </Link>
                               </td>
                               <td className="px-4 py-4 hidden sm:table-cell">
                                  <div className="flex items-center gap-2">
                                     <div className="w-1 h-4 rounded-full" style={{ backgroundColor: driver.constructorColor }} />
-                                    <span className="text-f1-silver text-sm">{driver.constructorName}</span>
+                                    <span className="text-f1-silver/80 text-sm font-mono">{driver.constructorName}</span>
                                  </div>
                               </td>
-                              <td className="px-4 py-4 text-f1-silver text-sm hidden md:table-cell">
+                              <td className="px-4 py-4 text-f1-silver/70 text-sm font-mono hidden md:table-cell">
                                  {driver.nationality}
                               </td>
                               <td className="px-4 py-4 text-right">
-                                 <span className="font-display font-bold text-lg">{driver.points}</span>
+                                 <span className="font-display font-black text-lg text-amber-400">{driver.points}</span>
                               </td>
                               <td className="px-4 py-4 text-right hidden sm:table-cell">
                                  {driver.wins > 0 && (
                                     <div className="flex items-center justify-end gap-1">
                                        <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                                       <span className="font-semibold text-amber-400">{driver.wins}</span>
+                                       <span className="font-mono font-semibold text-amber-400">{driver.wins}</span>
                                     </div>
                                  )}
                               </td>
                               <td className="px-4 py-4">
                                  <button
                                     onClick={(e) => { e.preventDefault(); toggleFavoriteDriver(driver.id); }}
-                                    className="p-1 rounded-lg hover:bg-f1-mid-gray transition-colors"
+                                    className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
+                                    aria-label={isDriverFavorite(driver.id) ? 'Remove from favorites' : 'Add to favorites'}
                                  >
                                     <Star
                                        className={`w-4 h-4 ${isDriverFavorite(driver.id) ? 'fill-amber-400 text-amber-400' : 'text-f1-silver/30'

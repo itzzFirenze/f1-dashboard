@@ -148,7 +148,7 @@ const DashboardPage: React.FC = () => {
    return (
       <div className="space-y-7 animate-fade-in">
          {/* ─── Hero Section: Mission Control HUD ─── */}
-         <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 shadow-2xl dot-grid">
+         <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-5 sm:p-9 shadow-2xl dot-grid">
             {/* Scanline texture */}
             <div className="scanline-overlay" />
 
@@ -162,41 +162,18 @@ const DashboardPage: React.FC = () => {
             <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                <div className="space-y-2">
                   <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
-                     <span className="w-2 h-2 rounded-full bg-f1-red animate-ping" />
                      <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
                         FIA FORMULA 1 WORLD CHAMPIONSHIP
                      </span>
                   </div>
 
-                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black tracking-tight text-f1-white uppercase">
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
                      {data.currentSeason} <span className="gradient-text">SEASON</span>
                   </h1>
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      Pit wall telemetry, live session status & real-time championship engineering intelligence.
                   </p>
-               </div>
-
-               {/* Live Session Radar Pill */}
-               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-f1-abyss/80 border border-white/[0.08] rounded-2xl p-4 sm:p-5 backdrop-blur-xl shrink-0">
-                  <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-f1-red/10 border border-f1-red/20 shrink-0">
-                     <Radio className="w-6 h-6 text-f1-red animate-pulse" />
-                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-                     </span>
-                  </div>
-                  <div>
-                     <div className="text-[10px] font-mono text-f1-silver/60 uppercase tracking-widest">
-                        Command Status
-                     </div>
-                     <div className="font-display font-bold text-base text-f1-white mt-0.5">
-                        Telemetry Online
-                     </div>
-                     <div className="text-xs font-mono text-emerald-400 font-semibold flex items-center gap-1.5 mt-0.5">
-                        <span>●</span> {data.racesRemaining} Rounds in Championship
-                     </div>
-                  </div>
                </div>
             </div>
          </div>
@@ -247,7 +224,7 @@ const DashboardPage: React.FC = () => {
 
          {/* ─── Next Grand Prix Telemetry Strip ─── */}
          {data.nextRaceName && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="">
                {/* Cinematic Next Race Banner */}
                <Link
                   to={`/races/${data.nextRaceId}`}
@@ -276,26 +253,22 @@ const DashboardPage: React.FC = () => {
                         <h2 className="text-3xl sm:text-4xl font-display font-black text-f1-white tracking-tight uppercase group-hover:text-f1-red-light transition-colors">
                            {data.nextRaceName}
                         </h2>
-                        <p className="text-f1-silver/90 text-sm sm:text-base font-mono mt-1.5 flex items-center gap-2">
-                           <Compass className="w-4 h-4 text-f1-red" />
-                           <span>{data.nextRaceCircuit}</span>
-                           <span className="text-f1-silver/40">|</span>
-                           <span className="text-f1-white font-semibold">{data.nextRaceCountry}</span>
-                        </p>
-                     </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-1.5">
+                           <p className="text-f1-silver/90 text-sm sm:text-base font-mono flex items-center gap-2">
+                              <Compass className="w-4 h-4 text-f1-red" />
+                              <span>{data.nextRaceCircuit}</span>
+                              <span className="text-f1-silver/40">|</span>
+                              <span className="text-f1-white font-semibold">{data.nextRaceCountry}</span>
+                           </p>
 
-                     {/* LED Countdown Block */}
-                     <div className="mt-6 pt-5 border-t border-white/[0.06] relative z-10">
-                        <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-3">
-                           Session Countdown Timer
+                           <CountdownTimer
+                              targetDate={
+                                 data.nextSessionTime
+                                    ? `${data.nextSessionDate}T${data.nextSessionTime}Z`
+                                    : data.nextSessionDate || ''
+                              }
+                           />
                         </div>
-                        <CountdownTimer
-                           targetDate={
-                              data.nextSessionTime
-                                 ? `${data.nextSessionDate}T${data.nextSessionTime}Z`
-                                 : data.nextSessionDate || ''
-                           }
-                        />
                      </div>
                   </div>
                </Link>

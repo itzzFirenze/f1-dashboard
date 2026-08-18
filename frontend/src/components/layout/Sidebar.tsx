@@ -252,23 +252,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                ))}
             </div>
-
-            {/* Bottom telemetry status indicator */}
-            <div className="p-3 border-t border-white/[0.04]">
-               {isExpanded ? (
-                  <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-f1-carbon/50 border border-white/[0.04]">
-                     <div className="flex items-center gap-2 text-f1-silver/60 text-[10px] uppercase font-mono tracking-widest">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-                        <span>Telemetry Sync</span>
-                     </div>
-                     <span className="text-[9px] font-mono text-emerald-400 font-bold">2026.1</span>
-                  </div>
-               ) : (
-                  <div className="flex justify-center" title="Telemetry Sync Online">
-                     <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
-                  </div>
-               )}
-            </div>
          </div>
       );
    };

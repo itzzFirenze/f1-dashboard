@@ -373,14 +373,15 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
       : null;
 
    return (
-      <div className="flex flex-col h-[590px] overflow-hidden rounded-2xl border border-white/10 bg-f1-dark-gray/60 shadow-2xl backdrop-blur-md">
+      <div className="telemetry-card flex flex-col h-[590px] overflow-hidden relative">
+         <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent z-10" />
          {/* Map area */}
          <div className="relative flex-1 min-h-0 p-3 pb-1">
             {/* HUD Info */}
             <div className="absolute left-3 top-3 z-10 space-y-0.5">
                <h3 className="font-display text-sm font-bold text-f1-white">{circuit.name}</h3>
-               <p className="flex items-center gap-1 text-[10px] text-f1-silver">
-                  <MapPin className="h-3 w-3 text-f1-red" />
+               <p className="flex items-center gap-1 text-[10px] font-mono text-f1-silver/60 uppercase tracking-wide">
+                  <MapPin className="h-3 w-3 text-f1-red-light" />
                   {circuit.location}, {circuit.country}
                </p>
             </div>
@@ -388,22 +389,22 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
             {/* HUD Badges */}
             <div className="absolute right-3 top-3 z-10 flex flex-wrap justify-end gap-1 max-w-[55%]">
                {safetyCarStatus.active && (
-                  <span className="rounded-md border border-yellow-300 bg-yellow-400 px-1.5 py-0.5 text-[9px] font-bold text-black animate-pulse">
+                  <span className="rounded-md border border-yellow-300 bg-yellow-400 px-1.5 py-0.5 text-[9px] font-mono font-bold text-black animate-pulse">
                      {safetyCarStatus.isVirtual ? 'VSC' : 'Safety Car'}
                   </span>
                )}
-               <span className="rounded-md border border-red-400/30 bg-red-500/10 px-1.5 py-0.5 text-[9px] text-red-200">S1</span>
-               <span className="rounded-md border border-sky-400/30 bg-sky-500/10 px-1.5 py-0.5 text-[9px] text-sky-200">S2</span>
-               <span className="rounded-md border border-yellow-300/30 bg-yellow-400/10 px-1.5 py-0.5 text-[9px] text-yellow-100">S3</span>
-               <span className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-1.5 py-0.5 text-[9px] text-cyan-200">Aero</span>
-               <span className="rounded-md border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[9px] text-amber-200">OT</span>
+               <span className="rounded-md border border-red-400/30 bg-red-500/10 px-1.5 py-0.5 text-[9px] font-mono text-red-200">S1</span>
+               <span className="rounded-md border border-sky-400/30 bg-sky-500/10 px-1.5 py-0.5 text-[9px] font-mono text-sky-200">S2</span>
+               <span className="rounded-md border border-yellow-300/30 bg-yellow-400/10 px-1.5 py-0.5 text-[9px] font-mono text-yellow-100">S3</span>
+               <span className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-1.5 py-0.5 text-[9px] font-mono text-cyan-200">Aero</span>
+               <span className="rounded-md border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-mono text-amber-200">OT</span>
             </div>
 
             {(currentLap !== null || (focusDriver && focusLapElapsed)) && (
                <div className="absolute bottom-1 right-3 z-10 flex items-end gap-2">
                   {focusDriver && focusLapElapsed && (
                      <div className="rounded-lg border border-white/10 bg-black/60 px-3 py-1 backdrop-blur-md">
-                        <p className="text-[8px] uppercase text-center tracking-wider text-f1-silver">
+                        <p className="text-[8px] font-mono uppercase text-center tracking-wider text-f1-silver/60">
                            {focusDriver.name_acronym} · L{focusLapElapsed.lapNumber}
                         </p>
                         <p className="text-lg font-black text-f1-white font-mono leading-tight text-center tabular-nums">
@@ -413,7 +414,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                   )}
                   {currentLap !== null && (
                      <div className="rounded-lg border border-white/10 bg-black/60 px-3 py-1 backdrop-blur-md">
-                        <p className="text-[8px] uppercase text-center tracking-wider text-f1-silver">Lap</p>
+                        <p className="text-[8px] font-mono uppercase text-center tracking-wider text-f1-silver/60">Lap</p>
                         <p className="text-lg font-black text-f1-white font-mono leading-tight text-center">{currentLap}</p>
                      </div>
                   )}
@@ -515,20 +516,20 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                      exit={{ opacity: 0, x: 12 }}
                      className="pointer-events-none absolute right-3 bottom-1 z-20 w-48 rounded-xl border border-f1-red/30 bg-f1-black/95 p-2.5 shadow-2xl backdrop-blur-md"
                   >
-                     <p className="text-[8px] uppercase tracking-[0.15em] text-f1-red-light">Turn {selectedCorner.number}</p>
+                     <p className="text-[8px] font-mono uppercase tracking-[0.15em] text-f1-red-light">Turn {selectedCorner.number}</p>
                      <h4 className="mt-0.5 text-xs font-display font-bold text-f1-white">{selectedCorner.name}</h4>
                      <div className="mt-1.5 grid grid-cols-3 gap-1 text-center text-[9px]">
                         <div className="rounded bg-white/[0.04] py-1">
-                           <p className="text-f1-silver">Type</p>
-                           <p className="font-semibold text-f1-white">{selectedCorner.type}</p>
+                           <p className="text-f1-silver/60 font-mono">Type</p>
+                           <p className="font-semibold font-mono text-f1-white">{selectedCorner.type}</p>
                         </div>
                         <div className="rounded bg-white/[0.04] py-1">
-                           <p className="text-f1-silver">Speed</p>
-                           <p className="font-semibold text-f1-white">{selectedCorner.averageSpeedKmh}</p>
+                           <p className="text-f1-silver/60 font-mono">Speed</p>
+                           <p className="font-semibold font-mono text-f1-white">{selectedCorner.averageSpeedKmh}</p>
                         </div>
                         <div className="rounded bg-white/[0.04] py-1">
-                           <p className="text-f1-silver">Pass</p>
-                           <p className="font-semibold text-f1-white">{selectedCorner.overtakingRating}/10</p>
+                           <p className="text-f1-silver/60 font-mono">Pass</p>
+                           <p className="font-semibold font-mono text-f1-white">{selectedCorner.overtakingRating}/10</p>
                         </div>
                      </div>
                   </motion.div>
@@ -555,10 +556,10 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: `#${driver.team_colour}` }} />
                            <div>
                               <h4 className="text-[11px] font-bold text-f1-white">{driver.full_name}</h4>
-                              <p className="text-[9px] text-f1-silver">{driver.team_name}</p>
+                              <p className="text-[9px] font-mono text-f1-silver/60">{driver.team_name}</p>
                            </div>
                         </div>
-                        <div className="mt-1.5 space-y-1 text-[10px] text-f1-silver">
+                        <div className="mt-1.5 space-y-1 text-[10px] font-mono text-f1-silver/60">
                            <div className="flex justify-between">
                               <span>Acronym</span>
                               <span className="font-mono text-f1-white font-semibold">{driver.name_acronym}</span>
@@ -585,7 +586,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
          </div>
 
          {/* Docked media player */}
-         <div className="border-t border-white/10 bg-black/30 px-4 py-3 space-y-2.5 shrink-0">
+         <div className="border-t border-white/[0.06] bg-f1-abyss/40 px-4 py-3 space-y-2.5 shrink-0">
             <div className="relative group">
                <div className="h-2 w-full bg-white/[0.08] rounded-full cursor-pointer relative">
                   <div className="absolute top-0 left-0 h-full bg-f1-red rounded-full" style={{ width: `${progressPercent}%` }} />
@@ -606,12 +607,12 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
             </div>
 
             <div className="flex items-center justify-between gap-3">
-               <span className="text-xs text-f1-silver font-mono w-16 shrink-0">
+               <span className="text-xs text-f1-silver/70 font-mono w-16 shrink-0">
                   {formatElapsed(elapsedMs)}
                </span>
 
                <div className="flex items-center gap-1.5">
-                  <button onClick={() => skip(-10)} className="rounded-lg bg-white/[0.04] border border-white/5 p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Skip back 10s">
+                  <button onClick={() => skip(-10)} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Skip back 10s">
                      <SkipBack className="h-4 w-4" />
                   </button>
 
@@ -625,21 +626,21 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                      </button>
                   )}
 
-                  <button onClick={stop} className="rounded-lg bg-white/[0.04] border border-white/5 p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Stop / Reset">
+                  <button onClick={stop} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Stop / Reset">
                      <Square className="h-4 w-4" />
                   </button>
 
-                  <button onClick={() => skip(10)} className="rounded-lg bg-white/[0.04] border border-white/5 p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Skip forward 10s">
+                  <button onClick={() => skip(10)} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Skip forward 10s">
                      <SkipForward className="h-4 w-4" />
                   </button>
                </div>
 
-               <div className="flex bg-white/[0.02] border border-white/5 p-1 rounded-lg gap-1">
+               <div className="flex bg-white/[0.03] border border-white/[0.06] p-1 rounded-lg gap-1">
                   {([1, 2, 4, 8] as const).map((spd) => (
                      <button
                         key={spd}
                         onClick={() => setSpeed(spd)}
-                        className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${playbackSpeed === spd ? 'bg-f1-red text-white' : 'text-f1-silver hover:text-f1-white'}`}
+                        className={`px-2 py-1 rounded-md text-[10px] font-mono font-bold transition-all ${playbackSpeed === spd ? 'bg-f1-red text-white' : 'text-f1-silver/60 hover:text-f1-white'}`}
                      >
                         {spd}x
                      </button>
@@ -652,7 +653,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                      setSelectedLap(e.target.value);
                      jumpToLap(Number(e.target.value));
                   }}
-                  className="bg-f1-mid-gray/50 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] text-f1-white focus:outline-none w-20 shrink-0"
+                  className="bg-white/[0.03] border border-white/[0.08] rounded-lg px-2 py-1.5 text-[10px] font-mono text-f1-white focus:outline-none focus:border-f1-red/50 w-20 shrink-0"
                >
                   <option value="">Lap...</option>
                   {laps

@@ -37,6 +37,7 @@ const ActiveAeroZone: React.FC<ActiveAeroZoneProps> = ({
          strokeDasharray={`${onLen} ${totalLength - onLen}`}
          strokeDashoffset={offset}
          opacity={active ? 0.85 : 0.3}
+         style={active ? { filter: 'drop-shadow(0 0 6px #22d3ee80)' } : undefined}
          className="transition-all duration-300 cursor-pointer"
          onMouseEnter={() => onHover(zone)}
          onMouseLeave={() => onHover(null)}

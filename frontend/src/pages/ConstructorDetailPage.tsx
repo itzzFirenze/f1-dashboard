@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Trophy, Users, Medal } from 'lucide-react';
+import { ArrowLeft, Trophy, Medal, Shield, ChevronRight, Radio } from 'lucide-react';
 import { constructorService } from '../services/constructorService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import { resolveTheme, getDriverImage } from '../config/teamThemes';
@@ -31,21 +31,22 @@ const ConstructorDetailPage: React.FC = () => {
 
    return (
       <div className="h-full flex flex-col gap-3 animate-fade-in overflow-hidden">
-         <Link to="/constructors" className="inline-flex items-center gap-2 text-f1-silver hover:text-f1-white transition-colors shrink-0">
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Back to Standings</span>
+         <Link to="/constructors" className="inline-flex items-center gap-2 text-f1-silver hover:text-f1-white transition-colors shrink-0 group w-fit">
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+            <span className="text-xs font-mono uppercase tracking-widest">Back to Standings</span>
          </Link>
 
-         {/* Team Hero Card */}
-         <div className="glass-card overflow-hidden shrink-0">
+         {/* ─── Team Hero HUD Card ─── */}
+         <div className="telemetry-card overflow-hidden shrink-0">
             {/* Two-tone gradient hero */}
             <div
-               className="relative overflow-hidden"
+               className="relative overflow-hidden dot-grid"
                style={{
                   background: `linear-gradient(to right, ${theme.bgFrom} 0%, ${theme.bgFrom} 35%, ${theme.bgTo} 100%)`,
                   minHeight: '130px',
                }}
             >
+               <div className="scanline-overlay" />
                {/* Dot-grid texture */}
                <div
                   className="absolute inset-0 opacity-20"
@@ -62,6 +63,14 @@ const ConstructorDetailPage: React.FC = () => {
                   }}
                />
 
+               {/* Status pill */}
+               <div className="absolute top-4 left-6 z-10 inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/25 border border-white/15 backdrop-blur-md">
+                  <Radio className="w-3 h-3 text-white/80" />
+                  <span className="text-white/80 text-[10px] font-mono font-bold tracking-[0.2em] uppercase">
+                     Constructor Telemetry
+                  </span>
+               </div>
+
                <div className="relative flex items-end justify-between h-full px-6 pt-1 pb-0">
                   {/* Team info */}
                   <div className="pb-4 z-10">
@@ -74,10 +83,10 @@ const ConstructorDetailPage: React.FC = () => {
                            onError={() => setLogoError(true)}
                         />
                      ) : null}
-                     <h1 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-white drop-shadow-lg">
+                     <h1 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-white drop-shadow-lg uppercase">
                         {team.name}
                      </h1>
-                     <p className="text-white/50 text-sm mt-1">{team.nationality}</p>
+                     <p className="text-white/50 text-xs font-mono uppercase tracking-widest mt-1">{team.nationality}</p>
                   </div>
 
                   {/* Car image — kept large */}
@@ -94,11 +103,11 @@ const ConstructorDetailPage: React.FC = () => {
             </div>
 
             {/* Meta bar */}
-            <div className="px-6 py-2 flex items-center gap-4 border-t border-white/5">
-               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.primary }} />
-               <span className="text-f1-silver text-sm">{team.nationality}</span>
+            <div className="px-6 py-2.5 flex items-center gap-4 border-t border-white/[0.06]">
+               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.primary, boxShadow: `0 0 6px ${theme.primary}` }} />
+               <span className="text-f1-silver text-xs font-mono uppercase tracking-wider">{team.nationality}</span>
                <span
-                  className="ml-auto text-xs font-bold uppercase tracking-widest"
+                  className="ml-auto text-xs font-mono font-bold uppercase tracking-widest px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06]"
                   style={{ color: theme.primary }}
                >
                   P{team.championshipPosition} · {team.points} PTS
@@ -106,34 +115,40 @@ const ConstructorDetailPage: React.FC = () => {
             </div>
          </div>
 
-         {/* Stats */}
+         {/* ─── Stat Cards ─── */}
          <div className="grid grid-cols-3 gap-3 shrink-0">
-            <div className="glass-card p-4 text-center">
+            <div className="telemetry-card p-4 text-center relative overflow-hidden">
+               <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
                <Trophy className="w-5 h-5 text-amber-400 mx-auto mb-1.5" />
-               <p className="stat-value text-amber-400">P{team.championshipPosition}</p>
-               <p className="stat-label mt-1">Championship</p>
+               <p className="stat-value text-amber-400 font-mono">P{team.championshipPosition}</p>
+               <p className="stat-label mt-1 text-[10px] font-mono uppercase tracking-widest text-f1-silver/50">Championship</p>
             </div>
-            <div className="glass-card p-4 text-center">
+            <div className="telemetry-card p-4 text-center relative overflow-hidden">
+               <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
                <Medal className="w-5 h-5 text-f1-red mx-auto mb-1.5" />
-               <p className="stat-value text-f1-red-light">{team.points}</p>
-               <p className="stat-label mt-1">Points</p>
+               <p className="stat-value text-f1-red-light font-mono">{team.points}</p>
+               <p className="stat-label mt-1 text-[10px] font-mono uppercase tracking-widest text-f1-silver/50">Points</p>
             </div>
-            <div className="glass-card p-4 text-center">
+            <div className="telemetry-card p-4 text-center relative overflow-hidden">
+               <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
                <Trophy className="w-5 h-5 text-emerald-400 mx-auto mb-1.5" />
-               <p className="stat-value text-emerald-400">{team.wins}</p>
-               <p className="stat-label mt-1">Wins</p>
+               <p className="stat-value text-emerald-400 font-mono">{team.wins}</p>
+               <p className="stat-label mt-1 text-[10px] font-mono uppercase tracking-widest text-f1-silver/50">Wins</p>
             </div>
          </div>
 
-         {/* Driver Lineup */}
+         {/* ─── Driver Lineup ─── */}
          <div className="flex-1 min-h-0 flex flex-col">
-            <h2 className="text-lg font-bold mb-2 shrink-0">Driver Lineup</h2>
+            <div className="flex items-center gap-2 mb-2 shrink-0">
+               <Shield className="w-4 h-4 text-f1-silver/50" />
+               <h2 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50">Driver Lineup</h2>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto">
                {team.drivers.map((driver) => {
                   const driverImgUrl = driver.imageUrl ?? getDriverImage(theme, driver.firstName, driver.lastName);
                   return (
-                     <Link key={driver.id} to={`/drivers/${driver.id}`}>
-                        <div className="glass-card overflow-hidden group cursor-pointer hover:border-white/10">
+                     <Link key={driver.id} to={`/drivers/${driver.id}`} className="group outline-none">
+                        <div className="telemetry-card overflow-hidden cursor-pointer group-hover:border-white/[0.12] transition-all duration-300">
                            {/* Mini hero gradient */}
                            <div
                               className="relative h-24 overflow-hidden"
@@ -168,14 +183,17 @@ const ConstructorDetailPage: React.FC = () => {
                               </div>
                            </div>
 
-                           <div className="p-3 flex items-center gap-3">
+                           <div className="p-3 flex items-center gap-3 border-t border-white/[0.06]">
                               <div>
-                                 <p className="font-bold text-sm">{driver.firstName} {driver.lastName}</p>
-                                 <p className="text-f1-silver text-xs">{driver.nationality}</p>
+                                 <p className="font-bold text-sm text-f1-white">{driver.firstName} {driver.lastName}</p>
+                                 <p className="text-f1-silver/60 text-[10px] font-mono uppercase tracking-wider">{driver.nationality}</p>
                               </div>
-                              <div className="ml-auto text-right">
-                                 <p className="font-display font-bold text-lg">{driver.points}</p>
-                                 <p className="text-xs text-f1-silver">PTS</p>
+                              <div className="ml-auto flex items-center gap-2">
+                                 <div className="text-right">
+                                    <p className="font-display font-black text-lg text-amber-400 leading-none">{driver.points}</p>
+                                    <p className="text-[9px] font-mono text-f1-silver/40 uppercase tracking-widest mt-0.5">PTS</p>
+                                 </div>
+                                 <ChevronRight className="w-4 h-4 text-f1-silver/30 group-hover:text-f1-white group-hover:translate-x-0.5 transition-all" />
                               </div>
                            </div>
                         </div>

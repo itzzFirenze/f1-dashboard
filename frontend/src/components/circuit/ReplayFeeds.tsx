@@ -361,20 +361,20 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
    if (activeTab === 'standings') {
       return (
          <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1">
-            <h4 className="text-xs uppercase tracking-wider text-f1-silver mb-2">Live Timing Standings</h4>
+            <h4 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-2">Live Timing Standings</h4>
             <div className="space-y-1.5">
                {liveStandings.map((drv, idx) => {
                   const teamColor = `#${drv.team_colour}`;
                   return (
                      <div
                         key={drv.driver_number}
-                        className="flex items-center justify-between rounded-lg bg-white/[0.02] border border-white/5 p-2 hover:bg-white/[0.05] transition-all"
+                        className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] p-2 hover:bg-white/[0.05] hover:border-white/[0.1] transition-all"
                      >
                         <div className="flex items-center gap-3">
-                           <span className="text-xs font-bold text-f1-silver w-4">{idx + 1}</span>
-                           <div className="w-1 h-5 rounded-full" style={{ backgroundColor: teamColor }} />
+                           <span className="text-xs font-mono font-bold text-f1-silver/60 w-4">{idx + 1}</span>
+                           <div className="w-1 h-5 rounded-full" style={{ backgroundColor: teamColor, boxShadow: `0 0 6px ${teamColor}80` }} />
                            <span className="text-sm font-bold text-f1-white font-mono">{drv.name_acronym}</span>
-                           <span className="text-[10px] text-f1-silver">{drv.team_name}</span>
+                           <span className="text-[10px] text-f1-silver/50 font-mono">{drv.team_name}</span>
                         </div>
                         <div className="flex items-center gap-2">
                            {drv.isFinished && (
@@ -383,16 +383,16 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
                               </span>
                            )}
                            {drv.isPitting && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/25 text-amber-300 animate-pulse">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/25 text-amber-300 animate-pulse">
                                  PIT
                               </span>
                            )}
-                           <span className="text-[10px] text-f1-silver font-mono">L{drv.lapsCompleted}</span>
-                           <span className="text-[10px] text-f1-silver font-mono w-14 text-right shrink-0">
+                           <span className="text-[10px] text-f1-silver/60 font-mono">L{drv.lapsCompleted}</span>
+                           <span className="text-[10px] text-f1-silver/60 font-mono w-14 text-right shrink-0">
                               {drv.gapLabel}
                            </span>
                            {/* Tyre badge */}
-                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${drv.tyre === 'DNF'
+                           <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${drv.tyre === 'DNF'
                               ? 'bg-red-500/25 text-red-500'
                               : drv.tyre === 'SOFT'
                                  ? 'bg-red-500/25 text-red-400'
@@ -418,9 +418,9 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
    if (activeTab === 'feeds') {
       return (
          <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1">
-            <h4 className="text-xs uppercase tracking-wider text-f1-silver mb-2">Race Control messages</h4>
+            <h4 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-2">Race Control messages</h4>
             {activeControlMessages.length === 0 ? (
-               <p className="text-xs text-f1-silver/50 text-center py-4">No active messages</p>
+               <p className="text-xs font-mono text-f1-silver/40 text-center py-4">No active messages</p>
             ) : (
                <div className="space-y-2">
                   {activeControlMessages.map((msg, i) => {
@@ -433,7 +433,7 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
                               ? 'bg-yellow-400/10 border-yellow-400/30 border-l-4 border-l-yellow-400'
                               : isWarning
                                  ? 'bg-amber-500/10 border-amber-500/20 text-amber-200'
-                                 : 'bg-white/[0.02] border-white/5 text-f1-silver'
+                                 : 'bg-white/[0.03] border-white/[0.06] text-f1-silver/70'
                               }`}
                         >
                            {isSafetyCar ? (
@@ -441,15 +441,15 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
                            ) : isWarning ? (
                               <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
                            ) : (
-                              <ShieldAlert className="h-4 w-4 shrink-0 text-f1-silver mt-0.5" />
+                              <ShieldAlert className="h-4 w-4 shrink-0 text-f1-silver/50 mt-0.5" />
                            )}
                            <div>
                               <div className="flex items-center gap-2 flex-wrap">
-                                 <span className="text-[9px] font-mono text-f1-silver/70">
+                                 <span className="text-[9px] font-mono text-f1-silver/60">
                                     LAP {msg.lap_number} - {new Date(msg.date).toLocaleTimeString()}
                                  </span>
                                  {isSafetyCar && (
-                                    <span className="rounded bg-yellow-400 px-1.5 py-0.5 text-[8px] font-bold uppercase text-black">
+                                    <span className="rounded bg-yellow-400 px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase text-black">
                                        Safety Car
                                     </span>
                                  )}
@@ -469,9 +469,9 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
 
    return (
       <div className="space-y-3 overflow-y-auto max-h-[500px] pr-1">
-         <h4 className="text-xs uppercase tracking-wider text-f1-silver mb-2">Team Radio Archive</h4>
+         <h4 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-2">Team Radio Archive</h4>
          {activeRadioMessages.length === 0 ? (
-            <p className="text-xs text-f1-silver/50 text-center py-4">No radios recorded yet</p>
+            <p className="text-xs font-mono text-f1-silver/40 text-center py-4">No radios recorded yet</p>
          ) : (
             <div className="space-y-2">
                {activeRadioMessages.map((radio, i) => {
@@ -479,16 +479,16 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
                   return (
                      <div
                         key={i}
-                        className="rounded-lg bg-white/[0.02] border border-white/5 p-3 hover:bg-white/[0.05] transition-all"
+                        className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3 hover:bg-white/[0.05] hover:border-white/[0.1] transition-all"
                      >
                         <div className="flex justify-between items-center">
                            <div className="flex gap-3 items-center">
-                              <Radio className="h-4 w-4 text-f1-red shrink-0" />
+                              <Radio className="h-4 w-4 text-f1-red-light shrink-0" />
                               <div>
                                  <span className="text-xs font-bold text-f1-white">
                                     {driver?.broadcast_name || `Driver ${radio.driver_number}`}
                                  </span>
-                                 <span className="block text-[9px] text-f1-silver font-mono">
+                                 <span className="block text-[9px] text-f1-silver/50 font-mono">
                                     {new Date(radio.date).toLocaleTimeString()}
                                  </span>
                               </div>

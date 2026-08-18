@@ -18,23 +18,24 @@ import {
    ArrowRight,
    AlertCircle,
    LogOut,
+   Flag,
 } from 'lucide-react';
 import { triviaService } from '../services/triviaService';
 import { TriviaQuestion, TriviaCategory, TriviaGameMode } from '../types';
 
-const CATEGORIES: { id: TriviaCategory; label: string; icon: any; color: string }[] = [
-   { id: 'all', label: 'All Topics', icon: Sparkles, color: 'from-f1-red to-orange-500' },
-   { id: 'drivers', label: 'Drivers', icon: Users, color: 'from-blue-500 to-indigo-600' },
-   { id: 'teams', label: 'Teams', icon: Wrench, color: 'from-amber-500 to-red-500' },
-   { id: 'circuits', label: 'Circuits', icon: Compass, color: 'from-emerald-500 to-teal-600' },
-   { id: 'team_radio', label: 'Team Radio', icon: Radio, color: 'from-purple-500 to-pink-500' },
-   { id: 'championships', label: 'Championships', icon: Trophy, color: 'from-yellow-400 to-amber-600' },
-   { id: 'pit_stops', label: 'Pit Stops', icon: Timer, color: 'from-cyan-500 to-blue-600' },
-   { id: 'tyres', label: 'Tyres', icon: Zap, color: 'from-rose-500 to-red-600' },
-   { id: 'race_results', label: 'Race Results', icon: Award, color: 'from-green-500 to-emerald-700' },
-   { id: 'records', label: 'Records', icon: Flame, color: 'from-orange-500 to-amber-600' },
-   { id: 'historical', label: 'Historical', icon: HelpCircle, color: 'from-slate-400 to-zinc-600' },
-   { id: 'rules', label: 'Rules & Regs', icon: AlertCircle, color: 'from-sky-400 to-blue-700' },
+const CATEGORIES: { id: TriviaCategory; label: string; icon: any; accent: string; tag: string }[] = [
+   { id: 'all', label: 'All Topics', icon: Sparkles, accent: '#E10600', tag: 'ALL' },
+   { id: 'drivers', label: 'Drivers', icon: Users, accent: '#38bdf8', tag: 'DRV' },
+   { id: 'teams', label: 'Teams', icon: Wrench, accent: '#f59e0b', tag: 'TEA' },
+   { id: 'circuits', label: 'Circuits', icon: Compass, accent: '#10b981', tag: 'CIR' },
+   { id: 'team_radio', label: 'Team Radio', icon: Radio, accent: '#a855f7', tag: 'RAD' },
+   { id: 'championships', label: 'Championships', icon: Trophy, accent: '#facc15', tag: 'WDC' },
+   { id: 'pit_stops', label: 'Pit Stops', icon: Timer, accent: '#22d3ee', tag: 'PIT' },
+   { id: 'tyres', label: 'Tyres', icon: Zap, accent: '#f43f5e', tag: 'TYR' },
+   { id: 'race_results', label: 'Race Results', icon: Award, accent: '#34d399', tag: 'RES' },
+   { id: 'records', label: 'Records', icon: Flame, accent: '#fb923c', tag: 'REC' },
+   { id: 'historical', label: 'Historical', icon: HelpCircle, accent: '#94a3b8', tag: 'HIS' },
+   { id: 'rules', label: 'Rules & Regs', icon: AlertCircle, accent: '#0ea5e9', tag: 'REG' },
 ];
 
 const QUESTION_TIMER_SECONDS = 20;
@@ -48,6 +49,73 @@ function shuffleArray<T>(arr: T[]): T[] {
    }
    return shuffled;
 }
+
+/** Circular HUD gauge — shared visual language with the dashboard's telemetry stat cards */
+interface ResultGaugeCardProps {
+   title: string;
+   value: number | string;
+   unit: string;
+   icon: React.ElementType;
+   percent: number;
+   colorHex: string;
+   badgeText?: string;
+}
+
+const ResultGaugeCard: React.FC<ResultGaugeCardProps> = ({ title, value, unit, icon: Icon, percent, colorHex, badgeText }) => {
+   const radius = 36;
+   const circumference = 2 * Math.PI * radius;
+   const strokeDashoffset = circumference - (Math.min(Math.max(percent, 0), 100) / 100) * circumference;
+
+   return (
+      <div className="telemetry-card p-5 flex flex-col justify-between relative overflow-hidden">
+         <div
+            className="absolute top-0 inset-x-0 h-[2px] opacity-75"
+            style={{ background: `linear-gradient(90deg, transparent, ${colorHex}, transparent)` }}
+         />
+         <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+               <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06]"
+                  style={{ backgroundColor: `${colorHex}15` }}
+               >
+                  <Icon className="w-4 h-4" style={{ color: colorHex }} />
+               </div>
+               <span className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">{title}</span>
+            </div>
+            {badgeText && (
+               <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white/[0.04] text-f1-silver/60 border border-white/[0.06]">
+                  {badgeText}
+               </span>
+            )}
+         </div>
+
+         <div className="flex items-center justify-between mt-2">
+            <div>
+               <div className="text-3xl sm:text-4xl font-black font-display tracking-tight text-f1-white">{value}</div>
+               <p className="text-[11px] font-mono text-f1-silver/50 tracking-widest uppercase mt-0.5">{unit}</p>
+            </div>
+            <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
+               <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
+                  <circle cx="44" cy="44" r={radius} className="gauge-track" />
+                  <circle
+                     cx="44"
+                     cy="44"
+                     r={radius}
+                     className="gauge-fill"
+                     style={{
+                        stroke: colorHex,
+                        strokeDasharray: circumference,
+                        strokeDashoffset: strokeDashoffset,
+                        filter: `drop-shadow(0 0 6px ${colorHex}80)`,
+                     }}
+                  />
+               </svg>
+               <span className="absolute font-mono text-[11px] font-bold text-f1-white/90">{Math.round(percent)}%</span>
+            </div>
+         </div>
+      </div>
+   );
+};
 
 const TriviaPage: React.FC = () => {
    // Game configuration state
@@ -275,99 +343,109 @@ const TriviaPage: React.FC = () => {
       return { title: 'Test & Reserve Driver', badge: '🔧', desc: 'Back to the simulator for more prep!' };
    };
 
+   const correctCount = userAnswers.filter((a) => a.correct).length;
+   const accuracyPct = Math.round((correctCount / (userAnswers.length || 1)) * 100);
+   const distancePct = Math.round((userAnswers.length / (questions.length || 1)) * 100);
+   const streakPct = Math.round((bestStreak / (userAnswers.length || 1)) * 100);
+   const scorePct = Math.min(100, Math.round((score / ((userAnswers.length || 1) * 300)) * 100));
+
    return (
-      <div className="w-full max-w-6xl mx-auto flex flex-col justify-start animate-fade-in">
+      <div className="w-full max-w-6xl mx-auto flex flex-col justify-start animate-fade-in space-y-7">
          {/* ------------------------------------------------------------------- */}
          {/* 1. LOBBY VIEW                                                       */}
          {/* ------------------------------------------------------------------- */}
          {gameState === 'lobby' && (
             <div className="space-y-5">
-               {/* Header Banner */}
-               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
-                  <div>
-                     <span className="bg-f1-red/20 text-f1-red font-bold text-xs px-2.5 py-0.5 rounded-full border border-f1-red/30 uppercase tracking-widest inline-flex items-center gap-1.5 mb-1.5">
-                        <Trophy className="w-3.5 h-3.5" /> F1 Pit Wall Challenge
-                     </span>
-                     <h1 className="text-2xl md:text-3xl font-extrabold font-display text-white tracking-tight">
-                        Formula 1 <span className="text-f1-red">Trivia & Quiz</span>
-                     </h1>
-                  </div>
+               {/* Hero: Mission Control HUD, matching dashboard */}
+               <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 shadow-2xl dot-grid">
+                  <div className="scanline-overlay" />
+                  <div className="absolute -top-24 -right-24 w-96 h-96 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute top-0 right-0 w-48 h-full bg-gradient-to-l from-f1-red/[0.04] to-transparent transform skew-x-12 pointer-events-none" />
 
-                  <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-2xl backdrop-blur-md">
-                     <Award className="w-5 h-5 text-amber-400" />
-                     <div>
-                        <div className="text-[10px] text-white/50 uppercase font-bold tracking-wider">All-Time High Score</div>
-                        <div className="text-base md:text-lg font-bold text-white font-mono">{highScore.toLocaleString()} PTS</div>
+                  <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                     <div className="space-y-2">
+                        <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                           <Trophy className="w-3.5 h-3.5 text-f1-red-light" />
+                           <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                              FIA Pit Wall Challenge
+                           </span>
+                        </div>
+
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black tracking-tight text-f1-white uppercase">
+                           Trivia <span className="gradient-text">Circuit</span>
+                        </h1>
+
+                        <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                           Test your championship knowledge against the pit wall clock. Choose a mode, pick a topic, and take the lights.
+                        </p>
+                     </div>
+
+                     <div className="flex items-center gap-3 bg-white/[0.04] border border-white/[0.06] px-4 py-2.5 rounded-2xl backdrop-blur-md shrink-0">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center border border-amber-400/20 bg-amber-400/10">
+                           <Award className="w-4 h-4 text-amber-400" />
+                        </div>
+                        <div>
+                           <div className="text-[10px] font-mono text-f1-silver/50 uppercase font-bold tracking-wider">All-Time High Score</div>
+                           <div className="text-base md:text-lg font-black font-display text-f1-white">{highScore.toLocaleString()} PTS</div>
+                        </div>
                      </div>
                   </div>
                </div>
 
                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                   {/* Left: Mode & Categories */}
-                  <div className="lg:col-span-2 space-y-4">
+                  <div className="lg:col-span-2 space-y-5">
                      {/* Mode Selector */}
-                     <div className="bg-[#1e1e2e]/80 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
-                        <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
+                     <div className="telemetry-card p-5">
+                        <h2 className="text-xs font-mono font-bold text-f1-silver/70 uppercase tracking-widest mb-3.5 flex items-center gap-2">
                            <Zap className="w-4 h-4 text-amber-400" /> Choose Race Mode
                         </h2>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                           <button
-                              onClick={() => setGameMode('sprint')}
-                              className={`p-3.5 rounded-xl border text-left transition-all ${
-                                 gameMode === 'sprint'
-                                    ? 'bg-f1-red/20 border-f1-red shadow-lg shadow-f1-red/10 ring-1 ring-f1-red/50'
-                                    : 'bg-white/5 border-white/5 hover:border-white/20'
-                              }`}
-                           >
-                              <div className="flex items-center justify-between mb-1.5">
-                                 <Zap className={`w-4 h-4 ${gameMode === 'sprint' ? 'text-f1-red' : 'text-white/60'}`} />
-                                 <span className="text-[11px] font-mono font-bold bg-white/10 px-2 py-0.5 rounded text-white/90">10 Laps</span>
-                              </div>
-                              <h3 className="font-bold text-white text-sm">Sprint Shootout</h3>
-                              <p className="text-xs text-white/50 mt-1 leading-snug">Quick 10-question sprint race.</p>
-                           </button>
-
-                           <button
-                              onClick={() => setGameMode('gp')}
-                              className={`p-3.5 rounded-xl border text-left transition-all ${
-                                 gameMode === 'gp'
-                                    ? 'bg-amber-500/20 border-amber-500 shadow-lg shadow-amber-500/10 ring-1 ring-amber-500/50'
-                                    : 'bg-white/5 border-white/5 hover:border-white/20'
-                              }`}
-                           >
-                              <div className="flex items-center justify-between mb-1.5">
-                                 <Trophy className={`w-4 h-4 ${gameMode === 'gp' ? 'text-amber-400' : 'text-white/60'}`} />
-                                 <span className="text-[11px] font-mono font-bold bg-white/10 px-2 py-0.5 rounded text-white/90">25 Laps</span>
-                              </div>
-                              <h3 className="font-bold text-white text-sm">Grand Prix</h3>
-                              <p className="text-xs text-white/50 mt-1 leading-snug">Full 25-question endurance test.</p>
-                           </button>
-
-                           <button
-                              onClick={() => setGameMode('survival')}
-                              className={`p-3.5 rounded-xl border text-left transition-all ${
-                                 gameMode === 'survival'
-                                    ? 'bg-purple-500/20 border-purple-500 shadow-lg shadow-purple-500/10 ring-1 ring-purple-500/50'
-                                    : 'bg-white/5 border-white/5 hover:border-white/20'
-                              }`}
-                           >
-                              <div className="flex items-center justify-between mb-1.5">
-                                 <Flame className={`w-4 h-4 ${gameMode === 'survival' ? 'text-purple-400' : 'text-white/60'}`} />
-                                 <span className="text-[11px] font-mono font-bold bg-purple-500/30 text-purple-200 px-2 py-0.5 rounded">Sudden Death</span>
-                              </div>
-                              <h3 className="font-bold text-white text-sm">Survival</h3>
-                              <p className="text-xs text-white/50 mt-1 leading-snug">1 mistake = Game Over!</p>
-                           </button>
+                           {[
+                              { id: 'sprint' as TriviaGameMode, icon: Zap, title: 'Sprint Shootout', desc: 'Quick 10-question sprint race.', tag: '10 LAPS', color: '#E10600' },
+                              { id: 'gp' as TriviaGameMode, icon: Trophy, title: 'Grand Prix', desc: 'Full 25-question endurance test.', tag: '25 LAPS', color: '#f59e0b' },
+                              { id: 'survival' as TriviaGameMode, icon: Flame, title: 'Survival', desc: '1 mistake = Game Over!', tag: 'SUDDEN DEATH', color: '#a855f7' },
+                           ].map((mode) => {
+                              const Icon = mode.icon;
+                              const isActive = gameMode === mode.id;
+                              return (
+                                 <button
+                                    key={mode.id}
+                                    onClick={() => setGameMode(mode.id)}
+                                    className={`relative overflow-hidden p-3.5 rounded-xl border text-left transition-all ${isActive
+                                          ? 'bg-white/[0.06] border-white/[0.14] shadow-lg'
+                                          : 'bg-white/[0.02] border-white/[0.05] hover:border-white/[0.12] hover:bg-white/[0.04]'
+                                       }`}
+                                    style={isActive ? { boxShadow: `0 0 0 1px ${mode.color}40, 0 10px 30px -10px ${mode.color}30` } : undefined}
+                                 >
+                                    {isActive && (
+                                       <div
+                                          className="absolute top-0 inset-x-0 h-[2px]"
+                                          style={{ background: `linear-gradient(90deg, transparent, ${mode.color}, transparent)` }}
+                                       />
+                                    )}
+                                    <div className="flex items-center justify-between mb-2">
+                                       <Icon className="w-4 h-4" style={{ color: isActive ? mode.color : '#8b93a1' }} />
+                                       <span className="text-[10px] font-mono font-bold bg-white/[0.06] px-2 py-0.5 rounded text-f1-silver/80">
+                                          {mode.tag}
+                                       </span>
+                                    </div>
+                                    <h3 className="font-display font-bold text-f1-white text-sm">{mode.title}</h3>
+                                    <p className="text-xs text-f1-silver/50 mt-1 leading-snug">{mode.desc}</p>
+                                 </button>
+                              );
+                           })}
                         </div>
                      </div>
 
                      {/* Category Selector */}
-                     <div className="bg-[#1e1e2e]/80 border border-white/10 rounded-2xl p-5 backdrop-blur-sm">
-                        <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-3 flex items-center justify-between">
+                     <div className="telemetry-card p-5">
+                        <h2 className="text-xs font-mono font-bold text-f1-silver/70 uppercase tracking-widest mb-3.5 flex items-center justify-between">
                            <span className="flex items-center gap-2">
                               <Compass className="w-4 h-4 text-f1-red" /> Category Topic
                            </span>
-                           <span className="text-xs text-white/40 font-normal">Choose topic or all</span>
+                           <span className="text-[10px] text-f1-silver/40 font-mono normal-case tracking-normal">Choose topic or all</span>
                         </h2>
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
@@ -378,16 +456,22 @@ const TriviaPage: React.FC = () => {
                                  <button
                                     key={cat.id}
                                     onClick={() => setSelectedCategory(cat.id)}
-                                    className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
-                                       isSelected
-                                          ? 'bg-white/15 border-f1-red text-white shadow-md ring-1 ring-f1-red/40'
-                                          : 'bg-white/5 border-white/5 text-white/70 hover:bg-white/10 hover:text-white'
-                                    }`}
+                                    className={`pill-button justify-start py-2.5 transition-all ${isSelected ? 'border-white/[0.14] bg-white/[0.06]' : 'hover:border-white/[0.12]'
+                                       }`}
+                                    style={isSelected ? { boxShadow: `0 0 0 1px ${cat.accent}40` } : undefined}
                                  >
-                                    <div className={`p-2 rounded-lg bg-gradient-to-br ${cat.color} text-white shadow-inner flex-shrink-0`}>
-                                       <Icon className="w-3.5 h-3.5" />
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                       <div
+                                          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border border-white/[0.06]"
+                                          style={{ backgroundColor: `${cat.accent}18` }}
+                                       >
+                                          <Icon className="w-3.5 h-3.5" style={{ color: cat.accent }} />
+                                       </div>
+                                       <div className="min-w-0 text-left">
+                                          <span className="text-xs font-semibold text-f1-white truncate block">{cat.label}</span>
+                                          <span className="text-[9px] font-mono text-f1-silver/40 uppercase">/{cat.tag}</span>
+                                       </div>
                                     </div>
-                                    <span className="text-xs font-semibold truncate">{cat.label}</span>
                                  </button>
                               );
                            })}
@@ -396,27 +480,26 @@ const TriviaPage: React.FC = () => {
                   </div>
 
                   {/* Right: Regulations & Start */}
-                  <div className="space-y-4">
-                     <div className="bg-[#1e1e2e]/80 border border-white/10 rounded-2xl p-5 backdrop-blur-sm space-y-4">
-                        <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <div className="space-y-5">
+                     <div className="telemetry-card p-5 space-y-4">
+                        <h2 className="text-xs font-mono font-bold text-f1-silver/70 uppercase tracking-widest flex items-center gap-2">
                            <Wrench className="w-4 h-4 text-cyan-400" /> Regulations
                         </h2>
 
                         {/* Difficulty */}
                         <div>
-                           <label className="text-xs font-bold uppercase tracking-wider text-white/50 mb-1.5 block">
+                           <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-f1-silver/50 mb-1.5 block">
                               Difficulty Level
                            </label>
-                           <div className="grid grid-cols-4 gap-1.5 p-1 bg-white/5 rounded-xl border border-white/5">
+                           <div className="grid grid-cols-4 gap-1.5 p-1 bg-white/[0.03] rounded-xl border border-white/[0.05]">
                               {(['all', 'easy', 'medium', 'hard'] as const).map((diff) => (
                                  <button
                                     key={diff}
                                     onClick={() => setDifficultyFilter(diff)}
-                                    className={`py-1.5 text-xs font-bold rounded-lg uppercase transition-all ${
-                                       difficultyFilter === diff
+                                    className={`py-1.5 text-[11px] font-mono font-bold rounded-lg uppercase tracking-wide transition-all ${difficultyFilter === diff
                                           ? 'bg-f1-red text-white shadow-md'
-                                          : 'text-white/60 hover:text-white'
-                                    }`}
+                                          : 'text-f1-silver/60 hover:text-f1-white'
+                                       }`}
                                  >
                                     {diff}
                                  </button>
@@ -425,12 +508,12 @@ const TriviaPage: React.FC = () => {
                         </div>
 
                         {/* Timer Toggle */}
-                        <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                        <div className="flex items-center justify-between p-3 bg-white/[0.03] rounded-xl border border-white/[0.05]">
                            <div className="flex items-center gap-2.5">
                               <Timer className="w-4 h-4 text-amber-400" />
                               <div>
-                                 <div className="text-xs font-bold text-white">20s Pit Wall Timer</div>
-                                 <div className="text-[10px] text-white/40">Bonus points for speed</div>
+                                 <div className="text-xs font-semibold text-f1-white">20s Pit Wall Timer</div>
+                                 <div className="text-[10px] font-mono text-f1-silver/40">Bonus points for speed</div>
                               </div>
                            </div>
                            <input
@@ -442,7 +525,7 @@ const TriviaPage: React.FC = () => {
                         </div>
 
                         {fetchError && (
-                           <div className="p-3 bg-red-950/50 border border-red-800/50 rounded-xl text-red-300 text-xs flex items-start gap-2">
+                           <div className="p-3 bg-red-950/40 border border-red-800/40 rounded-xl text-red-300 text-xs flex items-start gap-2">
                               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-400" />
                               <span>{fetchError}</span>
                            </div>
@@ -451,7 +534,7 @@ const TriviaPage: React.FC = () => {
                         <button
                            onClick={startQuiz}
                            disabled={loading}
-                           className="w-full py-4 bg-gradient-to-r from-f1-red to-red-700 hover:from-red-600 hover:to-f1-red text-white font-extrabold text-sm md:text-base rounded-xl shadow-xl shadow-f1-red/20 transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 uppercase tracking-wider disabled:opacity-50"
+                           className="w-full py-4 bg-gradient-to-r from-f1-red to-red-700 hover:from-red-600 hover:to-f1-red text-white font-mono font-extrabold text-sm rounded-xl shadow-xl shadow-f1-red/20 transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 uppercase tracking-[0.15em] disabled:opacity-50"
                         >
                            {loading ? (
                               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -463,9 +546,13 @@ const TriviaPage: React.FC = () => {
                         </button>
                      </div>
 
-                     <div className="bg-gradient-to-br from-amber-500/10 to-red-500/10 border border-amber-500/20 rounded-2xl p-4 text-xs text-amber-200/90 leading-relaxed flex items-center gap-3">
-                        <Flame className="w-5 h-5 text-amber-400 flex-shrink-0" />
-                        <span>Build your DRS streak with consecutive correct answers for up to +100 bonus points!</span>
+                     <div className="telemetry-card p-4 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center border border-amber-400/20 bg-amber-400/10 shrink-0">
+                           <Flame className="w-4 h-4 text-amber-400" />
+                        </div>
+                        <span className="text-xs text-f1-silver/70 leading-relaxed">
+                           Build your DRS streak with consecutive correct answers for up to <span className="text-amber-300 font-semibold">+100 bonus points</span>!
+                        </span>
                      </div>
                   </div>
                </div>
@@ -476,47 +563,55 @@ const TriviaPage: React.FC = () => {
          {/* 2. START LIGHTS COUNTDOWN                                           */}
          {/* ------------------------------------------------------------------- */}
          {gameState === 'starting' && (
-            <div className="w-full min-h-[55vh] flex flex-col items-center justify-center p-8 bg-[#1e1e2e]/70 border border-white/10 rounded-3xl backdrop-blur-md">
-               <span className="text-xs font-mono text-white/50 uppercase tracking-widest mb-1.5">Formation Lap Complete</span>
-               <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-8">GRIDDING UP...</h2>
+            <div className="relative overflow-hidden w-full min-h-[55vh] flex flex-col items-center justify-center p-8 rounded-3xl bg-f1-carbon/90 border border-white/[0.06] dot-grid shadow-2xl">
+               <div className="scanline-overlay" />
+               <div className="absolute -top-24 -right-24 w-96 h-96 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
 
-               <div className="flex items-center gap-3 sm:gap-6 bg-black/90 p-5 sm:p-7 rounded-3xl border border-white/20 shadow-2xl">
+               <span className="relative z-10 text-xs font-mono text-f1-silver/50 uppercase tracking-[0.2em] mb-1.5">
+                  Formation Lap Complete
+               </span>
+               <h2 className="relative z-10 text-3xl sm:text-4xl font-display font-black text-f1-white mb-8 uppercase tracking-tight">
+                  Gridding Up...
+               </h2>
+
+               <div className="relative z-10 flex items-center gap-3 sm:gap-6 bg-black/80 p-5 sm:p-7 rounded-3xl border border-white/[0.1] shadow-2xl">
                   {[1, 2, 3, 4, 5].map((lightIndex) => {
                      const isLit = lightIndex <= startLightCount;
                      return (
                         <div
                            key={lightIndex}
-                           className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full transition-all duration-150 ${
-                              isLit
+                           className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full transition-all duration-150 ${isLit
                                  ? 'bg-f1-red shadow-[0_0_30px_#e10600] border-2 border-white'
                                  : 'bg-zinc-900 border border-white/10'
-                           }`}
+                              }`}
                         />
                      );
                   })}
                </div>
 
-               <p className="mt-8 text-white/50 text-sm animate-pulse">Lights out and away we go!</p>
+               <p className="relative z-10 mt-8 text-f1-silver/50 text-sm font-mono animate-pulse uppercase tracking-widest">
+                  Lights out and away we go!
+               </p>
             </div>
          )}
 
          {/* ------------------------------------------------------------------- */}
-         {/* 3. ACTIVE QUIZ PLAYING VIEW (Generous, Proportional Cockpit)        */}
+         {/* 3. ACTIVE QUIZ PLAYING VIEW                                         */}
          {/* ------------------------------------------------------------------- */}
          {gameState === 'playing' && currentQuestion && (
             <div className="w-full flex flex-col gap-3.5">
                {/* Race HUD Header */}
-               <div className="bg-[#1e1e2e]/95 border border-white/10 rounded-2xl px-5 py-3 backdrop-blur-xl flex items-center justify-between gap-4 shadow-xl">
+               <div className="telemetry-card px-5 py-3.5 flex items-center justify-between gap-4">
                   {/* Left: Lap Progress & Category */}
                   <div className="flex items-center gap-3">
-                     <div className="w-9 h-9 rounded-xl bg-f1-red/20 border border-f1-red/40 flex items-center justify-center font-bold text-f1-red text-sm font-mono shadow-inner">
+                     <div className="w-9 h-9 rounded-xl bg-f1-red/15 border border-f1-red/30 flex items-center justify-center font-bold text-f1-red-light text-sm font-mono shadow-inner">
                         {currentIndex + 1}
                      </div>
                      <div>
-                        <div className="text-[10px] text-white/50 uppercase font-bold tracking-wider">Race Progress</div>
-                        <div className="text-sm md:text-base font-bold text-white font-mono flex items-center gap-2">
-                           Lap {currentIndex + 1} <span className="text-white/40 font-normal">/ {questions.length}</span>
-                           <span className="hidden sm:inline-block text-[11px] bg-white/10 text-white/90 font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                        <div className="text-[10px] font-mono text-f1-silver/50 uppercase font-bold tracking-wider">Race Progress</div>
+                        <div className="text-sm md:text-base font-bold text-f1-white font-mono flex items-center gap-2">
+                           Lap {currentIndex + 1} <span className="text-f1-silver/40 font-normal">/ {questions.length}</span>
+                           <span className="hidden sm:inline-block text-[11px] bg-white/[0.06] text-f1-silver/80 font-mono font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-white/[0.06]">
                               {currentQuestion.category.replace('_', ' ')}
                            </span>
                         </div>
@@ -525,7 +620,7 @@ const TriviaPage: React.FC = () => {
 
                   {/* Center: DRS Streak Multiplier */}
                   {streak > 1 && (
-                     <div className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/40 px-3.5 py-1 rounded-xl animate-pulse">
+                     <div className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500/15 to-red-500/15 border border-orange-500/30 px-3.5 py-1 rounded-xl animate-pulse">
                         <Flame className="w-4 h-4 text-orange-400" />
                         <span className="text-xs md:text-sm font-extrabold text-orange-300 font-mono">{streak}x DRS STREAK</span>
                      </div>
@@ -534,22 +629,22 @@ const TriviaPage: React.FC = () => {
                   {/* Right: Timer, Score & Quit */}
                   <div className="flex items-center gap-3">
                      {enableTimer && !isAnswerSubmitted && (
-                        <div className="flex items-center gap-1.5 font-mono text-xs md:text-sm font-bold bg-white/10 border border-white/10 px-3 py-1.5 rounded-xl">
+                        <div className="flex items-center gap-1.5 font-mono text-xs md:text-sm font-bold bg-white/[0.04] border border-white/[0.06] px-3 py-1.5 rounded-xl">
                            <Timer className={`w-4 h-4 ${timeLeft <= 5 ? 'text-red-400 animate-spin' : 'text-amber-400'}`} />
-                           <span className={timeLeft <= 5 ? 'text-red-400' : 'text-white'}>{timeLeft}s</span>
+                           <span className={timeLeft <= 5 ? 'text-red-400' : 'text-f1-white'}>{timeLeft}s</span>
                         </div>
                      )}
 
-                     <div className="text-right bg-white/5 border border-white/10 px-3.5 py-1 rounded-xl">
-                        <div className="text-[9px] text-white/50 uppercase font-bold">Score</div>
-                        <div className="text-sm md:text-base font-bold text-white font-mono">
-                           {score.toLocaleString()} <span className="text-white/40 text-[10px]">PTS</span>
+                     <div className="text-right bg-white/[0.03] border border-white/[0.06] px-3.5 py-1 rounded-xl">
+                        <div className="text-[9px] font-mono text-f1-silver/50 uppercase font-bold">Score</div>
+                        <div className="text-sm md:text-base font-bold text-f1-white font-mono">
+                           {score.toLocaleString()} <span className="text-f1-silver/40 text-[10px]">PTS</span>
                         </div>
                      </div>
 
                      <button
                         onClick={() => setGameState('lobby')}
-                        className="text-white/40 hover:text-white p-2 rounded-xl hover:bg-white/10 transition-colors"
+                        className="text-f1-silver/40 hover:text-f1-white p-2 rounded-xl hover:bg-white/[0.06] transition-colors"
                         title="Quit Race"
                      >
                         <LogOut className="w-4 h-4" />
@@ -558,16 +653,15 @@ const TriviaPage: React.FC = () => {
                </div>
 
                {/* Lap Progress Bar */}
-               <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden border border-white/5">
+               <div className="w-full bg-white/[0.04] h-2 rounded-full overflow-hidden border border-white/[0.05]">
                   <div
                      className="bg-gradient-to-r from-f1-red via-orange-500 to-amber-400 h-full transition-all duration-300 rounded-full shadow-lg shadow-f1-red/30"
                      style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
                   />
                </div>
 
-               {/* Main Expansive Question Card */}
-               <div className="bg-[#1e1e2e]/95 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden flex flex-col justify-between">
-                  {/* Top Timer Bar */}
+               {/* Main Question Card */}
+               <div className="telemetry-card p-6 md:p-8 relative overflow-hidden flex flex-col justify-between">
                   {enableTimer && !isAnswerSubmitted && (
                      <div
                         className="absolute top-0 left-0 h-1.5 bg-gradient-to-r from-green-500 via-amber-500 to-red-500 transition-all duration-1000 ease-linear shadow-md"
@@ -578,27 +672,27 @@ const TriviaPage: React.FC = () => {
                   {/* Header row inside question card */}
                   <div className="flex items-center justify-between gap-2 mb-3">
                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-f1-red bg-f1-red/15 px-3 py-0.5 rounded-full border border-f1-red/30">
+                        <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-f1-red-light bg-f1-red/10 px-3 py-0.5 rounded-full border border-f1-red/25">
                            Sector {((currentIndex % 3) + 1)} • Lap #{currentIndex + 1}
                         </span>
                         {currentQuestion.season && (
-                           <span className="text-xs font-mono text-amber-300 bg-amber-500/20 px-2.5 py-0.5 rounded-full font-bold">
+                           <span className="text-[11px] font-mono text-amber-300 bg-amber-500/15 px-2.5 py-0.5 rounded-full font-bold border border-amber-500/20">
                               {currentQuestion.season} Season
                            </span>
                         )}
                      </div>
 
-                     <span className="text-xs text-white/40 font-mono">
-                        Difficulty: <span className="text-white capitalize font-bold">{currentQuestion.difficulty}</span>
+                     <span className="text-[11px] text-f1-silver/40 font-mono">
+                        Difficulty: <span className="text-f1-white capitalize font-bold">{currentQuestion.difficulty}</span>
                      </span>
                   </div>
 
                   {/* Question Title */}
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-white leading-relaxed mb-6 min-h-[56px] flex items-center">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-display font-extrabold text-f1-white leading-relaxed mb-6 min-h-[56px] flex items-center">
                      {currentQuestion.question}
                   </h2>
 
-                  {/* 4 Large Option Cards */}
+                  {/* 4 Option Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-2">
                      {shuffledOptions.map((opt, idx) => {
                         const letter = ['A', 'B', 'C', 'D'][idx] || `${idx + 1}`;
@@ -606,17 +700,17 @@ const TriviaPage: React.FC = () => {
                         const isCorrect = opt === currentQuestion.correct_answer;
 
                         let cardStyle =
-                           'bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/25 hover:shadow-lg hover:shadow-black/20';
+                           'bg-white/[0.03] border-white/[0.06] text-f1-white hover:bg-white/[0.06] hover:border-white/[0.14] hover:shadow-lg hover:shadow-black/20';
 
                         if (isAnswerSubmitted) {
                            if (isCorrect) {
                               cardStyle =
-                                 'bg-emerald-500/20 border-emerald-500 text-emerald-200 shadow-xl shadow-emerald-500/10 font-bold ring-1 ring-emerald-500/50';
+                                 'bg-emerald-500/15 border-emerald-500/60 text-emerald-200 shadow-xl shadow-emerald-500/10 font-bold ring-1 ring-emerald-500/40';
                            } else if (isSelected && !isCorrect) {
                               cardStyle =
-                                 'bg-rose-500/20 border-rose-500 text-rose-200 shadow-xl shadow-rose-500/10 ring-1 ring-rose-500/50';
+                                 'bg-rose-500/15 border-rose-500/60 text-rose-200 shadow-xl shadow-rose-500/10 ring-1 ring-rose-500/40';
                            } else {
-                              cardStyle = 'bg-white/5 border-white/5 text-white/30 opacity-40';
+                              cardStyle = 'bg-white/[0.02] border-white/[0.04] text-f1-silver/30 opacity-40';
                            }
                         }
 
@@ -628,13 +722,12 @@ const TriviaPage: React.FC = () => {
                               className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 flex items-center gap-4 transform active:scale-[0.99] group ${cardStyle}`}
                            >
                               <span
-                                 className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-bold text-xs sm:text-sm flex-shrink-0 transition-transform group-hover:scale-105 ${
-                                    isAnswerSubmitted && isCorrect
+                                 className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-bold text-xs sm:text-sm flex-shrink-0 transition-transform group-hover:scale-105 ${isAnswerSubmitted && isCorrect
                                        ? 'bg-emerald-500 text-black shadow-md'
                                        : isAnswerSubmitted && isSelected && !isCorrect
-                                       ? 'bg-rose-500 text-white shadow-md'
-                                       : 'bg-white/10 text-white/90 border border-white/10'
-                                 }`}
+                                          ? 'bg-rose-500 text-white shadow-md'
+                                          : 'bg-white/[0.06] text-f1-white/90 border border-white/[0.06]'
+                                    }`}
                               >
                                  {letter}
                               </span>
@@ -646,13 +739,12 @@ const TriviaPage: React.FC = () => {
 
                   {/* Inline Explanation & Next Button Bar */}
                   {isAnswerSubmitted && (
-                     <div className="mt-4 pt-4 border-t border-white/10 animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                     <div className="mt-4 pt-4 border-t border-white/[0.06] animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                         <div
-                           className={`p-3.5 rounded-2xl border flex items-center gap-3 flex-1 ${
-                              selectedAnswer === currentQuestion.correct_answer
-                                 ? 'bg-emerald-950/60 border-emerald-800/60 text-emerald-200'
-                                 : 'bg-rose-950/60 border-rose-800/60 text-rose-200'
-                           }`}
+                           className={`p-3.5 rounded-2xl border flex items-center gap-3 flex-1 ${selectedAnswer === currentQuestion.correct_answer
+                                 ? 'bg-emerald-950/40 border-emerald-800/40 text-emerald-200'
+                                 : 'bg-rose-950/40 border-rose-800/40 text-rose-200'
+                              }`}
                         >
                            {selectedAnswer === currentQuestion.correct_answer ? (
                               <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
@@ -665,13 +757,13 @@ const TriviaPage: React.FC = () => {
                                     ? '🏁 Purple Sector! Correct.'
                                     : `❌ Correct Answer: "${currentQuestion.correct_answer}".`}
                               </span>
-                              <span className="text-white/80 text-xs leading-relaxed">{currentQuestion.explanation}</span>
+                              <span className="text-f1-silver/70 text-xs leading-relaxed">{currentQuestion.explanation}</span>
                            </div>
                         </div>
 
                         <button
                            onClick={handleNextQuestion}
-                           className="px-7 py-3.5 bg-gradient-to-r from-f1-red to-red-700 hover:from-red-600 hover:to-f1-red text-white font-extrabold text-sm rounded-2xl shadow-xl shadow-f1-red/30 transition-all transform hover:scale-105 flex items-center justify-center gap-2 uppercase tracking-wider flex-shrink-0"
+                           className="px-7 py-3.5 bg-gradient-to-r from-f1-red to-red-700 hover:from-red-600 hover:to-f1-red text-white font-mono font-extrabold text-sm rounded-2xl shadow-xl shadow-f1-red/30 transition-all transform hover:scale-105 flex items-center justify-center gap-2 uppercase tracking-wider flex-shrink-0"
                         >
                            {currentIndex + 1 < questions.length ? (
                               <>
@@ -682,9 +774,7 @@ const TriviaPage: React.FC = () => {
                                  Finish Race <Trophy className="w-4 h-4" />
                               </>
                            )}
-                           <span className="hidden sm:inline-block text-[10px] bg-black/25 px-1.5 py-0.5 rounded font-mono ml-1">
-                              [Enter]
-                           </span>
+                           <span className="hidden sm:inline-block text-[10px] bg-black/25 px-1.5 py-0.5 rounded font-mono ml-1">[Enter]</span>
                         </button>
                      </div>
                   )}
@@ -697,68 +787,83 @@ const TriviaPage: React.FC = () => {
          {/* ------------------------------------------------------------------- */}
          {gameState === 'finished' && (
             <div className="w-full space-y-5 animate-slide-up">
-               {/* Podium Trophy Banner */}
-               <div className="bg-gradient-to-br from-[#1e1e2e] to-[#15151e] border border-white/10 rounded-3xl p-6 sm:p-8 text-center backdrop-blur-xl shadow-2xl relative overflow-hidden">
-                  <div className="text-4xl sm:text-5xl mb-2">{getPerformanceRank().badge}</div>
-                  <span className="text-xs font-mono text-f1-red font-bold uppercase tracking-widest">
-                     FIA Formula 1 Classification
-                  </span>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mt-1">
-                     {getPerformanceRank().title}
-                  </h2>
-                  <p className="text-white/60 text-sm mt-1 max-w-md mx-auto">{getPerformanceRank().desc}</p>
+               {/* Podium Banner — Mission Control HUD style */}
+               <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 text-center shadow-2xl dot-grid">
+                  <div className="scanline-overlay" />
+                  <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-f1-red/10 rounded-full blur-3xl pointer-events-none" />
 
-                  {/* Summary Stat Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-                     <div className="bg-white/5 border border-white/5 p-3.5 rounded-2xl">
-                        <div className="text-[10px] text-white/50 uppercase font-bold">Total Score</div>
-                        <div className="text-xl sm:text-2xl font-extrabold text-amber-400 font-mono mt-0.5">
-                           {score.toLocaleString()}
-                        </div>
+                  <div className="relative z-10">
+                     <div className="text-4xl sm:text-5xl mb-2">{getPerformanceRank().badge}</div>
+                     <span className="text-xs font-mono text-f1-red-light font-bold uppercase tracking-[0.2em]">
+                        FIA Formula 1 Classification
+                     </span>
+                     <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-black text-f1-white mt-1 uppercase tracking-tight">
+                        {getPerformanceRank().title}
+                     </h2>
+                     <p className="text-f1-silver/70 text-sm mt-1 max-w-md mx-auto">{getPerformanceRank().desc}</p>
+
+                     {/* Telemetry gauge grid — same signature dial as the dashboard */}
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-7 text-left">
+                        <ResultGaugeCard
+                           title="Total Score"
+                           value={score.toLocaleString()}
+                           unit="Championship Points"
+                           icon={Award}
+                           percent={scorePct}
+                           colorHex="#f59e0b"
+                           badgeText="FINAL"
+                        />
+                        <ResultGaugeCard
+                           title="Accuracy"
+                           value={`${accuracyPct}%`}
+                           unit="Correct Call Rate"
+                           icon={CheckCircle2}
+                           percent={accuracyPct}
+                           colorHex="#10b981"
+                           badgeText="HIT RATE"
+                        />
+                        <ResultGaugeCard
+                           title="Laps Completed"
+                           value={`${correctCount} / ${userAnswers.length}`}
+                           unit="Race Distance"
+                           icon={Flag}
+                           percent={distancePct}
+                           colorHex="#38bdf8"
+                           badgeText="DISTANCE"
+                        />
+                        <ResultGaugeCard
+                           title="Max DRS Streak"
+                           value={`${bestStreak}x`}
+                           unit="Consecutive Correct"
+                           icon={Flame}
+                           percent={streakPct}
+                           colorHex="#fb923c"
+                           badgeText="PEAK"
+                        />
                      </div>
 
-                     <div className="bg-white/5 border border-white/5 p-3.5 rounded-2xl">
-                        <div className="text-[10px] text-white/50 uppercase font-bold">Accuracy</div>
-                        <div className="text-xl sm:text-2xl font-extrabold text-emerald-400 font-mono mt-0.5">
-                           {Math.round((userAnswers.filter((a) => a.correct).length / (userAnswers.length || 1)) * 100)}%
-                        </div>
+                     {/* Action Buttons */}
+                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-7">
+                        <button
+                           onClick={startQuiz}
+                           className="w-full sm:w-auto px-8 py-3.5 bg-f1-red hover:bg-red-600 text-white font-mono font-extrabold text-sm rounded-xl shadow-lg shadow-f1-red/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wider"
+                        >
+                           <RotateCcw className="w-4 h-4" /> Race Again
+                        </button>
+                        <button
+                           onClick={() => setGameState('lobby')}
+                           className="w-full sm:w-auto px-8 py-3.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.06] text-f1-white font-mono font-extrabold text-sm rounded-xl transition-all flex items-center justify-center gap-2 uppercase tracking-wider"
+                        >
+                           Change Settings
+                        </button>
                      </div>
-
-                     <div className="bg-white/5 border border-white/5 p-3.5 rounded-2xl">
-                        <div className="text-[10px] text-white/50 uppercase font-bold">Laps Completed</div>
-                        <div className="text-xl sm:text-2xl font-extrabold text-white font-mono mt-0.5">
-                           {userAnswers.filter((a) => a.correct).length} / {userAnswers.length}
-                        </div>
-                     </div>
-
-                     <div className="bg-white/5 border border-white/5 p-3.5 rounded-2xl">
-                        <div className="text-[10px] text-white/50 uppercase font-bold">Max DRS Streak</div>
-                        <div className="text-xl sm:text-2xl font-extrabold text-orange-400 font-mono mt-0.5">
-                           {bestStreak}x
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
-                     <button
-                        onClick={startQuiz}
-                        className="w-full sm:w-auto px-8 py-3.5 bg-f1-red hover:bg-red-600 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-f1-red/20 transition-all flex items-center justify-center gap-2 uppercase tracking-wider"
-                     >
-                        <RotateCcw className="w-4 h-4" /> Race Again
-                     </button>
-                     <button
-                        onClick={() => setGameState('lobby')}
-                        className="w-full sm:w-auto px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white font-extrabold text-sm rounded-xl transition-all flex items-center justify-center gap-2 uppercase tracking-wider"
-                     >
-                        Change Settings
-                     </button>
                   </div>
                </div>
 
                {/* Question Review Section */}
-               <div className="bg-[#1e1e2e]/80 border border-white/10 rounded-2xl p-5 backdrop-blur-sm max-h-56 overflow-y-auto">
-                  <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+               <div className="telemetry-card p-5 max-h-56 overflow-y-auto">
+                  <h3 className="text-xs font-mono font-bold text-f1-silver/70 uppercase tracking-widest mb-3 flex items-center gap-2">
                      <HelpCircle className="w-4 h-4 text-f1-red" /> Lap Telemetry Review
                   </h3>
 
@@ -766,16 +871,14 @@ const TriviaPage: React.FC = () => {
                      {userAnswers.map((ans, idx) => (
                         <div
                            key={idx}
-                           className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between gap-3 hover:border-white/10 transition-colors"
+                           className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-between gap-3 hover:border-white/[0.1] transition-colors"
                         >
                            <div className="flex items-center gap-2.5 min-w-0">
-                              <span className="text-xs font-mono font-bold text-white/40">#{idx + 1}</span>
-                              <span className="text-xs md:text-sm text-white truncate">{ans.question.question}</span>
+                              <span className="text-xs font-mono font-bold text-f1-silver/40">#{idx + 1}</span>
+                              <span className="text-xs md:text-sm text-f1-white truncate">{ans.question.question}</span>
                            </div>
-                           <div className="flex items-center gap-2 flex-shrink-0 text-xs">
-                              <span className={ans.correct ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
-                                 {ans.selected}
-                              </span>
+                           <div className="flex items-center gap-2 flex-shrink-0 text-xs font-mono">
+                              <span className={ans.correct ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>{ans.selected}</span>
                               {ans.correct ? (
                                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                               ) : (

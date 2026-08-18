@@ -32,14 +32,15 @@ const Layout: React.FC = () => {
             <EasterEggPlayer />
 
             {/* Footer */}
-            <footer className="border-t border-white/[0.04] mt-auto">
-               <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                     <p className="text-f1-silver/60 text-sm">
+            <footer className="border-t border-white/[0.06] mt-auto bg-f1-carbon/40">
+               <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
+                     <p className="flex items-center gap-2 text-[11px] font-mono text-f1-silver/50 uppercase tracking-[0.15em]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] shrink-0" />
                         © 2026 F1 Dashboard — Premium Analytics Platform
                      </p>
-                     <p className="text-f1-silver/30 text-xs">
-                        Data sourced from Jolpica F1 API & OpenF1
+                     <p className="text-f1-silver/30 text-[11px] font-mono uppercase tracking-[0.15em]">
+                        Data sourced from Jolpica F1 API &amp; OpenF1
                      </p>
                   </div>
                </div>

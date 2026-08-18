@@ -90,7 +90,7 @@ const RaceReplayCenterPage: React.FC = () => {
    }, [isLoading]);
 
    const tabButtonClass = (tab: typeof activeTab) =>
-      `flex-1 py-2 rounded-lg text-xs font-bold transition-all flex justify-center items-center gap-1.5 ${activeTab === tab ? 'bg-f1-red text-white' : 'text-f1-silver hover:text-f1-white'
+      `flex-1 py-2 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider transition-all flex justify-center items-center gap-1.5 ${activeTab === tab ? 'bg-f1-red text-white shadow-lg shadow-f1-red/20' : 'text-f1-silver/60 hover:text-f1-white'
       }`;
 
    return (
@@ -109,60 +109,66 @@ const RaceReplayCenterPage: React.FC = () => {
                   onTouchMove={(e) => e.preventDefault()}
                >
                   <Loader2 className="h-10 w-10 animate-spin text-f1-red" />
-                  <span className="text-sm font-bold text-f1-white tracking-wide">Syncing feeds...</span>
+                  <span className="text-sm font-mono font-bold text-f1-white tracking-wide uppercase">Syncing feeds...</span>
                </motion.div>
             )}
          </AnimatePresence>
 
-         {/* Header Panel */}
-         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/5 pb-3">
-            <div>
-               <span className="text-xs font-bold text-f1-red uppercase tracking-[0.2em]">F1TV Replay Center</span>
-               <h1 className="text-2xl font-display font-black text-f1-white mt-1">Race Replay Center</h1>
-            </div>
-
-            <div className="flex gap-2">
-               <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="bg-f1-mid-gray/50 border border-white/10 rounded-xl px-4 py-2 text-sm text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer"
-               >
-                  {RACE_YEARS.map((y) => (
-                     <option key={y} value={y} className="bg-f1-black">{y}</option>
-                  ))}
-               </select>
-
-               {isLoading ? (
-                  <div className="flex items-center gap-2 text-xs text-f1-silver bg-white/[0.02] border border-white/5 px-3 py-2 rounded-xl">
-                     <Loader2 className="h-4 w-4 animate-spin text-f1-red" /> Syncing feeds...
+         {/* Header Panel — mirrors Dashboard hero band */}
+         <div className="relative overflow-hidden rounded-2xl bg-f1-carbon/90 border border-white/[0.06] px-5 py-4 sm:px-6 sm:py-5 dot-grid">
+            <div className="absolute -top-16 -right-16 w-64 h-64 bg-f1-red/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+               <div className="flex items-center gap-2.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-f1-red animate-pulse shadow-[0_0_6px_#E10600]" />
+                  <div>
+                     <span className="text-[10px] font-mono font-bold text-f1-red-light uppercase tracking-[0.2em]">F1TV Replay Center</span>
+                     <h1 className="text-2xl font-display font-black text-f1-white uppercase tracking-tight mt-0.5">Race Replay Center</h1>
                   </div>
-               ) : (
+               </div>
+
+               <div className="flex gap-2">
                   <select
-                     value={activeSession?.session_key || ''}
-                     onChange={(e) => {
-                        const session = sessions.find((s) => s.session_key === Number(e.target.value));
-                        if (session) selectSession(session);
-                     }}
-                     className="bg-f1-mid-gray/50 border border-white/10 rounded-xl px-4 py-2 text-sm text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer disabled:opacity-50"
-                     disabled={sessions.length === 0 || isLoading}
+                     value={selectedYear}
+                     onChange={(e) => setSelectedYear(Number(e.target.value))}
+                     className="bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2 text-sm font-mono text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer"
                   >
-                     {sessions.length === 0 && <option value="">No races found</option>}
-                     {sessions.map((s) => (
-                        <option key={s.session_key} value={s.session_key} className="bg-f1-black">
-                           {s.location} - {s.session_name}{cancelledSessions.has(s.session_key) ? ' (No data)' : ''}
-                        </option>
+                     {RACE_YEARS.map((y) => (
+                        <option key={y} value={y} className="bg-f1-black">{y}</option>
                      ))}
                   </select>
-               )}
+
+                  {isLoading ? (
+                     <div className="flex items-center gap-2 text-xs font-mono text-f1-silver/60 bg-white/[0.03] border border-white/[0.06] px-3 py-2 rounded-xl">
+                        <Loader2 className="h-4 w-4 animate-spin text-f1-red" /> Syncing feeds...
+                     </div>
+                  ) : (
+                     <select
+                        value={activeSession?.session_key || ''}
+                        onChange={(e) => {
+                           const session = sessions.find((s) => s.session_key === Number(e.target.value));
+                           if (session) selectSession(session);
+                        }}
+                        className="bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2 text-sm font-mono text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer disabled:opacity-50"
+                        disabled={sessions.length === 0 || isLoading}
+                     >
+                        {sessions.length === 0 && <option value="">No races found</option>}
+                        {sessions.map((s) => (
+                           <option key={s.session_key} value={s.session_key} className="bg-f1-black">
+                              {s.location} - {s.session_name}{cancelledSessions.has(s.session_key) ? ' (No data)' : ''}
+                           </option>
+                        ))}
+                     </select>
+                  )}
+               </div>
             </div>
          </div>
 
          {/* Main Grid — circuit | telemetry/standings toggle group */}
          {activeSession && cancelledSessions.has(activeSession.session_key) ? (
-            <div className="rounded-2xl border border-white/10 bg-f1-dark-gray/60 p-10 text-center">
-               <Flag className="h-8 w-8 text-f1-silver mx-auto mb-3" />
-               <h3 className="text-sm font-bold text-f1-white">No timing data available</h3>
-               <p className="text-xs text-f1-silver mt-1">
+            <div className="telemetry-card p-10 text-center dot-grid relative overflow-hidden">
+               <Flag className="h-8 w-8 text-f1-silver/40 mx-auto mb-3 relative z-10" />
+               <h3 className="text-sm font-display font-bold text-f1-white relative z-10">No timing data available</h3>
+               <p className="text-xs font-mono text-f1-silver/50 mt-1 relative z-10">
                   This session has no recorded data and may have been cancelled or postponed.
                </p>
             </div>
@@ -182,9 +188,10 @@ const RaceReplayCenterPage: React.FC = () => {
                         flexBasis: expandedPanel === 'telemetry' ? '0%' : '56px',
                      }}
                      transition={PANEL_TRANSITION}
-                     className="min-w-0 rounded-2xl border border-white/10 bg-f1-dark-gray/60 shadow-xl backdrop-blur-md h-full overflow-hidden"
+                     className="telemetry-card min-w-0 h-full overflow-hidden relative"
                      style={{ flexShrink: 0 }}
                   >
+                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-sky-400 to-transparent z-10" />
                      <AnimatePresence mode="wait" initial={false}>
                         {expandedPanel === 'telemetry' ? (
                            <motion.div
@@ -200,10 +207,11 @@ const RaceReplayCenterPage: React.FC = () => {
                                  className="flex items-center justify-between mb-2 px-1 group shrink-0"
                                  title="Collapse Battle Telemetry"
                               >
-                                 <h2 className="text-[11px] font-display font-black text-f1-white uppercase tracking-wider">
+                                 <h2 className="text-[11px] font-mono font-bold text-f1-silver/70 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Gauge className="h-3.5 w-3.5 text-sky-400" />
                                     Battle Telemetry
                                  </h2>
-                                 <ChevronLeft className="h-4 w-4 text-f1-silver group-hover:text-f1-white transition-colors" />
+                                 <ChevronLeft className="h-4 w-4 text-f1-silver/50 group-hover:text-f1-white transition-colors" />
                               </button>
                               <div className="flex-1 overflow-y-auto pr-0.5">
                                  <TelemetryDashboard />
@@ -217,14 +225,14 @@ const RaceReplayCenterPage: React.FC = () => {
                               exit={{ opacity: 0 }}
                               transition={{ duration: 0.12, delay: 0.12 }}
                               onClick={() => setExpandedPanel('telemetry')}
-                              className="w-14 h-full flex flex-col items-center justify-between py-4 hover:bg-white/[0.03] hover:border-f1-red/30 transition-colors group"
+                              className="w-14 h-full flex flex-col items-center justify-between py-4 hover:bg-white/[0.03] transition-colors group"
                               title="Expand Battle Telemetry"
                            >
-                              <Gauge className="h-4 w-4 text-f1-silver group-hover:text-f1-red-light transition-colors shrink-0" />
-                              <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-bold uppercase tracking-wider text-f1-silver group-hover:text-f1-white transition-colors whitespace-nowrap">
+                              <Gauge className="h-4 w-4 text-f1-silver/50 group-hover:text-f1-red-light transition-colors shrink-0" />
+                              <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-mono font-bold uppercase tracking-wider text-f1-silver/50 group-hover:text-f1-white transition-colors whitespace-nowrap">
                                  Battle Telemetry
                               </span>
-                              <ChevronRight className="h-4 w-4 text-f1-silver group-hover:text-f1-red-light transition-colors shrink-0" />
+                              <ChevronRight className="h-4 w-4 text-f1-silver/50 group-hover:text-f1-red-light transition-colors shrink-0" />
                            </motion.button>
                         )}
                      </AnimatePresence>
@@ -237,9 +245,10 @@ const RaceReplayCenterPage: React.FC = () => {
                         flexBasis: expandedPanel === 'standings' ? '0%' : '56px',
                      }}
                      transition={PANEL_TRANSITION}
-                     className="min-w-0 rounded-2xl border border-white/10 bg-f1-dark-gray/60 shadow-xl backdrop-blur-md h-full overflow-hidden"
+                     className="telemetry-card min-w-0 h-full overflow-hidden relative"
                      style={{ flexShrink: 0 }}
                   >
+                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-amber-400 to-transparent z-10" />
                      <AnimatePresence mode="wait" initial={false}>
                         {expandedPanel === 'standings' ? (
                            <motion.div
@@ -251,7 +260,7 @@ const RaceReplayCenterPage: React.FC = () => {
                               className="p-4 flex flex-col h-full w-[320px] xl:w-full"
                            >
                               <div className="flex items-center gap-2 mb-3 shrink-0">
-                                 <div className="flex flex-1 bg-white/[0.02] border border-white/5 p-1 rounded-xl gap-1">
+                                 <div className="flex flex-1 bg-white/[0.03] border border-white/[0.06] p-1 rounded-xl gap-1">
                                     <button onClick={() => setActiveTab('standings')} className={tabButtonClass('standings')}>
                                        <Trophy className="h-3.5 w-3.5" /> Standings
                                     </button>
@@ -264,7 +273,7 @@ const RaceReplayCenterPage: React.FC = () => {
                                  </div>
                                  <button
                                     onClick={() => setExpandedPanel('telemetry')}
-                                    className="shrink-0 p-2 rounded-lg bg-white/[0.04] border border-white/5 hover:bg-white/[0.08] transition-all text-f1-silver hover:text-f1-white"
+                                    className="shrink-0 p-2 rounded-lg bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-all text-f1-silver/60 hover:text-f1-white"
                                     title="Collapse"
                                  >
                                     <ChevronRight className="h-4 w-4" />
@@ -283,14 +292,14 @@ const RaceReplayCenterPage: React.FC = () => {
                               exit={{ opacity: 0 }}
                               transition={{ duration: 0.12, delay: 0.12 }}
                               onClick={() => setExpandedPanel('standings')}
-                              className="w-14 h-full flex flex-col items-center justify-between py-4 hover:bg-white/[0.03] hover:border-f1-red/30 transition-colors group"
+                              className="w-14 h-full flex flex-col items-center justify-between py-4 hover:bg-white/[0.03] transition-colors group"
                               title="Expand Standings"
                            >
-                              <Trophy className="h-4 w-4 text-f1-silver group-hover:text-f1-red-light transition-colors shrink-0" />
-                              <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-bold uppercase tracking-wider text-f1-silver group-hover:text-f1-white transition-colors whitespace-nowrap">
+                              <Trophy className="h-4 w-4 text-f1-silver/50 group-hover:text-f1-red-light transition-colors shrink-0" />
+                              <span className="[writing-mode:vertical-rl] rotate-180 text-[10px] font-mono font-bold uppercase tracking-wider text-f1-silver/50 group-hover:text-f1-white transition-colors whitespace-nowrap">
                                  Standings · Feeds · Radio
                               </span>
-                              <ChevronLeft className="h-4 w-4 text-f1-silver group-hover:text-f1-red-light transition-colors shrink-0" />
+                              <ChevronLeft className="h-4 w-4 text-f1-silver/50 group-hover:text-f1-red-light transition-colors shrink-0" />
                            </motion.button>
                         )}
                      </AnimatePresence>

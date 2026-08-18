@@ -1,9 +1,34 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Calendar, Trophy, AlertTriangle, TrendingUp, ArrowUp, Clock, Filter } from 'lucide-react';
+import { Calendar, Trophy, AlertTriangle, TrendingUp, ArrowUp, Clock, Filter, Radio, Zap } from 'lucide-react';
 import { ResponsiveLine } from '@nivo/line';
 import { analyticsService } from '../services/analyticsService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import type { TimelineData, TimelineEvent } from '../types';
+
+/** Compact telemetry stat block (no gauge dial — used for timeline summary strip) */
+const TelemetryStat: React.FC<{ label: string; value: number | string; colorHex: string; icon: React.ElementType; tag: string }> = ({
+   label, value, colorHex, icon: Icon, tag
+}) => (
+   <div className="telemetry-card p-4 relative overflow-hidden">
+      <div
+         className="absolute top-0 inset-x-0 h-[2px] opacity-75"
+         style={{ background: `linear-gradient(90deg, transparent, ${colorHex}, transparent)` }}
+      />
+      <div className="flex items-center justify-between mb-2">
+         <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center border border-white/[0.06]"
+            style={{ backgroundColor: `${colorHex}15` }}
+         >
+            <Icon className="w-3.5 h-3.5" style={{ color: colorHex }} />
+         </div>
+         <span className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded bg-white/[0.04] text-f1-silver/50 border border-white/[0.06]">
+            {tag}
+         </span>
+      </div>
+      <div className="text-2xl sm:text-3xl font-black font-display text-f1-white leading-none">{value}</div>
+      <p className="text-[10px] font-mono text-f1-silver/50 tracking-widest uppercase mt-1.5">{label}</p>
+   </div>
+);
 
 const SeasonTimelinePage: React.FC = () => {
    const [data, setData] = useState<TimelineData | null>(null);
@@ -29,7 +54,7 @@ const SeasonTimelinePage: React.FC = () => {
       return [
          {
             id: 'Championship Gap',
-            color: '#e11d48',
+            color: '#E10600',
             data: data.gapEvolution.map(g => ({ x: `R${g.round}`, y: g.gap })),
          },
       ];
@@ -45,45 +70,58 @@ const SeasonTimelinePage: React.FC = () => {
    }, [data]);
 
    if (loading) return <PageSkeleton />;
+   if (!data) return null;
 
    return (
-      <div className="space-y-8 animate-fade-in">
-         {/* Header */}
-         <div>
-            <h1 className="text-3xl font-display font-bold flex items-center gap-3">
-               <Calendar className="w-8 h-8 text-f1-red" />
-               2026 Season Timeline
-            </h1>
-            <p className="text-f1-silver mt-1">Every race, every turning point — the story of the season</p>
-         </div>
+      <div className="space-y-7 animate-fade-in">
+         {/* ─── Hero Section: Mission Control HUD ─── */}
+         <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 shadow-2xl dot-grid">
+            <div className="scanline-overlay" />
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-48 h-full bg-gradient-to-l from-f1-red/[0.04] to-transparent transform skew-x-12 pointer-events-none" />
 
-         {/* Season Summary Cards */}
-         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="glass-card p-4 text-center">
-               <div className="text-2xl font-bold text-white">{seasonStats.completed}</div>
-               <div className="text-xs text-f1-silver uppercase tracking-wider mt-1">Races Completed</div>
-            </div>
-            <div className="glass-card p-4 text-center">
-               <div className="text-2xl font-bold text-amber-400">{seasonStats.upcoming}</div>
-               <div className="text-xs text-f1-silver uppercase tracking-wider mt-1">Races Remaining</div>
-            </div>
-            <div className="glass-card p-4 text-center">
-               <div className="text-2xl font-bold text-purple-400">{seasonStats.leadChanges}</div>
-               <div className="text-xs text-f1-silver uppercase tracking-wider mt-1">Lead Changes</div>
-            </div>
-            <div className="glass-card p-4 text-center">
-               <div className="text-2xl font-bold text-emerald-400">{seasonStats.uniqueWinners}</div>
-               <div className="text-xs text-f1-silver uppercase tracking-wider mt-1">Unique Winners</div>
+            <div className="relative z-10 space-y-2">
+               <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                  <Radio className="w-3.5 h-3.5 text-f1-red-light" />
+                  <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                     SEASON LOG / RACE-BY-RACE FEED
+                  </span>
+               </div>
+
+               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-black tracking-tight text-f1-white uppercase">
+                  SEASON <span className="gradient-text">TIMELINE</span>
+               </h1>
+
+               <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                  Every race, every turning point — the full telemetry trace of the championship battle.
+               </p>
             </div>
          </div>
 
-         {/* Gap Evolution Chart */}
+         {/* ─── Season Summary Telemetry Grid ─── */}
+         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <TelemetryStat label="Races Completed" value={seasonStats.completed} colorHex="#10b981" icon={Calendar} tag="DONE" />
+            <TelemetryStat label="Races Remaining" value={seasonStats.upcoming} colorHex="#f59e0b" icon={Clock} tag="NEXT" />
+            <TelemetryStat label="Lead Changes" value={seasonStats.leadChanges} colorHex="#a855f7" icon={Zap} tag="SWING" />
+            <TelemetryStat label="Unique Winners" value={seasonStats.uniqueWinners} colorHex="#38bdf8" icon={Trophy} tag="SPREAD" />
+         </div>
+
+         {/* ─── Gap Evolution Chart ─── */}
          {gapChartData.length > 0 && gapChartData[0].data.length > 0 && (
-            <div className="glass-card p-6">
-               <h2 className="text-xl font-display font-semibold mb-6 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-f1-red" />
-                  Championship Gap Evolution (P1 → P2)
-               </h2>
+            <div className="telemetry-card p-6 relative overflow-hidden">
+               <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
+               <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xs font-mono font-bold text-f1-silver/70 tracking-[0.2em] uppercase flex items-center gap-2.5">
+                     <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-f1-red/15">
+                        <TrendingUp className="w-4 h-4 text-f1-red-light" />
+                     </div>
+                     Championship Gap Evolution — P1 vs P2
+                  </h2>
+                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white/[0.04] text-f1-silver/60 border border-white/[0.06]">
+                     LIVE TRACE
+                  </span>
+               </div>
                <div style={{ height: 280 }}>
                   <ResponsiveLine
                      data={gapChartData}
@@ -91,21 +129,21 @@ const SeasonTimelinePage: React.FC = () => {
                      xScale={{ type: 'point' }}
                      yScale={{ type: 'linear', min: 0, max: 'auto' }}
                      curve="monotoneX"
-                     colors={['#e11d48']}
+                     colors={['#E10600']}
                      enableArea={true}
                      areaBaselineValue={0}
                      areaOpacity={0.15}
                      pointSize={8}
-                     pointColor="#1a1a2e"
+                     pointColor="#0a0a12"
                      pointBorderWidth={2}
-                     pointBorderColor="#e11d48"
+                     pointBorderColor="#E10600"
                      enableSlices="x"
                      theme={{
-                        text: { fill: '#9ca3af' },
+                        text: { fill: '#9ca3af', fontFamily: 'monospace', fontSize: 11 },
                         axis: { ticks: { text: { fill: '#9ca3af' } }, legend: { text: { fill: '#9ca3af' } } },
-                        grid: { line: { stroke: '#333' } },
-                        crosshair: { line: { stroke: '#e11d48' } },
-                        tooltip: { container: { background: '#1a1a2e', color: '#fff', border: '1px solid #333' } },
+                        grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
+                        crosshair: { line: { stroke: '#E10600' } },
+                        tooltip: { container: { background: '#111118', color: '#fff', border: '1px solid rgba(255,255,255,0.08)' } },
                      }}
                      axisBottom={{ tickRotation: -45 }}
                      axisLeft={{ legend: 'Points Gap', legendPosition: 'middle', legendOffset: -50 }}
@@ -114,27 +152,30 @@ const SeasonTimelinePage: React.FC = () => {
             </div>
          )}
 
-         {/* Filter */}
-         <div className="flex gap-2 items-center">
-            <Filter className="w-4 h-4 text-f1-silver" />
+         {/* ─── Filter Console ─── */}
+         <div className="flex gap-2 items-center flex-wrap">
+            <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mr-1">
+               <Filter className="w-3.5 h-3.5" />
+               Feed Filter
+            </div>
             {(['all', 'completed', 'upcoming'] as const).map(f => (
                <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${filter === f
-                     ? 'bg-f1-red text-white'
-                     : 'glass-card text-f1-silver hover:text-white'
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-mono font-semibold uppercase tracking-wider transition-all border ${filter === f
+                        ? 'bg-f1-red text-white border-f1-red shadow-lg shadow-f1-red/20'
+                        : 'bg-white/[0.03] text-f1-silver/60 border-white/[0.06] hover:text-f1-white hover:border-white/[0.12]'
                      }`}
                >
-                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                  {f}
                </button>
             ))}
          </div>
 
          {/* Timeline */}
          <div className="relative">
-            {/* Vertical line */}
-            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-f1-red via-f1-mid-gray to-transparent" />
+            {/* Vertical HUD trace line */}
+            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-f1-red via-white/10 to-transparent" />
 
             <div className="space-y-1">
                {filteredEvents.map((event, idx) => (
@@ -144,9 +185,9 @@ const SeasonTimelinePage: React.FC = () => {
          </div>
 
          {filteredEvents.length === 0 && (
-            <div className="glass-card p-12 text-center">
-               <Calendar className="w-16 h-16 text-f1-mid-gray mx-auto mb-4" />
-               <p className="text-f1-silver">No events match the selected filter</p>
+            <div className="telemetry-card p-12 text-center">
+               <Calendar className="w-16 h-16 text-f1-silver/20 mx-auto mb-4" />
+               <p className="text-f1-silver font-mono text-sm uppercase tracking-wider">No events match the selected filter</p>
             </div>
          )}
       </div>
@@ -163,30 +204,43 @@ const TimelineNode: React.FC<{ event: TimelineEvent; isLast: boolean }> = ({ eve
             ? event.leadChanged
                ? 'bg-purple-500 border-purple-400 shadow-lg shadow-purple-500/30'
                : 'bg-f1-red border-f1-red shadow-lg shadow-f1-red/30'
-            : 'bg-f1-dark-gray border-f1-mid-gray'
+            : 'bg-f1-carbon border-white/20'
             }`}>
             {!isCompleted && (
-               <div className="absolute inset-0.5 rounded-full animate-pulse bg-f1-mid-gray/50" />
+               <div className="absolute inset-0.5 rounded-full animate-pulse bg-white/20" />
             )}
          </div>
 
          {/* Event card */}
-         <div className={`glass-card p-5 transition-all duration-300 group-hover:translate-x-1 ${!isCompleted ? 'opacity-60 border-dashed' : ''
+         <div className={`telemetry-card p-5 relative overflow-hidden transition-all duration-300 group-hover:translate-x-1 ${!isCompleted ? 'opacity-60 border-dashed' : ''
             }`}>
+            <div
+               className={`absolute top-0 inset-x-0 h-[2px] opacity-75 ${event.leadChanged
+                     ? 'bg-gradient-to-r from-transparent via-purple-500 to-transparent'
+                     : isCompleted
+                        ? 'bg-gradient-to-r from-transparent via-f1-red to-transparent'
+                        : 'bg-gradient-to-r from-transparent via-amber-500/60 to-transparent'
+                  }`}
+            />
+
             {/* Header row */}
             <div className="flex items-center justify-between flex-wrap gap-2">
                <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-f1-silver bg-f1-dark-gray px-2 py-0.5 rounded">R{event.round}</span>
-                  <h3 className="font-display font-semibold text-lg">{event.raceName}</h3>
-                  <span className="text-xs text-f1-silver">{event.country}</span>
+                  <span className="text-[10px] font-mono font-bold text-f1-silver/70 bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 rounded">
+                     R{event.round}
+                  </span>
+                  <h3 className="font-display font-black text-lg uppercase tracking-tight text-f1-white">{event.raceName}</h3>
+                  <span className="text-xs font-mono text-f1-silver/60">{event.country}</span>
                </div>
                <div className="flex items-center gap-2">
                   {event.leadChanged && (
-                     <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full animate-pulse">
+                     <span className="text-[10px] font-mono font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/25 px-2 py-0.5 rounded-full animate-pulse uppercase tracking-wider">
                         ⚡ Lead Change
                      </span>
                   )}
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${isCompleted ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                  <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider border ${isCompleted
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                      }`}>
                      {isCompleted ? 'Completed' : 'Upcoming'}
                   </span>
@@ -194,36 +248,36 @@ const TimelineNode: React.FC<{ event: TimelineEvent; isLast: boolean }> = ({ eve
             </div>
 
             {/* Date */}
-            <div className="text-xs text-f1-silver mt-1 flex items-center gap-1.5">
+            <div className="text-[11px] font-mono text-f1-silver/50 mt-2 flex items-center gap-1.5 uppercase tracking-wider">
                <Clock className="w-3 h-3" />
                {new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
 
             {/* Completed race details */}
             {isCompleted && (
-               <div className="mt-4 space-y-3">
+               <div className="mt-4 space-y-2.5 pt-4 border-t border-white/[0.04]">
                   {/* Winner */}
                   {event.winnerCode && (
                      <div className="flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-yellow-400" />
-                        <span className="text-sm font-semibold">Winner:</span>
+                        <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="text-xs font-mono font-semibold text-f1-silver/70 uppercase tracking-wider">Winner:</span>
                         <span
-                           className="font-bold text-sm"
+                           className="font-black text-sm font-display"
                            style={{ color: event.winnerConstructorColor || '#fff' }}
                         >
                            {event.winnerCode}
                         </span>
-                        <span className="text-xs text-f1-silver">({event.winnerConstructor})</span>
+                        <span className="text-xs font-mono text-f1-silver/50">({event.winnerConstructor})</span>
                      </div>
                   )}
 
                   {/* Championship leader */}
                   {event.championshipLeaderCode && (
                      <div className="flex items-center gap-2">
-                        <ArrowUp className="w-4 h-4 text-emerald-400" />
-                        <span className="text-sm font-semibold">Championship Leader:</span>
-                        <span className="font-bold text-sm">{event.championshipLeaderCode}</span>
-                        <span className="text-xs text-f1-silver">
+                        <ArrowUp className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span className="text-xs font-mono font-semibold text-f1-silver/70 uppercase tracking-wider">Leader:</span>
+                        <span className="font-black text-sm font-display text-f1-white">{event.championshipLeaderCode}</span>
+                        <span className="text-xs font-mono text-f1-silver/50">
                            ({event.leaderPoints} pts, +{event.gapToSecond.toFixed(0)} gap)
                         </span>
                      </div>
@@ -235,7 +289,7 @@ const TimelineNode: React.FC<{ event: TimelineEvent; isLast: boolean }> = ({ eve
                         {event.keyEvents.map((ke, i) => (
                            <span
                               key={i}
-                              className="text-xs bg-white/5 text-f1-silver px-2 py-1 rounded-full flex items-center gap-1"
+                              className="text-[10px] font-mono bg-white/[0.04] text-f1-silver/70 border border-white/[0.06] px-2 py-1 rounded-full flex items-center gap-1 uppercase tracking-wider"
                            >
                               <AlertTriangle className="w-3 h-3 text-amber-400" />
                               {ke}
@@ -248,7 +302,7 @@ const TimelineNode: React.FC<{ event: TimelineEvent; isLast: boolean }> = ({ eve
 
             {/* Upcoming race - show countdown hint */}
             {!isCompleted && (
-               <div className="mt-3 text-sm text-f1-silver italic flex items-center gap-1.5">
+               <div className="mt-3 pt-3 border-t border-white/[0.04] text-xs font-mono text-f1-silver/50 uppercase tracking-wider flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
                   Race weekend upcoming
                </div>
