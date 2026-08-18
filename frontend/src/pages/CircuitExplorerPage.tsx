@@ -28,7 +28,7 @@ const CircuitExplorerPage: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2 }}
-                  className="w-full flex flex-col h-[calc(100vh-6.5rem)] max-h-[calc(100vh-6.5rem)] overflow-hidden"
+                  className="w-full flex flex-col min-h-0 lg:h-[calc(100vh-6.5rem)] lg:max-h-[calc(100vh-6.5rem)] lg:overflow-hidden"
                >
                   {/* Slim Top Action Bar */}
                   <div className="flex items-center justify-between pb-3 mb-2 border-b border-white/[0.06] flex-shrink-0">

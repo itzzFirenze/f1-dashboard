@@ -606,45 +606,65 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                </div>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
-               <span className="text-xs text-f1-silver/70 font-mono w-16 shrink-0">
-                  {formatElapsed(elapsedMs)}
-               </span>
-
-               <div className="flex items-center gap-1.5">
-                  <button onClick={() => skip(-10)} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Skip back 10s">
-                     <SkipBack className="h-4 w-4" />
-                  </button>
-
-                  {isPlaying ? (
-                     <button onClick={pause} className="rounded-lg bg-f1-red/10 border border-f1-red/30 p-2 hover:bg-f1-red/20 transition-all text-f1-red-light" title="Pause">
-                        <Pause className="h-4.5 w-4.5 fill-current" />
-                     </button>
-                  ) : (
-                     <button onClick={play} className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-2 hover:bg-emerald-500/20 transition-all text-emerald-400" title="Play">
-                        <Play className="h-4.5 w-4.5 fill-current" />
-                     </button>
-                  )}
-
-                  <button onClick={stop} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Stop / Reset">
-                     <Square className="h-4 w-4" />
-                  </button>
-
-                  <button onClick={() => skip(10)} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Skip forward 10s">
-                     <SkipForward className="h-4 w-4" />
-                  </button>
+            <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-3">
+               <div className="flex items-center justify-between w-full sm:w-auto gap-3 shrink-0">
+                  <span className="text-xs text-f1-silver/70 font-mono w-16 shrink-0">
+                     {formatElapsed(elapsedMs)}
+                  </span>
+                  <select
+                     value={selectedLap}
+                     onChange={(e) => {
+                        setSelectedLap(e.target.value);
+                        jumpToLap(Number(e.target.value));
+                     }}
+                     className="sm:hidden bg-white/[0.03] border border-white/[0.08] rounded-lg px-2 py-1 text-[10px] font-mono text-f1-white focus:outline-none focus:border-f1-red/50 w-24 shrink-0"
+                  >
+                     <option value="">Lap...</option>
+                     {laps
+                        .filter((l, idx, self) => self.findIndex((t) => t.lap_number === l.lap_number) === idx)
+                        .sort((a, b) => a.lap_number - b.lap_number)
+                        .map((l) => (
+                           <option key={l.lap_number} value={l.lap_number}>Lap {l.lap_number}</option>
+                        ))}
+                  </select>
                </div>
 
-               <div className="flex bg-white/[0.03] border border-white/[0.06] p-1 rounded-lg gap-1">
-                  {([1, 2, 4, 8] as const).map((spd) => (
-                     <button
-                        key={spd}
-                        onClick={() => setSpeed(spd)}
-                        className={`px-2 py-1 rounded-md text-[10px] font-mono font-bold transition-all ${playbackSpeed === spd ? 'bg-f1-red text-white' : 'text-f1-silver/60 hover:text-f1-white'}`}
-                     >
-                        {spd}x
+               <div className="flex items-center justify-between w-full sm:w-auto gap-2 sm:gap-3 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                     <button onClick={() => skip(-10)} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Skip back 10s">
+                        <SkipBack className="h-4 w-4" />
                      </button>
-                  ))}
+
+                     {isPlaying ? (
+                        <button onClick={pause} className="rounded-lg bg-f1-red/10 border border-f1-red/30 p-2 hover:bg-f1-red/20 transition-all text-f1-red-light" title="Pause">
+                           <Pause className="h-4.5 w-4.5 fill-current" />
+                        </button>
+                     ) : (
+                        <button onClick={play} className="rounded-lg bg-emerald-500/10 border border-emerald-500/30 p-2 hover:bg-emerald-500/20 transition-all text-emerald-400" title="Play">
+                           <Play className="h-4.5 w-4.5 fill-current" />
+                        </button>
+                     )}
+
+                     <button onClick={stop} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Stop / Reset">
+                        <Square className="h-4 w-4" />
+                     </button>
+
+                     <button onClick={() => skip(10)} className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-1.5 hover:bg-white/[0.08] transition-all text-f1-white" title="Skip forward 10s">
+                        <SkipForward className="h-4 w-4" />
+                     </button>
+                  </div>
+
+                  <div className="flex bg-white/[0.03] border border-white/[0.06] p-1 rounded-lg gap-1 shrink-0">
+                     {([1, 2, 4, 8] as const).map((spd) => (
+                        <button
+                           key={spd}
+                           onClick={() => setSpeed(spd)}
+                           className={`px-2 py-1 rounded-md text-[10px] font-mono font-bold transition-all ${playbackSpeed === spd ? 'bg-f1-red text-white' : 'text-f1-silver/60 hover:text-f1-white'}`}
+                        >
+                           {spd}x
+                        </button>
+                     ))}
+                  </div>
                </div>
 
                <select
@@ -653,7 +673,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                      setSelectedLap(e.target.value);
                      jumpToLap(Number(e.target.value));
                   }}
-                  className="bg-white/[0.03] border border-white/[0.08] rounded-lg px-2 py-1.5 text-[10px] font-mono text-f1-white focus:outline-none focus:border-f1-red/50 w-20 shrink-0"
+                  className="hidden sm:block bg-white/[0.03] border border-white/[0.08] rounded-lg px-2 py-1.5 text-[10px] font-mono text-f1-white focus:outline-none focus:border-f1-red/50 w-20 shrink-0"
                >
                   <option value="">Lap...</option>
                   {laps

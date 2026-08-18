@@ -165,19 +165,19 @@ const RaceDetailPage: React.FC = () => {
 
                {/* Results with Tabs */}
                {hasAnyResults && (
-                  <div className="telemetry-card p-6 relative overflow-hidden">
+                  <div className="telemetry-card p-3.5 sm:p-6 relative overflow-hidden">
                      <div
                         className="absolute top-0 inset-x-0 h-[2px] opacity-75"
                         style={{ background: 'linear-gradient(90deg, transparent, #E10600, transparent)' }}
                      />
 
                      {/* Tab Bar */}
-                     <div className="flex items-center gap-1 mb-5 border-b border-white/[0.06] pb-4">
+                     <div className="flex items-center gap-1 mb-4 sm:mb-5 border-b border-white/[0.06] pb-3 sm:pb-4">
                         {tabs.map((tab) => (
                            <button
                               key={tab}
                               onClick={() => setActiveTab(tab)}
-                              className={`px-4 py-2 rounded-lg text-xs font-mono font-bold uppercase tracking-widest transition-all ${activeTab === tab
+                              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider sm:tracking-widest transition-all ${activeTab === tab
                                  ? 'bg-f1-red text-white shadow-lg shadow-f1-red/20'
                                  : 'text-f1-silver/70 hover:text-f1-white hover:bg-white/[0.04]'
                                  }`}
@@ -191,46 +191,46 @@ const RaceDetailPage: React.FC = () => {
 
                      {/* Qualifying Sub-header (Q1/Q2/Q3 column labels) */}
                      {activeTab === 'qualifying' && (
-                        <div className="flex items-center justify-end gap-6 px-3 pb-2 text-[10px] font-mono font-semibold text-f1-silver/50 uppercase tracking-[0.2em]">
-                           <span className="w-16 text-center">Q1</span>
-                           <span className="w-16 text-center">Q2</span>
-                           <span className="w-16 text-center">Q3</span>
+                        <div className="flex items-center justify-end gap-2 sm:gap-6 px-2 sm:px-3 pb-2 text-[9px] sm:text-[10px] font-mono font-semibold text-f1-silver/50 uppercase tracking-[0.2em]">
+                           <span className="w-12 sm:w-16 text-center">Q1</span>
+                           <span className="w-12 sm:w-16 text-center">Q2</span>
+                           <span className="w-12 sm:w-16 text-center">Q3</span>
                         </div>
                      )}
 
                      {/* Results List */}
                      <div className="space-y-1">
                         {getActiveResults().map((result) => (
-                           <div key={result.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/[0.03] transition-colors group">
-                              <div className="flex items-center gap-3 min-w-0">
-                                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-mono font-bold shrink-0 ${result.position === 1 ? 'bg-amber-500/20 text-amber-400' :
+                           <div key={result.id} className="flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-white/[0.03] transition-colors group gap-2">
+                              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                 <span className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-[11px] sm:text-xs font-mono font-bold shrink-0 ${result.position === 1 ? 'bg-amber-500/20 text-amber-400' :
                                     result.position === 2 ? 'bg-gray-400/20 text-gray-300' :
                                        result.position === 3 ? 'bg-orange-700/20 text-orange-400' :
                                           'bg-white/[0.04] text-f1-silver'
                                     }`}>
                                     {result.position}
                                  </span>
-                                 <div className="w-1 h-5 rounded-full shrink-0" style={{ backgroundColor: result.constructorColor }} />
+                                 <div className="w-1 h-4 sm:h-5 rounded-full shrink-0" style={{ backgroundColor: result.constructorColor }} />
                                  <div className="min-w-0">
-                                    <span className="font-semibold text-sm">{result.driverFirstName} {result.driverLastName}</span>
-                                    <span className="text-f1-silver/70 text-xs font-mono ml-2">{result.constructorName}</span>
+                                    <span className="font-semibold text-xs sm:text-sm truncate block sm:inline">{result.driverFirstName} {result.driverLastName}</span>
+                                    <span className="text-f1-silver/70 text-xs font-mono ml-2 hidden sm:inline">{result.constructorName}</span>
                                  </div>
                                  {result.fastestLap && (
-                                    <span className="text-[10px] font-mono font-bold text-purple-400 bg-purple-400/10 border border-purple-400/20 rounded px-1.5 py-0.5 shrink-0">
+                                    <span className="text-[9px] sm:text-[10px] font-mono font-bold text-purple-400 bg-purple-400/10 border border-purple-400/20 rounded px-1.5 py-0.5 shrink-0 hidden xs:inline-block">
                                        FL
                                     </span>
                                  )}
                               </div>
 
                               {activeTab === 'qualifying' ? (
-                                 <div className="flex items-center gap-6 font-mono text-sm shrink-0">
-                                    <span className="w-16 text-center text-f1-silver/70">{result.q1 || '—'}</span>
-                                    <span className="w-16 text-center text-f1-silver/70">{result.q2 || '—'}</span>
-                                    <span className="w-16 text-center font-bold text-f1-white">{result.q3 || '—'}</span>
+                                 <div className="flex items-center gap-2 sm:gap-6 font-mono text-xs sm:text-sm shrink-0">
+                                    <span className="w-12 sm:w-16 text-center text-f1-silver/70 truncate">{result.q1 || '—'}</span>
+                                    <span className="w-12 sm:w-16 text-center text-f1-silver/70 truncate">{result.q2 || '—'}</span>
+                                    <span className="w-12 sm:w-16 text-center font-bold text-f1-white truncate">{result.q3 || '—'}</span>
                                  </div>
                               ) : (
                                  <div className="text-right shrink-0">
-                                    <span className="font-display font-black text-amber-400">{result.points}</span>
+                                    <span className="font-display font-black text-sm sm:text-base text-amber-400">{result.points}</span>
                                     <span className="text-f1-silver/50 text-[10px] font-mono ml-1 uppercase tracking-widest">Pts</span>
                                  </div>
                               )}

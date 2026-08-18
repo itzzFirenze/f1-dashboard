@@ -368,31 +368,31 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
                   return (
                      <div
                         key={drv.driver_number}
-                        className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] p-2 hover:bg-white/[0.05] hover:border-white/[0.1] transition-all"
+                        className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/[0.06] p-2 hover:bg-white/[0.05] hover:border-white/[0.1] transition-all gap-2"
                      >
-                        <div className="flex items-center gap-3">
-                           <span className="text-xs font-mono font-bold text-f1-silver/60 w-4">{idx + 1}</span>
-                           <div className="w-1 h-5 rounded-full" style={{ backgroundColor: teamColor, boxShadow: `0 0 6px ${teamColor}80` }} />
-                           <span className="text-sm font-bold text-f1-white font-mono">{drv.name_acronym}</span>
-                           <span className="text-[10px] text-f1-silver/50 font-mono">{drv.team_name}</span>
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                           <span className="text-xs font-mono font-bold text-f1-silver/60 w-4 shrink-0">{idx + 1}</span>
+                           <div className="w-1 h-4 sm:h-5 rounded-full shrink-0" style={{ backgroundColor: teamColor, boxShadow: `0 0 6px ${teamColor}80` }} />
+                           <span className="text-xs sm:text-sm font-bold text-f1-white font-mono shrink-0">{drv.name_acronym}</span>
+                           <span className="text-[10px] text-f1-silver/50 font-mono truncate hidden sm:inline">{drv.team_name}</span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                            {drv.isFinished && (
                               <span title="Finished" className="shrink-0">
                                  <CheckeredFlagIcon className="h-3 w-3 text-f1-white" />
                               </span>
                            )}
                            {drv.isPitting && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/25 text-amber-300 animate-pulse">
+                              <span className="px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-mono font-bold bg-amber-500/25 text-amber-300 animate-pulse">
                                  PIT
                               </span>
                            )}
-                           <span className="text-[10px] text-f1-silver/60 font-mono">L{drv.lapsCompleted}</span>
-                           <span className="text-[10px] text-f1-silver/60 font-mono w-14 text-right shrink-0">
+                           <span className="text-[9px] sm:text-[10px] text-f1-silver/60 font-mono">L{drv.lapsCompleted}</span>
+                           <span className="text-[9px] sm:text-[10px] text-f1-silver/60 font-mono w-10 sm:w-14 text-right shrink-0 truncate">
                               {drv.gapLabel}
                            </span>
                            {/* Tyre badge */}
-                           <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${drv.tyre === 'DNF'
+                           <span className={`px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-mono font-bold shrink-0 ${drv.tyre === 'DNF'
                               ? 'bg-red-500/25 text-red-500'
                               : drv.tyre === 'SOFT'
                                  ? 'bg-red-500/25 text-red-400'

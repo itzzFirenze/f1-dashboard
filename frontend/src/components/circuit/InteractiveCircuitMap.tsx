@@ -283,10 +283,10 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
    };
 
    return (
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_330px] xl:grid-cols-[1fr_370px] gap-4 items-stretch h-full min-h-0 overflow-hidden animate-fade-in">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_330px] xl:grid-cols-[1fr_370px] gap-4 items-stretch min-h-0 lg:h-full lg:overflow-hidden animate-fade-in">
          {/* Main Large Circuit Map Stage — Mission Control HUD styling to match dashboard hero */}
          <motion.div
-            className="telemetry-card dot-grid relative flex flex-col justify-between overflow-hidden p-4 sm:p-5 shadow-2xl h-full min-h-0"
+            className="telemetry-card dot-grid relative flex flex-col justify-between overflow-hidden p-4 sm:p-5 shadow-2xl min-h-[380px] sm:min-h-[460px] lg:min-h-0 lg:h-full"
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.25 }}
@@ -329,7 +329,7 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
             </div>
 
             {/* SVG Track Map Canvas */}
-            <div className="relative z-10 flex-1 w-full h-full min-h-0 flex items-center justify-center overflow-hidden my-1">
+            <div className="relative z-10 flex-1 w-full h-[260px] sm:h-[340px] lg:h-full min-h-0 flex items-center justify-center overflow-hidden my-1">
                <svg
                   viewBox={computedViewBox}
                   role="img"
@@ -431,9 +431,9 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
          </motion.div>
 
          {/* Right Sidebar: Equal Sized 50/50 Cards, telemetry/diagonal-card styling */}
-         <aside className="flex flex-col gap-3.5 h-full min-h-0 overflow-hidden">
+         <aside className="flex flex-col gap-3.5 h-auto lg:h-full lg:min-h-0 lg:overflow-hidden">
             {/* Card 1 (Top 50%): Circuit Vital Stats */}
-            <div className="telemetry-card p-4 flex-1 min-h-0 flex flex-col justify-between overflow-hidden relative">
+            <div className="telemetry-card p-4 h-auto lg:flex-1 lg:min-h-0 flex flex-col justify-between overflow-hidden relative">
                <div
                   className="absolute top-0 inset-x-0 h-[2px] opacity-75"
                   style={{ background: 'linear-gradient(90deg, transparent, #E10600, transparent)' }}
@@ -472,7 +472,7 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
             <div
                onMouseEnter={() => setIsFactHovered(true)}
                onMouseLeave={() => setIsFactHovered(false)}
-               className="diagonal-card p-4 flex-1 min-h-0 flex flex-col justify-between overflow-hidden relative group"
+               className="diagonal-card p-4 h-auto lg:flex-1 lg:min-h-0 flex flex-col justify-between overflow-hidden relative group"
             >
                {/* Dynamic accent line matching current fact's tag color */}
                <div

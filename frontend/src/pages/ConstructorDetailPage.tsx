@@ -71,9 +71,9 @@ const ConstructorDetailPage: React.FC = () => {
                   </span>
                </div>
 
-               <div className="relative flex items-end justify-between h-full px-6 pt-1 pb-0">
+               <div className="relative flex items-end justify-between h-full px-4 sm:px-6 pt-1 pb-0">
                   {/* Team info */}
-                  <div className="pb-4 z-10">
+                  <div className="pb-4 z-10 min-w-0 flex-1">
                      {/* Team logo — bigger */}
                      {!logoError && (team.logoUrl ?? theme.teamLogoUrl) ? (
                         <img
@@ -83,19 +83,18 @@ const ConstructorDetailPage: React.FC = () => {
                            onError={() => setLogoError(true)}
                         />
                      ) : null}
-                     <h1 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-white drop-shadow-lg uppercase">
+                     <h1 className="text-xl sm:text-3xl font-display font-black tracking-tight text-white drop-shadow-lg uppercase truncate">
                         {team.name}
                      </h1>
                      <p className="text-white/50 text-xs font-mono uppercase tracking-widest mt-1">{team.nationality}</p>
                   </div>
 
-                  {/* Car image — kept large */}
+                  {/* Car image — scaled small on mobile, large on desktop */}
                   {!carError && (
                      <img
                         src={theme.carImageUrl}
                         alt={`${team.name} 2026 car`}
-                        className="h-36 sm:h-52 object-contain object-right-bottom relative z-10 drop-shadow-2xl select-none"
-                        style={{ maxWidth: '480px' }}
+                        className="h-20 sm:h-52 max-w-[160px] sm:max-w-[480px] object-contain object-right-bottom relative z-10 drop-shadow-2xl select-none shrink-0"
                         onError={() => setCarError(true)}
                      />
                   )}

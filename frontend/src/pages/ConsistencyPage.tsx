@@ -135,25 +135,25 @@ const ConsistencyPage: React.FC = () => {
          )}
 
          {/* ─── Points Finish Rate ─── */}
-         <div className="telemetry-card p-6 relative overflow-hidden">
+         <div className="telemetry-card p-4 sm:p-6 relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
-            <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-6">
+            <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-4 sm:mb-6">
                Points Finish Rate
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2.5 sm:space-y-3">
                {sortedByRate.map((d, idx) => (
-                  <div key={d.driver.id} className="flex items-center gap-3">
-                     <span className="text-[10px] font-mono text-f1-silver/40 w-6 text-right">{idx + 1}</span>
+                  <div key={d.driver.id} className="flex items-center gap-2 sm:gap-3">
+                     <span className="text-[9px] sm:text-[10px] font-mono text-f1-silver/40 w-4 sm:w-6 text-right shrink-0">{idx + 1}</span>
                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold text-white text-xs shrink-0 border border-white/[0.08] shadow-md"
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-display font-bold text-white text-[11px] sm:text-xs shrink-0 border border-white/[0.08] shadow-md"
                         style={{ backgroundColor: d.driver.constructorColor }}
                      >
                         {d.driver.code}
                      </div>
-                     <span className="text-sm font-semibold text-f1-white w-28 truncate">
+                     <span className="text-xs sm:text-sm font-semibold text-f1-white w-16 sm:w-28 truncate shrink-0">
                         {d.driver.firstName} {d.driver.lastName}
                      </span>
-                     <div className="flex-1 h-2.5 rounded-full bg-white/[0.04] border border-white/[0.04] overflow-hidden">
+                     <div className="flex-1 min-w-[60px] h-2 sm:h-2.5 rounded-full bg-white/[0.04] border border-white/[0.04] overflow-hidden">
                         <div
                            className="h-full rounded-full transition-all duration-1000"
                            style={{
@@ -163,7 +163,7 @@ const ConsistencyPage: React.FC = () => {
                            }}
                         />
                      </div>
-                     <span className="text-sm font-mono font-bold w-14 text-right" style={{ color: d.driver.constructorColor }}>
+                     <span className="text-xs sm:text-sm font-mono font-bold w-10 sm:w-14 text-right shrink-0" style={{ color: d.driver.constructorColor }}>
                         {d.pointsFinishRate.toFixed(0)}%
                      </span>
                   </div>
@@ -173,7 +173,7 @@ const ConsistencyPage: React.FC = () => {
 
          {/* ─── Consistency Scatter Plot ─── */}
          {scatterData.length > 0 && (
-            <div className="telemetry-card p-6 relative overflow-hidden">
+            <div className="telemetry-card p-4 sm:p-6 relative overflow-hidden">
                <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-sky-400 to-transparent" />
                <div className="flex items-center gap-2 mb-1">
                   <Target className="w-4 h-4 text-sky-400" />
@@ -184,60 +184,62 @@ const ConsistencyPage: React.FC = () => {
                <p className="text-xs font-mono text-f1-silver/50 mb-4">
                   Bottom-left = consistent &amp; fast. Top-right = inconsistent &amp; slow.
                </p>
-               <div className="h-96">
-                  <ResponsiveScatterPlot
-                     data={scatterData}
-                     margin={{ top: 20, right: 30, bottom: 60, left: 60 }}
-                     xScale={{ type: 'linear', min: 0, max: 'auto' }}
-                     yScale={{ type: 'linear', min: 0, max: 'auto' }}
-                     axisBottom={{
-                        legend: 'Average Finish Position',
-                        legendOffset: 46,
-                        legendPosition: 'middle',
-                     }}
-                     axisLeft={{
-                        legend: 'Std Dev (Volatility)',
-                        legendOffset: -46,
-                        legendPosition: 'middle',
-                     }}
-                     nodeSize={14}
-                     colors={({ serieId }) => {
-                        const group = scatterData.find(s => s.id === serieId);
-                        return group?.data[0]?.color || '#888';
-                     }}
-                     animate={true}
-                     useMesh={true}
-                     tooltip={({ node }) => {
-                        const d = node.data as any;
-                        return (
-                           <div className="bg-f1-carbon border border-white/[0.08] rounded-lg px-3 py-2 text-sm font-mono">
-                              <strong className="text-f1-white">{d.driver}</strong>
-                              <br />
-                              <span className="text-f1-silver/70">Avg Finish: P{d.x} · StdDev: {d.y}</span>
-                           </div>
-                        );
-                     }}
-                     theme={{
-                        text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' },
-                        axis: {
-                           ticks: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } },
-                           legend: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } },
-                        },
-                        grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
-                     }}
-                     legends={[
-                        {
-                           anchor: 'bottom-right',
-                           direction: 'column',
-                           translateX: 10,
-                           itemWidth: 130,
-                           itemHeight: 18,
-                           symbolSize: 10,
-                           symbolShape: 'circle',
-                           itemTextColor: '#9ca3af',
-                        },
-                     ]}
-                  />
+               <div className="overflow-x-auto">
+                  <div className="h-96 min-w-[500px] sm:min-w-0">
+                     <ResponsiveScatterPlot
+                        data={scatterData}
+                        margin={{ top: 20, right: 30, bottom: 60, left: 60 }}
+                        xScale={{ type: 'linear', min: 0, max: 'auto' }}
+                        yScale={{ type: 'linear', min: 0, max: 'auto' }}
+                        axisBottom={{
+                           legend: 'Average Finish Position',
+                           legendOffset: 46,
+                           legendPosition: 'middle',
+                        }}
+                        axisLeft={{
+                           legend: 'Std Dev (Volatility)',
+                           legendOffset: -46,
+                           legendPosition: 'middle',
+                        }}
+                        nodeSize={14}
+                        colors={({ serieId }) => {
+                           const group = scatterData.find(s => s.id === serieId);
+                           return group?.data[0]?.color || '#888';
+                        }}
+                        animate={true}
+                        useMesh={true}
+                        tooltip={({ node }) => {
+                           const d = node.data as any;
+                           return (
+                              <div className="bg-f1-carbon border border-white/[0.08] rounded-lg px-3 py-2 text-sm font-mono">
+                                 <strong className="text-f1-white">{d.driver}</strong>
+                                 <br />
+                                 <span className="text-f1-silver/70">Avg Finish: P{d.x} · StdDev: {d.y}</span>
+                              </div>
+                           );
+                        }}
+                        theme={{
+                           text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' },
+                           axis: {
+                              ticks: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } },
+                              legend: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } },
+                           },
+                           grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
+                        }}
+                        legends={[
+                           {
+                              anchor: 'bottom-right',
+                              direction: 'column',
+                              translateX: 10,
+                              itemWidth: 130,
+                              itemHeight: 18,
+                              symbolSize: 10,
+                              symbolShape: 'circle',
+                              itemTextColor: '#9ca3af',
+                           },
+                        ]}
+                     />
+                  </div>
                </div>
 
                {/* Quadrant Labels */}

@@ -80,38 +80,36 @@ const DriverDetailPage: React.FC = () => {
                   </span>
                </div>
 
-               <div className="relative flex items-end h-full px-6 pt-4 pb-0">
+               <div className="relative flex items-end h-full px-4 sm:px-6 pt-4 pb-0">
                   {/* Driver info */}
-                  <div className="pb-4 z-10 pr-[180px] sm:pr-[220px]">
-                     <p className="text-xs font-mono font-bold uppercase tracking-[0.2em] mb-1" style={{ color: theme.bgTo }}>
+                  <div className="pb-4 z-10 pr-[135px] sm:pr-[220px]">
+                     <p className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-[0.2em] mb-1" style={{ color: theme.bgTo }}>
                         #{driver.number} · {driver.constructorName}
                      </p>
-                     <h1 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-white drop-shadow-lg">
+                     <h1 className="text-xl sm:text-3xl font-display font-black tracking-tight text-white drop-shadow-lg leading-tight">
                         {driver.firstName}
                         <br />
-                        <span className="text-3xl sm:text-4xl">{driver.lastName.toUpperCase()}</span>
+                        <span className="text-2xl sm:text-4xl">{driver.lastName.toUpperCase()}</span>
                      </h1>
-                     <div className="flex items-center gap-3 mt-2 text-white/60 text-xs font-mono uppercase tracking-wider">
-                        <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" />{driver.nationality}</span>
+                     <div className="flex items-center gap-2.5 sm:gap-3 mt-1.5 sm:mt-2 text-white/60 text-[10px] sm:text-xs font-mono uppercase tracking-wider">
+                        <span className="flex items-center gap-1"><Globe className="w-3 sm:w-3.5 h-3 sm:h-3.5" />{driver.nationality}</span>
                         {driver.dateOfBirth && (
                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3.5 h-3.5" />
+                              <Calendar className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
                               {new Date(driver.dateOfBirth).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                            </span>
                         )}
                      </div>
                   </div>
 
-                  {/* Driver image: flush right, cropped from top */}
-                  <div className="absolute right-0 bottom-0 top-0 w-[190px] sm:w-[230px] z-10">
+                  {/* Driver image: flush right, cropped from top (3/4 scale on mobile) */}
+                  <div className="absolute right-0 bottom-0 top-0 w-[140px] sm:w-[230px] z-10">
                      {/* Big driver number sitting behind the image */}
                      <span
-                        className="absolute inset-0 flex items-center justify-start font-display font-black leading-none select-none pointer-events-none"
+                        className="absolute inset-0 flex items-center justify-start font-display font-black leading-none select-none pointer-events-none text-6xl sm:text-[9rem] -translate-x-12 sm:-translate-x-[90px]"
                         style={{
-                           fontSize: '9rem',
                            color: `${theme.bgTo}60`,
                            zIndex: 0,
-                           transform: 'translateX(-90px)',
                         }}
                      >
                         {driver.number}
@@ -125,7 +123,7 @@ const DriverDetailPage: React.FC = () => {
                               alt={`${driver.firstName} ${driver.lastName}`}
                               className="w-full h-full object-cover object-top select-none drop-shadow-2xl"
                               style={{
-                                 transform: 'scale(1.1)',
+                                 transform: 'scale(1.05)',
                                  transformOrigin: 'top center',
                               }}
                               onError={() => setImgError(true)}
@@ -135,7 +133,7 @@ const DriverDetailPage: React.FC = () => {
                               className="absolute inset-0 rounded-t-2xl flex items-end justify-center pb-4"
                               style={{ backgroundColor: `${theme.bgTo}22` }}
                            >
-                              <span className="text-6xl font-display font-black text-white/20">{driver.code}</span>
+                              <span className="text-4xl sm:text-6xl font-display font-black text-white/20">{driver.code}</span>
                            </div>
                         )}
                      </div>

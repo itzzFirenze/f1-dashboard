@@ -126,11 +126,11 @@ const RaceReplayCenterPage: React.FC = () => {
                   </div>
                </div>
 
-               <div className="flex gap-2">
+               <div className="flex gap-2 w-full sm:w-auto">
                   <select
                      value={selectedYear}
                      onChange={(e) => setSelectedYear(Number(e.target.value))}
-                     className="bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2 text-sm font-mono text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer"
+                     className="bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-mono text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer shrink-0"
                   >
                      {RACE_YEARS.map((y) => (
                         <option key={y} value={y} className="bg-f1-black">{y}</option>
@@ -138,8 +138,8 @@ const RaceReplayCenterPage: React.FC = () => {
                   </select>
 
                   {isLoading ? (
-                     <div className="flex items-center gap-2 text-xs font-mono text-f1-silver/60 bg-white/[0.03] border border-white/[0.06] px-3 py-2 rounded-xl">
-                        <Loader2 className="h-4 w-4 animate-spin text-f1-red" /> Syncing feeds...
+                     <div className="flex-1 sm:flex-initial flex items-center justify-center gap-2 text-xs font-mono text-f1-silver/60 bg-white/[0.03] border border-white/[0.06] px-3 py-2 rounded-xl min-w-0">
+                        <Loader2 className="h-4 w-4 animate-spin text-f1-red shrink-0" /> <span className="truncate">Syncing feeds...</span>
                      </div>
                   ) : (
                      <select
@@ -148,7 +148,7 @@ const RaceReplayCenterPage: React.FC = () => {
                            const session = sessions.find((s) => s.session_key === Number(e.target.value));
                            if (session) selectSession(session);
                         }}
-                        className="bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2 text-sm font-mono text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer disabled:opacity-50"
+                        className="flex-1 sm:flex-initial min-w-0 max-w-full sm:max-w-xs md:max-w-none bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-mono text-f1-white focus:outline-none focus:border-f1-red/50 transition-all cursor-pointer disabled:opacity-50 truncate"
                         disabled={sessions.length === 0 || isLoading}
                      >
                         {sessions.length === 0 && <option value="">No races found</option>}
@@ -200,7 +200,7 @@ const RaceReplayCenterPage: React.FC = () => {
                               animate={{ opacity: 1 }}
                               exit={{ opacity: 0 }}
                               transition={{ duration: 0.15, delay: expandedPanel === 'telemetry' ? 0.15 : 0 }}
-                              className="p-3 flex flex-col h-full w-[280px] xl:w-full"
+                              className="p-3 flex flex-col h-full w-full min-w-0"
                            >
                               <button
                                  onClick={() => setExpandedPanel('standings')}
@@ -257,7 +257,7 @@ const RaceReplayCenterPage: React.FC = () => {
                               animate={{ opacity: 1 }}
                               exit={{ opacity: 0 }}
                               transition={{ duration: 0.15, delay: 0.15 }}
-                              className="p-4 flex flex-col h-full w-[320px] xl:w-full"
+                              className="p-4 flex flex-col h-full w-full min-w-0"
                            >
                               <div className="flex items-center gap-2 mb-3 shrink-0">
                                  <div className="flex flex-1 bg-white/[0.03] border border-white/[0.06] p-1 rounded-xl gap-1">

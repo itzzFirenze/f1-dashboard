@@ -39,7 +39,7 @@ const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
    const strokeDashoffset = circumference - (Math.min(Math.max(percent, 0), 100) / 100) * circumference;
 
    return (
-      <div className="telemetry-card p-5 group flex flex-col justify-between relative overflow-hidden">
+      <div className="telemetry-card p-3.5 sm:p-5 group flex flex-col justify-between relative overflow-hidden">
          {/* Subtle top indicator bar */}
          <div
             className="absolute top-0 inset-x-0 h-[2px] opacity-75 transition-opacity group-hover:opacity-100"
@@ -47,38 +47,38 @@ const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
          />
 
          {/* Header */}
-         <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
+         <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] transition-transform group-hover:scale-105"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center border border-white/[0.06] transition-transform group-hover:scale-105 shrink-0"
                   style={{ backgroundColor: `${colorHex}15` }}
                >
-                  <Icon className="w-4 h-4" style={{ color: colorHex }} />
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: colorHex }} />
                </div>
-               <span className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">
+               <span className="text-[10px] sm:text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase truncate">
                   {title}
                </span>
             </div>
             {badgeText && (
-               <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white/[0.04] text-f1-silver/60 border border-white/[0.06]">
+               <span className="text-[9px] sm:text-[10px] font-mono font-semibold px-1.5 sm:px-2 py-0.5 rounded bg-white/[0.04] text-f1-silver/60 border border-white/[0.06] shrink-0 hidden xs:inline-block">
                   {badgeText}
                </span>
             )}
          </div>
 
          {/* Center Gauge & Value */}
-         <div className="flex items-center justify-between mt-2">
-            <div>
-               <div className="text-3xl sm:text-4xl font-black font-display tracking-tight text-f1-white flex items-baseline gap-1">
-                  <span>{value}</span>
+         <div className="flex items-center justify-between mt-1 sm:mt-2 gap-2">
+            <div className="min-w-0">
+               <div className="text-2xl sm:text-4xl font-black font-display tracking-tight text-f1-white flex items-baseline gap-1">
+                  <span className="truncate">{value}</span>
                </div>
-               <p className="text-[11px] font-mono text-f1-silver/50 tracking-widest uppercase mt-0.5">
+               <p className="text-[10px] sm:text-[11px] font-mono text-f1-silver/50 tracking-widest uppercase mt-0.5 truncate">
                   {unit}
                </p>
             </div>
 
             {/* Circular HUD Dial */}
-            <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
+            <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center shrink-0">
                <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
                   {/* Outer track */}
                   <circle
@@ -101,7 +101,7 @@ const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
                      }}
                   />
                </svg>
-               <span className="absolute font-mono text-[11px] font-bold text-f1-white/90">
+               <span className="absolute font-mono text-[9px] sm:text-[11px] font-bold text-f1-white/90">
                   {Math.round(percent)}%
                </span>
             </div>
@@ -176,7 +176,7 @@ const DashboardPage: React.FC = () => {
          </div>
 
          {/* ─── Telemetry HUD Stats Grid ─── */}
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <StatGaugeCard
                title="Rounds Completed"
                value={data.racesCompleted}
@@ -437,32 +437,32 @@ const DashboardPage: React.FC = () => {
             <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-3 px-1">
                Engineering Command Shortcuts
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
                {[
                   { to: '/drivers', label: 'Driver Standings', icon: Users, accent: '#38bdf8', tag: 'DRV' },
                   { to: '/constructors', label: 'Constructor Table', icon: Shield, accent: '#f59e0b', tag: 'CON' },
                   { to: '/races', label: 'Grand Prix Calendar', icon: Calendar, accent: '#10b981', tag: 'CAL' },
                   { to: '/momentum', label: 'Momentum Analytics', icon: Activity, accent: '#a855f7', tag: 'MOM' },
                ].map(({ to, label, icon: Icon, accent, tag }) => (
-                  <Link key={to} to={to} className="group outline-none">
-                     <div className="pill-button justify-between py-3.5 group-hover:border-white/[0.12] transition-all">
-                        <div className="flex items-center gap-3">
+                  <Link key={to} to={to} className="group outline-none h-full flex">
+                     <div className="pill-button justify-between py-3 sm:py-3.5 px-3 sm:px-4 group-hover:border-white/[0.12] transition-all w-full h-full min-h-[62px] flex items-center">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                            <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/[0.04]"
+                              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/[0.04]"
                               style={{ backgroundColor: `${accent}15` }}
                            >
-                              <Icon className="w-4 h-4" style={{ color: accent }} />
+                              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" style={{ color: accent }} />
                            </div>
-                           <div>
-                              <span className="text-xs font-mono font-semibold text-f1-white group-hover:text-f1-red-light transition-colors block">
+                           <div className="min-w-0 flex-1">
+                              <span className="text-xs font-mono font-semibold text-f1-white group-hover:text-f1-red-light transition-colors block truncate">
                                  {label}
                               </span>
-                              <span className="text-[9px] font-mono text-f1-silver/40 uppercase">
+                              <span className="text-[9px] font-mono text-f1-silver/40 uppercase block truncate">
                                  TELEMETRY /{tag}
                               </span>
                            </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-f1-silver/30 group-hover:text-f1-white group-hover:translate-x-0.5 transition-all" />
+                        <ChevronRight className="w-4 h-4 text-f1-silver/30 group-hover:text-f1-white group-hover:translate-x-0.5 transition-all shrink-0 hidden sm:block ml-1" />
                      </div>
                   </Link>
                ))}

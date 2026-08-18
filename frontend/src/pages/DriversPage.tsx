@@ -109,17 +109,17 @@ const DriversPage: React.FC = () => {
          ) : (
             <div className="telemetry-card overflow-hidden relative">
                <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
-               <div className="overflow-x-auto">
+               <div className="w-full">
                   <table className="w-full">
                      <thead>
                         <tr className="border-b border-white/[0.06]">
-                           <th className="text-left text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3 w-12">Pos</th>
-                           <th className="text-left text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3">Driver</th>
+                           <th className="text-left text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-2.5 sm:px-4 py-3 w-10 sm:w-12">Pos</th>
+                           <th className="text-left text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-2 sm:px-4 py-3">Driver</th>
                            <th className="text-left text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3 hidden sm:table-cell">Team</th>
                            <th className="text-left text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3 hidden md:table-cell">Nationality</th>
-                           <th className="text-right text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3">Points</th>
+                           <th className="text-right text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-2.5 sm:px-4 py-3 w-16 sm:w-auto">Points</th>
                            <th className="text-right text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3 hidden sm:table-cell">Wins</th>
-                           <th className="w-12 px-4 py-3"></th>
+                           <th className="w-8 sm:w-12 px-1.5 sm:px-4 py-3"></th>
                         </tr>
                      </thead>
                      <tbody>
@@ -129,16 +129,16 @@ const DriversPage: React.FC = () => {
                               className="border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors group relative"
                               style={{ animationDelay: `${i * 30}ms` }}
                            >
-                              <td className="px-4 py-4">
+                              <td className="px-2.5 sm:px-4 py-3 sm:py-4">
                                  <PositionBadge position={driver.championshipPosition} />
                               </td>
-                              <td className="px-4 py-4">
+                              <td className="px-2 sm:px-4 py-3 sm:py-4">
                                  <Link
                                     to={`/drivers/${driver.id}`}
-                                    className="flex items-center gap-3"
+                                    className="flex items-center gap-2 sm:gap-3 min-w-0"
                                  >
                                     <div
-                                       className="w-10 h-10 rounded-xl flex items-center justify-center font-mono font-bold text-xs text-white border border-white/[0.08] shrink-0 relative overflow-hidden group-hover:scale-105 transition-transform"
+                                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center font-mono font-bold text-[11px] sm:text-xs text-white border border-white/[0.08] shrink-0 relative overflow-hidden group-hover:scale-105 transition-transform"
                                        style={{ backgroundColor: `${driver.constructorColor}30` }}
                                     >
                                        {driver.code}
@@ -147,25 +147,25 @@ const DriversPage: React.FC = () => {
                                           style={{ backgroundColor: driver.constructorColor }}
                                        />
                                     </div>
-                                    <div>
-                                       <p className="font-display font-bold text-f1-white group-hover:text-f1-red-light transition-colors">
+                                    <div className="min-w-0">
+                                       <p className="font-display font-bold text-xs sm:text-sm md:text-base text-f1-white group-hover:text-f1-red-light transition-colors truncate">
                                           {driver.firstName} <span className="font-black">{driver.lastName}</span>
                                        </p>
-                                       <p className="text-xs font-mono text-f1-silver/60 sm:hidden">{driver.constructorName}</p>
+                                       <p className="text-[10px] sm:text-xs font-mono text-f1-silver/60 sm:hidden truncate">{driver.constructorName}</p>
                                     </div>
                                  </Link>
                               </td>
                               <td className="px-4 py-4 hidden sm:table-cell">
                                  <div className="flex items-center gap-2">
-                                    <div className="w-1 h-4 rounded-full" style={{ backgroundColor: driver.constructorColor }} />
-                                    <span className="text-f1-silver/80 text-sm font-mono">{driver.constructorName}</span>
+                                    <div className="w-1 h-4 rounded-full shrink-0" style={{ backgroundColor: driver.constructorColor }} />
+                                    <span className="text-f1-silver/80 text-sm font-mono truncate">{driver.constructorName}</span>
                                  </div>
                               </td>
                               <td className="px-4 py-4 text-f1-silver/70 text-sm font-mono hidden md:table-cell">
                                  {driver.nationality}
                               </td>
-                              <td className="px-4 py-4 text-right">
-                                 <span className="font-display font-black text-lg text-amber-400">{driver.points}</span>
+                              <td className="px-2.5 sm:px-4 py-3 sm:py-4 text-right shrink-0">
+                                 <span className="font-display font-black text-base sm:text-lg text-amber-400">{driver.points}</span>
                               </td>
                               <td className="px-4 py-4 text-right hidden sm:table-cell">
                                  {driver.wins > 0 && (
@@ -175,14 +175,14 @@ const DriversPage: React.FC = () => {
                                     </div>
                                  )}
                               </td>
-                              <td className="px-4 py-4">
+                              <td className="px-1.5 sm:px-4 py-3 sm:py-4 text-center">
                                  <button
                                     onClick={(e) => { e.preventDefault(); toggleFavoriteDriver(driver.id); }}
-                                    className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
+                                    className="p-1 sm:p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
                                     aria-label={isDriverFavorite(driver.id) ? 'Remove from favorites' : 'Add to favorites'}
                                  >
                                     <Star
-                                       className={`w-4 h-4 ${isDriverFavorite(driver.id) ? 'fill-amber-400 text-amber-400' : 'text-f1-silver/30'
+                                       className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isDriverFavorite(driver.id) ? 'fill-amber-400 text-amber-400' : 'text-f1-silver/30'
                                           }`}
                                     />
                                  </button>

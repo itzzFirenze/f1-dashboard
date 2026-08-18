@@ -616,17 +616,17 @@ const TriviaPage: React.FC = () => {
 
          {/* 3. ACTIVE QUIZ PLAYING VIEW */}
          {gameState === 'playing' && currentQuestion && (
-            <div className="w-full flex flex-col gap-3.5">
+            <div className="w-full flex flex-col gap-2.5 sm:gap-3.5">
                {/* Race HUD Header */}
-               <div className="telemetry-card px-5 py-3.5 flex items-center justify-between gap-4">
+               <div className="telemetry-card px-3 sm:px-5 py-2 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4">
                   {/* Left: Lap Progress & Category */}
-                  <div className="flex items-center gap-3">
-                     <div className="w-9 h-9 rounded-xl bg-f1-red/15 border border-f1-red/30 flex items-center justify-center font-bold text-f1-red-light text-sm font-mono shadow-inner">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                     <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-f1-red/15 border border-f1-red/30 flex items-center justify-center font-bold text-f1-red-light text-xs sm:text-sm font-mono shadow-inner shrink-0">
                         {currentIndex + 1}
                      </div>
-                     <div>
-                        <div className="text-[10px] font-mono text-f1-silver/50 uppercase font-bold tracking-wider">Race Progress</div>
-                        <div className="text-sm md:text-base font-bold text-f1-white font-mono flex items-center gap-2">
+                     <div className="min-w-0">
+                        <div className="text-[9px] sm:text-[10px] font-mono text-f1-silver/50 uppercase font-bold tracking-wider">Race Progress</div>
+                        <div className="text-xs sm:text-base font-bold text-f1-white font-mono flex items-center gap-1.5 sm:gap-2 truncate">
                            Lap {currentIndex + 1} <span className="text-f1-silver/40 font-normal">/ {questions.length}</span>
                            <span className="hidden sm:inline-block text-[11px] bg-white/[0.06] text-f1-silver/80 font-mono font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-white/[0.06]">
                               {currentQuestion.category.replace('_', ' ')}
@@ -637,40 +637,40 @@ const TriviaPage: React.FC = () => {
 
                   {/* Center: DRS Streak Multiplier */}
                   {streak > 1 && (
-                     <div className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500/15 to-red-500/15 border border-orange-500/30 px-3.5 py-1 rounded-xl animate-pulse">
-                        <Flame className="w-4 h-4 text-orange-400" />
-                        <span className="text-xs md:text-sm font-extrabold text-orange-300 font-mono">{streak}x DRS STREAK</span>
+                     <div className="hidden xs:flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-orange-500/15 to-red-500/15 border border-orange-500/30 px-2 sm:px-3.5 py-0.5 sm:py-1 rounded-lg sm:rounded-xl animate-pulse shrink-0">
+                        <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400" />
+                        <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-orange-300 font-mono">{streak}x DRS</span>
                      </div>
                   )}
 
                   {/* Right: Timer, Score & Quit */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                      {enableTimer && !isAnswerSubmitted && (
-                        <div className="flex items-center gap-1.5 font-mono text-xs md:text-sm font-bold bg-white/[0.04] border border-white/[0.06] px-3 py-1.5 rounded-xl">
-                           <Timer className={`w-4 h-4 ${timeLeft <= 5 ? 'text-red-400 animate-spin' : 'text-amber-400'}`} />
+                        <div className="flex items-center gap-1 sm:gap-1.5 font-mono text-xs sm:text-sm font-bold bg-white/[0.04] border border-white/[0.06] px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl">
+                           <Timer className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${timeLeft <= 5 ? 'text-red-400 animate-spin' : 'text-amber-400'}`} />
                            <span className={timeLeft <= 5 ? 'text-red-400' : 'text-f1-white'}>{timeLeft}s</span>
                         </div>
                      )}
 
-                     <div className="text-right bg-white/[0.03] border border-white/[0.06] px-3.5 py-1 rounded-xl">
-                        <div className="text-[9px] font-mono text-f1-silver/50 uppercase font-bold">Score</div>
-                        <div className="text-sm md:text-base font-bold text-f1-white font-mono">
-                           {score.toLocaleString()} <span className="text-f1-silver/40 text-[10px]">PTS</span>
+                     <div className="text-right bg-white/[0.03] border border-white/[0.06] px-2 sm:px-3.5 py-1 rounded-lg sm:rounded-xl">
+                        <div className="text-[8px] sm:text-[9px] font-mono text-f1-silver/50 uppercase font-bold">Score</div>
+                        <div className="text-xs sm:text-base font-bold text-f1-white font-mono">
+                           {score.toLocaleString()} <span className="text-f1-silver/40 text-[9px] sm:text-[10px]">PTS</span>
                         </div>
                      </div>
 
                      <button
                         onClick={() => setGameState('lobby')}
-                        className="text-f1-silver/40 hover:text-f1-white p-2 rounded-xl hover:bg-white/[0.06] transition-colors"
+                        className="text-f1-silver/40 hover:text-f1-white p-1.5 sm:p-2 rounded-lg sm:rounded-xl hover:bg-white/[0.06] transition-colors"
                         title="Quit Race"
                      >
-                        <LogOut className="w-4 h-4" />
+                        <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                      </button>
                   </div>
                </div>
 
                {/* Lap Progress Bar */}
-               <div className="w-full bg-white/[0.04] h-2 rounded-full overflow-hidden border border-white/[0.05]">
+               <div className="w-full bg-white/[0.04] h-1.5 sm:h-2 rounded-full overflow-hidden border border-white/[0.05]">
                   <div
                      className="bg-gradient-to-r from-f1-red via-orange-500 to-amber-400 h-full transition-all duration-300 rounded-full shadow-lg shadow-f1-red/30"
                      style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
@@ -678,7 +678,7 @@ const TriviaPage: React.FC = () => {
                </div>
 
                {/* Main Question Card */}
-               <div className="telemetry-card p-6 md:p-8 relative overflow-hidden flex flex-col justify-between">
+               <div className="telemetry-card p-3.5 sm:p-6 md:p-8 relative overflow-hidden flex flex-col justify-between">
                   {enableTimer && !isAnswerSubmitted && (
                      <div
                         className="absolute top-0 left-0 h-1.5 bg-gradient-to-r from-green-500 via-amber-500 to-red-500 transition-all duration-1000 ease-linear shadow-md"
@@ -687,30 +687,30 @@ const TriviaPage: React.FC = () => {
                   )}
 
                   {/* Header row inside question card */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                     <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-f1-red-light bg-f1-red/10 px-3 py-0.5 rounded-full border border-f1-red/25">
+                  <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
+                     <div className="flex items-center gap-1.5 sm:gap-2">
+                        <span className="text-[9px] sm:text-[11px] font-mono font-bold uppercase tracking-wider text-f1-red-light bg-f1-red/10 px-2 sm:px-3 py-0.5 rounded-full border border-f1-red/25">
                            Sector {((currentIndex % 3) + 1)} • Lap #{currentIndex + 1}
                         </span>
                         {currentQuestion.season && (
-                           <span className="text-[11px] font-mono text-amber-300 bg-amber-500/15 px-2.5 py-0.5 rounded-full font-bold border border-amber-500/20">
-                              {currentQuestion.season} Season
+                           <span className="text-[9px] sm:text-[11px] font-mono text-amber-300 bg-amber-500/15 px-2 sm:px-2.5 py-0.5 rounded-full font-bold border border-amber-500/20">
+                              {currentQuestion.season}
                            </span>
                         )}
                      </div>
 
-                     <span className="text-[11px] text-f1-silver/40 font-mono">
+                     <span className="text-[9px] sm:text-[11px] text-f1-silver/40 font-mono">
                         Difficulty: <span className="text-f1-white capitalize font-bold">{currentQuestion.difficulty}</span>
                      </span>
                   </div>
 
                   {/* Question Title */}
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-display font-extrabold text-f1-white leading-relaxed mb-6 min-h-[56px] flex items-center">
+                  <h2 className="text-sm sm:text-lg md:text-2xl font-display font-extrabold text-f1-white leading-snug sm:leading-relaxed mb-3 sm:mb-6 min-h-0 sm:min-h-[56px] flex items-center">
                      {currentQuestion.question}
                   </h2>
 
                   {/* 4 Option Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3.5 mb-1 sm:mb-2">
                      {shuffledOptions.map((opt, idx) => {
                         const letter = ['A', 'B', 'C', 'D'][idx] || `${idx + 1}`;
                         const isSelected = selectedAnswer === opt;
@@ -736,10 +736,10 @@ const TriviaPage: React.FC = () => {
                               key={idx}
                               onClick={() => handleSelectOption(opt)}
                               disabled={isAnswerSubmitted}
-                              className={`p-4 sm:p-5 rounded-2xl border text-left transition-all duration-200 flex items-center gap-4 transform active:scale-[0.99] group ${cardStyle}`}
+                              className={`p-2.5 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl border text-left transition-all duration-200 flex items-center gap-2.5 sm:gap-4 transform active:scale-[0.99] group ${cardStyle}`}
                            >
                               <span
-                                 className={`w-8 h-8 rounded-xl flex items-center justify-center font-mono font-bold text-xs sm:text-sm flex-shrink-0 transition-transform group-hover:scale-105 ${isAnswerSubmitted && isCorrect
+                                 className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center font-mono font-bold text-xs sm:text-sm flex-shrink-0 transition-transform group-hover:scale-105 ${isAnswerSubmitted && isCorrect
                                     ? 'bg-emerald-500 text-black shadow-md'
                                     : isAnswerSubmitted && isSelected && !isCorrect
                                        ? 'bg-rose-500 text-white shadow-md'
@@ -748,7 +748,7 @@ const TriviaPage: React.FC = () => {
                               >
                                  {letter}
                               </span>
-                              <span className="text-sm sm:text-base font-medium leading-snug">{opt}</span>
+                              <span className="text-xs sm:text-base font-medium leading-snug">{opt}</span>
                            </button>
                         );
                      })}
@@ -756,39 +756,39 @@ const TriviaPage: React.FC = () => {
 
                   {/* Inline Explanation & Next Button Bar */}
                   {isAnswerSubmitted && (
-                     <div className="mt-4 pt-4 border-t border-white/[0.06] animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                     <div className="mt-2.5 sm:mt-4 pt-2.5 sm:pt-4 border-t border-white/[0.06] animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
                         <div
-                           className={`p-3.5 rounded-2xl border flex items-center gap-3 flex-1 ${selectedAnswer === currentQuestion.correct_answer
+                           className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border flex items-center gap-2.5 sm:gap-3 flex-1 ${selectedAnswer === currentQuestion.correct_answer
                               ? 'bg-emerald-950/40 border-emerald-800/40 text-emerald-200'
                               : 'bg-rose-950/40 border-rose-800/40 text-rose-200'
                               }`}
                         >
                            {selectedAnswer === currentQuestion.correct_answer ? (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 flex-shrink-0" />
                            ) : (
-                              <XCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+                              <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400 flex-shrink-0" />
                            )}
                            <div className="leading-snug">
                               <span className="font-bold text-xs sm:text-sm mr-1">
                                  {selectedAnswer === currentQuestion.correct_answer
-                                    ? '🏁 Purple Sector! Correct.'
-                                    : `❌ Correct Answer: "${currentQuestion.correct_answer}".`}
+                                    ? '🏁 Correct!'
+                                    : `❌ Correct: "${currentQuestion.correct_answer}".`}
                               </span>
-                              <span className="text-f1-silver/70 text-xs leading-relaxed">{currentQuestion.explanation}</span>
+                              <span className="text-f1-silver/70 text-[11px] sm:text-xs leading-relaxed">{currentQuestion.explanation}</span>
                            </div>
                         </div>
 
                         <button
                            onClick={handleNextQuestion}
-                           className="px-7 py-3.5 bg-gradient-to-r from-f1-red to-red-700 hover:from-red-600 hover:to-f1-red text-white font-mono font-extrabold text-sm rounded-2xl shadow-xl shadow-f1-red/30 transition-all transform hover:scale-105 flex items-center justify-center gap-2 uppercase tracking-wider flex-shrink-0"
+                           className="px-4 sm:px-7 py-2.5 sm:py-3.5 bg-gradient-to-r from-f1-red to-red-700 hover:from-red-600 hover:to-f1-red text-white font-mono font-extrabold text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-xl shadow-f1-red/30 transition-all transform hover:scale-105 flex items-center justify-center gap-1.5 sm:gap-2 uppercase tracking-wider flex-shrink-0"
                         >
                            {currentIndex + 1 < questions.length ? (
                               <>
-                                 Next Lap <ArrowRight className="w-4 h-4" />
+                                 Next Lap <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               </>
                            ) : (
                               <>
-                                 Finish Race <Trophy className="w-4 h-4" />
+                                 Finish Race <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               </>
                            )}
                            <span className="hidden sm:inline-block text-[10px] bg-black/25 px-1.5 py-0.5 rounded font-mono ml-1">[Enter]</span>
