@@ -8,7 +8,8 @@
     "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
     "build:frontend": "cd frontend && npm install && npm run build",
     "build:backend": "cd backend && mvn clean package -DskipTests",
-    "build": "npm run build:frontend && npm run build:backend"
+    "build": "cd frontend && npm install && npm run build",
+    "build:all": "npm run build:frontend && npm run build:backend"
   },
   "devDependencies": {
     "concurrently": "^10.0.4"
