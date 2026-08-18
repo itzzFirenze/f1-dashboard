@@ -103,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       return false;
    };
 
-   const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => {
+   const renderSidebarContent = (isMobile: boolean) => {
       const isExpanded = isMobile || !collapsed;
 
       return (
@@ -120,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                      <div className="absolute inset-0 rounded-xl bg-f1-red/25 blur-md -z-10" />
                   </div>
                   {isExpanded && (
-                     <div className="animate-fade-in flex flex-col">
+                     <div className="flex flex-col">
                         <div className="flex items-baseline">
                            <span className="font-display font-black text-xl tracking-tight text-f1-white">F1</span>
                            <span className="font-display font-medium text-f1-red-light text-xl ml-1">HUD</span>
@@ -288,7 +288,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                md:translate-x-0 ${mobileOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
                ${collapsed ? 'md:w-[72px]' : 'md:w-64'}`}
          >
-            <SidebarContent isMobile={mobileOpen} />
+            {renderSidebarContent(mobileOpen)}
          </nav>
       </>
    );
