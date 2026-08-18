@@ -13,6 +13,30 @@ const EasterEggPlayer: React.FC = () => {
    const audioRef = useRef<HTMLAudioElement | null>(null);
    const keyBufferRef = useRef<string>('');
    const bufferTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+   const listenersRef = useRef<{
+      timeupdate?: () => void;
+      ended?: () => void;
+      error?: () => void;
+   }>({});
+
+   const cleanupAudio = () => {
+      if (audioRef.current) {
+         audioRef.current.pause();
+         if (listenersRef.current.timeupdate) {
+            audioRef.current.removeEventListener('timeupdate', listenersRef.current.timeupdate);
+         }
+         if (listenersRef.current.ended) {
+            audioRef.current.removeEventListener('ended', listenersRef.current.ended);
+         }
+         if (listenersRef.current.error) {
+            audioRef.current.removeEventListener('error', listenersRef.current.error);
+         }
+         audioRef.current.src = '';
+         audioRef.current = null;
+         listenersRef.current = {};
+      }
+   };
 
    useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -53,45 +77,52 @@ const EasterEggPlayer: React.FC = () => {
       return () => {
          window.removeEventListener('keydown', handleKeyDown);
          if (bufferTimerRef.current) clearTimeout(bufferTimerRef.current);
+         if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+         cleanupAudio();
       };
    }, []);
 
    const playEasterEgg = (track: EasterEggTrack) => {
-      if (audioRef.current) {
-         audioRef.current.pause();
-         audioRef.current.src = '';
-      }
+      cleanupAudio();
 
       setErrorMsg(null);
       setActiveTrack(track);
       setNotification(`🎉 Easter Egg Unlocked: ${track.title}!`);
-      setTimeout(() => setNotification(null), 4000);
+      if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+      notificationTimerRef.current = setTimeout(() => setNotification(null), 4000);
 
       try {
          const audio = new Audio(track.audioUrl);
          audioRef.current = audio;
          audio.muted = isMuted;
 
-         audio.addEventListener('timeupdate', () => {
+         const onTimeUpdate = () => {
             if (audio.duration) {
                setProgress((audio.currentTime / audio.duration) * 100);
             }
-         });
+         };
 
-         audio.addEventListener('ended', () => {
+         const onEnded = () => {
             setIsPlaying(false);
             setProgress(0);
             setActiveTrack(null);
-            if (audioRef.current) {
-               audioRef.current.src = '';
-               audioRef.current = null;
-            }
-         });
+            cleanupAudio();
+         };
 
-         audio.addEventListener('error', () => {
+         const onError = () => {
             setErrorMsg(`Audio file couldn't be loaded from Supabase (${track.audioUrl}). Check URL.`);
             setIsPlaying(false);
-         });
+         };
+
+         listenersRef.current = {
+            timeupdate: onTimeUpdate,
+            ended: onEnded,
+            error: onError,
+         };
+
+         audio.addEventListener('timeupdate', onTimeUpdate);
+         audio.addEventListener('ended', onEnded);
+         audio.addEventListener('error', onError);
 
          audio
             .play()
@@ -129,11 +160,7 @@ const EasterEggPlayer: React.FC = () => {
    };
 
    const closePlayer = () => {
-      if (audioRef.current) {
-         audioRef.current.pause();
-         audioRef.current.src = '';
-         audioRef.current = null;
-      }
+      cleanupAudio();
       setActiveTrack(null);
       setIsPlaying(false);
       setProgress(0);

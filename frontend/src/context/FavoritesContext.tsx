@@ -18,13 +18,23 @@ const STORAGE_KEYS = {
 
 export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
    const [favoriteDrivers, setFavoriteDrivers] = useState<number[]>(() => {
-      const saved = localStorage.getItem(STORAGE_KEYS.drivers);
-      return saved ? JSON.parse(saved) : [];
+      try {
+         const saved = localStorage.getItem(STORAGE_KEYS.drivers);
+         const parsed = saved ? JSON.parse(saved) : [];
+         return Array.isArray(parsed) ? parsed : [];
+      } catch {
+         return [];
+      }
    });
 
    const [favoriteTeams, setFavoriteTeams] = useState<number[]>(() => {
-      const saved = localStorage.getItem(STORAGE_KEYS.teams);
-      return saved ? JSON.parse(saved) : [];
+      try {
+         const saved = localStorage.getItem(STORAGE_KEYS.teams);
+         const parsed = saved ? JSON.parse(saved) : [];
+         return Array.isArray(parsed) ? parsed : [];
+      } catch {
+         return [];
+      }
    });
 
    useEffect(() => {

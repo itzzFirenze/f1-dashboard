@@ -504,7 +504,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
 
          const loadedPits = await telemetryService.getPits(session.session_key);
          setPits(loadedPits);
-         console.log("[Replay] pits loaded:", loadedPits.length, loadedPits[0]);
 
          const loadedRaceControl = await telemetryService.getRaceControl(
             session.session_key,
@@ -570,6 +569,11 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
                chunkEnd.toISOString(),
             )
             .then((data) => {
+               // Limit cache size to 60 chunks to prevent unbounded memory growth
+               const keys = Object.keys(locationCache.current);
+               if (keys.length > 60) {
+                  delete locationCache.current[Number(keys[0])];
+               }
                locationCache.current[chunkIndex] = data;
                delete locationChunkFailedAt.current[chunkIndex];
             })
@@ -613,14 +617,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
          const chunkStart = new Date(start.getTime() + chunkIndex * 60_000);
          const chunkEnd = new Date(chunkStart.getTime() + 60_000);
 
-         console.log("[Replay] Requesting telemetry", {
-            sessionKey: session.session_key,
-            driverNumber,
-            chunkIndex,
-            start: chunkStart.toISOString(),
-            end: chunkEnd.toISOString(),
-         });
-
          const request = telemetryService
             .getCarData(
                session.session_key,
@@ -629,10 +625,11 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
                chunkEnd.toISOString(),
             )
             .then((data) => {
-               console.log(
-                  `[Replay] Driver ${driverNumber}: ${data.length} telemetry frames`,
-                  data.length > 0 ? data[0] : null,
-               );
+               // Limit car telemetry cache size to 120 driver-chunks
+               const keys = Object.keys(carDataCache.current);
+               if (keys.length > 120) {
+                  delete carDataCache.current[keys[0]];
+               }
                carDataCache.current[key] = data;
                delete carChunkFailedAt.current[key];
             })

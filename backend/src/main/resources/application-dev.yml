@@ -1,0 +1,30 @@
+# ============================================
+# F1 Dashboard - Dev Profile Overrides
+# ============================================
+# Activate with: SPRING_PROFILES_ACTIVE=dev
+# This re-enables dev tools that are disabled in the default (production) config.
+
+spring:
+  h2:
+    console:
+      enabled: true
+      settings:
+        web-allow-others: false
+
+# Re-enable Swagger/OpenAPI for local development
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+# More detailed actuator endpoints for dev
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

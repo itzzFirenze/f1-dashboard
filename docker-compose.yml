@@ -5,15 +5,15 @@ services:
     image: postgres:16-alpine
     container_name: f1-postgres
     environment:
-      POSTGRES_DB: f1dashboard
-      POSTGRES_USER: f1admin
-      POSTGRES_PASSWORD: f1password
+      POSTGRES_DB: ${POSTGRES_DB:-f1dashboard}
+      POSTGRES_USER: ${POSTGRES_USER:-f1admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-f1password}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U f1admin -d f1dashboard"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-f1admin} -d $${POSTGRES_DB:-f1dashboard}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,9 +27,9 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: f1dashboard
-      DB_USERNAME: f1admin
-      DB_PASSWORD: f1password
+      DB_NAME: ${POSTGRES_DB:-f1dashboard}
+      DB_USERNAME: ${POSTGRES_USER:-f1admin}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-f1password}
     depends_on:
       postgres:
         condition: service_healthy

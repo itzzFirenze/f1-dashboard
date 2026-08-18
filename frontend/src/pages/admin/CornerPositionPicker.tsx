@@ -98,6 +98,13 @@ export default function CornerPositionPicker() {
    const trackPathRef = useRef<SVGPathElement | null>(null);
    const svgRef = useRef<SVGSVGElement | null>(null);
    const samplesRef = useRef<SamplePoint[]>([]);
+   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+   useEffect(() => {
+      return () => {
+         if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      };
+   }, []);
 
    const selectedCircuit = circuits.find((c) => c.id === circuitId);
    const currentPathKey = selectedCircuit ? CIRCUIT_ID_TO_SVG_KEY[selectedCircuit.id] : null;
@@ -280,7 +287,8 @@ export default function CornerPositionPicker() {
    const copyOutput = async (): Promise<void> => {
       await navigator.clipboard.writeText(outputText);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1200);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopied(false), 1200);
    };
 
    const expectedCorners = selectedCircuit?.corners ?? 0;

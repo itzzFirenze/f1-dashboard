@@ -1,14 +1,17 @@
 package com.f1dashboard.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/telemetry")
@@ -18,13 +21,34 @@ public class TelemetryProxyController {
    private final RestTemplate restTemplate;
    private static final String OPENF1_BASE_URL = "https://api.openf1.org/v1";
 
-   private final java.util.concurrent.ConcurrentHashMap<URI, Object[]> cache = new java.util.concurrent.ConcurrentHashMap<>();
+   private static final Set<String> ALLOWED_ENDPOINTS = Set.of(
+         "sessions", "drivers", "laps", "stints", "pit", "race_control",
+         "team_radio", "location", "car_data", "weather", "intervals", "position"
+   );
+
+   private static final int MAX_CACHE_SIZE = 300;
+
+   // Thread-safe bounded LRU cache
+   private final Map<URI, Object[]> cache = Collections.synchronizedMap(
+         new LinkedHashMap<URI, Object[]>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<URI, Object[]> eldest) {
+               return size() > MAX_CACHE_SIZE;
+            }
+         }
+   );
 
    @GetMapping("/{endpoint}")
    public ResponseEntity<Object[]> proxyRequest(
          @PathVariable String endpoint,
          @RequestParam Map<String, String> allParams,
          HttpServletRequest request) {
+
+      // Validate endpoint to prevent path traversal or SSRF to arbitrary endpoints
+      if (endpoint == null || !ALLOWED_ENDPOINTS.contains(endpoint.toLowerCase())) {
+         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+               .body(new Object[] { Map.of("error", "Invalid or disallowed telemetry endpoint") });
+      }
 
       String queryString = request.getQueryString();
       String urlString = OPENF1_BASE_URL + "/" + endpoint;
@@ -34,8 +58,9 @@ public class TelemetryProxyController {
 
       URI targetUri = URI.create(urlString);
 
-      if (cache.containsKey(targetUri)) {
-         return ResponseEntity.ok(cache.get(targetUri));
+      Object[] cached = cache.get(targetUri);
+      if (cached != null) {
+         return ResponseEntity.ok(cached);
       }
 
       int maxRetries = 3;
@@ -67,4 +92,4 @@ public class TelemetryProxyController {
 
       return ResponseEntity.status(429).body(new Object[] { Map.of("error", "Rate limit exceeded after retries") });
    }
-}
+}

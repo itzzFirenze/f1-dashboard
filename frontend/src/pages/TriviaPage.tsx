@@ -144,6 +144,27 @@ const TriviaPage: React.FC = () => {
    });
 
    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+   const startLightsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+   const startLightsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+   const clearStartLightsTimers = () => {
+      if (startLightsIntervalRef.current) {
+         clearInterval(startLightsIntervalRef.current);
+         startLightsIntervalRef.current = null;
+      }
+      if (startLightsTimeoutRef.current) {
+         clearTimeout(startLightsTimeoutRef.current);
+         startLightsTimeoutRef.current = null;
+      }
+   };
+
+   // Clean up all timers on unmount
+   useEffect(() => {
+      return () => {
+         if (timerRef.current) clearInterval(timerRef.current);
+         clearStartLightsTimers();
+      };
+   }, []);
 
    const currentQuestion = questions[currentIndex];
 
@@ -207,6 +228,7 @@ const TriviaPage: React.FC = () => {
    const startQuiz = async () => {
       setLoading(true);
       setFetchError(null);
+      clearStartLightsTimers();
 
       try {
          let limit = 10;
@@ -240,12 +262,15 @@ const TriviaPage: React.FC = () => {
          setStartLightCount(0);
 
          let light = 1;
-         const lightInterval = setInterval(() => {
+         startLightsIntervalRef.current = setInterval(() => {
             setStartLightCount(light);
             light++;
             if (light > 5) {
-               clearInterval(lightInterval);
-               setTimeout(() => {
+               if (startLightsIntervalRef.current) {
+                  clearInterval(startLightsIntervalRef.current);
+                  startLightsIntervalRef.current = null;
+               }
+               startLightsTimeoutRef.current = setTimeout(() => {
                   setStartLightCount(0);
                   setGameState('playing');
                }, 600);
