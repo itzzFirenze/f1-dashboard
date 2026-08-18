@@ -22,7 +22,7 @@ export default defineConfig({
     include: ['@supabase/supabase-js'],
   },
   build: {
-    outDir: '../backend/src/main/resources/static',
+    outDir: 'dist',
     emptyOutDir: true,
   },
 });
