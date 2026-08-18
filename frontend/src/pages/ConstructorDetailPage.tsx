@@ -43,7 +43,6 @@ const ConstructorDetailPage: React.FC = () => {
                className="relative overflow-hidden dot-grid"
                style={{
                   background: `linear-gradient(to right, ${theme.bgFrom} 0%, ${theme.bgFrom} 35%, ${theme.bgTo} 100%)`,
-                  minHeight: '130px',
                }}
             >
                <div className="scanline-overlay" />
@@ -64,37 +63,37 @@ const ConstructorDetailPage: React.FC = () => {
                />
 
                {/* Status pill */}
-               <div className="absolute top-4 left-6 z-10 inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/25 border border-white/15 backdrop-blur-md">
+               <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-10 inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/25 border border-white/15 backdrop-blur-md">
                   <Radio className="w-3 h-3 text-white/80" />
                   <span className="text-white/80 text-[10px] font-mono font-bold tracking-[0.2em] uppercase">
                      Constructor Telemetry
                   </span>
                </div>
 
-               <div className="relative flex items-end justify-between h-full px-4 sm:px-6 pt-1 pb-0">
-                  {/* Team info */}
-                  <div className="pb-4 z-10 min-w-0 flex-1">
-                     {/* Team logo — bigger */}
+               <div className="relative flex items-end justify-between min-h-[150px] sm:min-h-[190px] px-4 sm:px-6 pt-12 pb-3 sm:pb-4 gap-2">
+                  {/* Team info — anchored at bottom */}
+                  <div className="z-10 min-w-0 flex-1">
+                     {/* Team logo */}
                      {!logoError && (team.logoUrl ?? theme.teamLogoUrl) ? (
                         <img
                            src={team.logoUrl ?? theme.teamLogoUrl}
                            alt={team.name}
-                           className="h-4 sm:h-8 w-auto object-contain mb-2 drop-shadow-lg"
+                           className="h-5 sm:h-8 w-auto object-contain mb-1.5 sm:mb-2 drop-shadow-lg"
                            onError={() => setLogoError(true)}
                         />
                      ) : null}
-                     <h1 className="text-xl sm:text-3xl font-display font-black tracking-tight text-white drop-shadow-lg uppercase truncate">
+                     <h1 className="text-xl sm:text-3xl font-display font-black tracking-tight text-white drop-shadow-lg uppercase leading-tight truncate">
                         {team.name}
                      </h1>
-                     <p className="text-white/50 text-xs font-mono uppercase tracking-widest mt-1">{team.nationality}</p>
+                     <p className="text-white/50 text-[11px] sm:text-xs font-mono uppercase tracking-widest mt-0.5 sm:mt-1">{team.nationality}</p>
                   </div>
 
-                  {/* Car image — scaled small on mobile, large on desktop */}
+                  {/* Car image — increased size on mobile, anchored to bottom right */}
                   {!carError && (
                      <img
                         src={theme.carImageUrl}
                         alt={`${team.name} 2026 car`}
-                        className="h-20 sm:h-52 max-w-[160px] sm:max-w-[480px] object-contain object-right-bottom relative z-10 drop-shadow-2xl select-none shrink-0"
+                        className="h-28 sm:h-52 max-w-[210px] sm:max-w-[480px] object-contain object-right-bottom relative z-10 drop-shadow-2xl select-none shrink-0"
                         onError={() => setCarError(true)}
                      />
                   )}
@@ -102,7 +101,7 @@ const ConstructorDetailPage: React.FC = () => {
             </div>
 
             {/* Meta bar */}
-            <div className="px-6 py-2.5 flex items-center gap-4 border-t border-white/[0.06]">
+            <div className="px-4 sm:px-6 py-2.5 flex items-center gap-4 border-t border-white/[0.06]">
                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.primary, boxShadow: `0 0 6px ${theme.primary}` }} />
                <span className="text-f1-silver text-xs font-mono uppercase tracking-wider">{team.nationality}</span>
                <span
