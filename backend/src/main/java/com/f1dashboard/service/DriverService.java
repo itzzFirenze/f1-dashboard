@@ -73,11 +73,22 @@ public class DriverService {
          int wins = (int) dResults.stream().filter(r -> r.getPosition() != null && r.getPosition() == 1).count();
          int podiums = (int) dResults.stream().filter(r -> r.getPosition() != null && r.getPosition() <= 3).count();
 
+         // ← derive the team from THIS season's results, not the live FK
+         com.f1dashboard.entity.Constructor seasonConstructor = dResults.stream()
+               .filter(r -> r.getConstructor() != null)
+               .reduce((first, second) -> second) // most recent race result that season
+               .map(RaceResult::getConstructor)
+               .orElseGet(() -> dSprintResults.stream()
+                     .filter(r -> r.getConstructor() != null)
+                     .reduce((first, second) -> second)
+                     .map(RaceResult::getConstructor)
+                     .orElse(d.getConstructor())); // last-resort fallback
+
          DriverDto dto = new DriverDto(
                d.getId(), d.getCode(), d.getFirstName(), d.getLastName(), d.getNumber(),
                d.getNationality(), d.getImageUrl(), points, wins, podiums, 0,
-               d.getConstructor() != null ? d.getConstructor().getName() : null,
-               d.getConstructor() != null ? d.getConstructor().getColor() : null);
+               seasonConstructor != null ? seasonConstructor.getName() : null,
+               seasonConstructor != null ? seasonConstructor.getColor() : null);
          dtoList.add(dto);
       }
 

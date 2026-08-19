@@ -13,7 +13,7 @@ const ConstructorsPage: React.FC = () => {
    const { toggleFavoriteTeam, isTeamFavorite } = useFavorites();
 
    useEffect(() => {
-      constructorService.getAll()
+      constructorService.getAll(2026)
          .then(setConstructors)
          .catch(console.error)
          .finally(() => setLoading(false));

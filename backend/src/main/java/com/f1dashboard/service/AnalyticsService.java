@@ -44,23 +44,27 @@ public class AnalyticsService {
             .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverBId));
 
       DriverComparisonDto dto = new DriverComparisonDto();
-      dto.setDriverA(driverService.toDto(driverA));
-      dto.setDriverB(driverService.toDto(driverB));
 
-      // Race results (used for grid/finish stats and the race-by-race table)
       List<RaceResult> resultsA = raceResultRepository
             .findByDriverIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(driverAId, season, SessionType.RACE);
       List<RaceResult> resultsB = raceResultRepository
             .findByDriverIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(driverBId, season, SessionType.RACE);
 
-      // Sprint results (points only — no grid/finish semantics used here)
       List<RaceResult> sprintResultsA = raceResultRepository
             .findByDriverIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(driverAId, season, SessionType.SPRINT);
       List<RaceResult> sprintResultsB = raceResultRepository
             .findByDriverIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(driverBId, season, SessionType.SPRINT);
 
+      // ← season-scoped constructor instead of the live FK
+      dto.setDriverA(toSeasonScopedDriverDto(driverA, resultsA, sprintResultsA));
+      dto.setDriverB(toSeasonScopedDriverDto(driverB, resultsB, sprintResultsB));
+
       dto.setStatsA(computeComparisonStats(driverA, resultsA, sprintResultsA));
       dto.setStatsB(computeComparisonStats(driverB, resultsB, sprintResultsB));
+
+      // ... rest of the method (h2h/race loop etc.) stays exactly the same,
+      // just delete the old resultsA/resultsB/sprintResultsA/sprintResultsB
+      // declarations further down since they're now declared above.
 
       // Group by race to compute H2H and race-by-race data
       Map<Long, RaceResult> mapA = resultsA.stream().collect(Collectors.toMap(r -> r.getRace().getId(), r -> r));
@@ -115,6 +119,25 @@ public class AnalyticsService {
       dto.setHeadToHeadQualiB(0);
 
       return dto;
+   }
+
+   private DriverDto toSeasonScopedDriverDto(Driver driver, List<RaceResult> results, List<RaceResult> sprintResults) {
+      Constructor seasonConstructor = results.stream()
+            .filter(r -> r.getConstructor() != null)
+            .reduce((first, second) -> second) // most recent race result that season
+            .map(RaceResult::getConstructor)
+            .orElseGet(() -> sprintResults.stream()
+                  .filter(r -> r.getConstructor() != null)
+                  .reduce((first, second) -> second)
+                  .map(RaceResult::getConstructor)
+                  .orElse(driver.getConstructor())); // last-resort fallback
+
+      return new DriverDto(
+            driver.getId(), driver.getCode(), driver.getFirstName(), driver.getLastName(),
+            driver.getNumber(), driver.getNationality(), driver.getImageUrl(),
+            driver.getPoints(), driver.getWins(), driver.getPodiums(), driver.getChampionshipPosition(),
+            seasonConstructor != null ? seasonConstructor.getName() : null,
+            seasonConstructor != null ? seasonConstructor.getColor() : null);
    }
 
    private DriverComparisonDto.ComparisonStats computeComparisonStats(Driver driver, List<RaceResult> results,
@@ -305,14 +328,6 @@ public class AnalyticsService {
 
       ConstructorComparisonDto dto = new ConstructorComparisonDto();
 
-      // ── DELETE these two lines (the old live-FK driver lookup) ──
-      // List<Driver> driversA =
-      // driverRepository.findByConstructorIdOrderByChampionshipPositionAsc(teamAId);
-      // List<Driver> driversB =
-      // driverRepository.findByConstructorIdOrderByChampionshipPositionAsc(teamBId);
-
-      // Fetch all race + sprint + quali results for both teams in the given season
-      // (season-scoped via RaceResult.constructor, not the live Driver FK)
       List<RaceResult> resultsA = raceResultRepository
             .findByConstructorIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(teamAId, season, SessionType.RACE);
       List<RaceResult> resultsB = raceResultRepository
