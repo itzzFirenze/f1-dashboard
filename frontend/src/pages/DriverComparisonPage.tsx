@@ -6,10 +6,12 @@ import { ResponsiveBump } from '@nivo/bump';
 import { driverService } from '../services/driverService';
 import { analyticsService } from '../services/analyticsService';
 import DriverSelector from '../components/ui/DriverSelector';
+import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import type { Driver, DriverComparisonData } from '../types';
 
 const DriverComparisonPage: React.FC = () => {
+   const [season, setSeason] = useState<number>(2026);
    const [drivers, setDrivers] = useState<Driver[]>([]);
    const [driverA, setDriverA] = useState<Driver | null>(null);
    const [driverB, setDriverB] = useState<Driver | null>(null);
@@ -18,21 +20,28 @@ const DriverComparisonPage: React.FC = () => {
    const [driversLoading, setDriversLoading] = useState(true);
 
    useEffect(() => {
-      driverService.getAll()
-         .then(setDrivers)
+      setDriversLoading(true);
+      driverService.getAll(undefined, season)
+         .then((dList) => {
+            setDrivers(dList);
+            if (dList.length >= 2) {
+               setDriverA((prev) => (prev ? dList.find(d => d.id === prev.id) || dList[0] : dList[0]));
+               setDriverB((prev) => (prev ? dList.find(d => d.id === prev.id) || dList[1] : dList[1]));
+            }
+         })
          .catch(console.error)
          .finally(() => setDriversLoading(false));
-   }, []);
+   }, [season]);
 
    useEffect(() => {
       if (driverA && driverB) {
          setLoading(true);
-         analyticsService.compareDrivers(driverA.id, driverB.id)
+         analyticsService.compareDrivers(driverA.id, driverB.id, season)
             .then(setData)
             .catch(console.error)
             .finally(() => setLoading(false));
       }
-   }, [driverA, driverB]);
+   }, [driverA, driverB, season]);
 
    const swapDrivers = () => {
       const temp = driverA;
@@ -118,21 +127,29 @@ const DriverComparisonPage: React.FC = () => {
             <div className="absolute -top-24 -right-24 w-80 h-80 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative z-10 space-y-2">
-               <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
-                  <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
-                     Head-to-Head Telemetry
-                  </span>
+            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+               <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                        Head-to-Head Telemetry
+                     </span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
+                     <GitCompare className="w-8 h-8 text-f1-red shrink-0" />
+                     Driver <span className="gradient-text">Comparison</span>
+                  </h1>
+
+                  <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                     Compare any two drivers head-to-head across points, pace and race craft for the {season} season.
+                  </p>
                </div>
 
-               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
-                  <GitCompare className="w-8 h-8 text-f1-red shrink-0" />
-                  Driver <span className="gradient-text">Comparison</span>
-               </h1>
-
-               <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
-                  Compare any two drivers head-to-head across points, pace and race craft.
-               </p>
+               <SeasonSelector
+                  selectedSeason={season}
+                  onSelectSeason={(yr) => setSeason(yr || 2026)}
+                  label="Select Season"
+               />
             </div>
          </div>
 

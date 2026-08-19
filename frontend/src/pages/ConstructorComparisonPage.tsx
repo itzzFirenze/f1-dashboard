@@ -8,8 +8,10 @@ import { analyticsService } from '../services/analyticsService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import type { Constructor, ConstructorComparisonData } from '../types';
 import TeamSelector from '../components/ui/TeamSelector';
+import SeasonSelector from '../components/ui/SeasonSelector';
 
 const ConstructorComparisonPage: React.FC = () => {
+   const [season, setSeason] = useState<number>(2026);
    const [constructors, setConstructors] = useState<Constructor[]>([]);
    const [teamA, setTeamA] = useState<Constructor | null>(null);
    const [teamB, setTeamB] = useState<Constructor | null>(null);
@@ -18,21 +20,28 @@ const ConstructorComparisonPage: React.FC = () => {
    const [constructorsLoading, setConstructorsLoading] = useState(true);
 
    useEffect(() => {
-      constructorService.getAll()
-         .then(setConstructors)
+      setConstructorsLoading(true);
+      constructorService.getAll(season)
+         .then((cList) => {
+            setConstructors(cList);
+            if (cList.length >= 2) {
+               setTeamA((prev) => (prev ? cList.find(c => c.id === prev.id) || cList[0] : cList[0]));
+               setTeamB((prev) => (prev ? cList.find(c => c.id === prev.id) || cList[1] : cList[1]));
+            }
+         })
          .catch(console.error)
          .finally(() => setConstructorsLoading(false));
-   }, []);
+   }, [season]);
 
    useEffect(() => {
       if (teamA && teamB) {
          setLoading(true);
-         analyticsService.compareConstructors(teamA.id, teamB.id)
+         analyticsService.compareConstructors(teamA.id, teamB.id, season)
             .then(setData)
             .catch(console.error)
             .finally(() => setLoading(false));
       }
-   }, [teamA, teamB]);
+   }, [teamA, teamB, season]);
 
    const swapTeams = () => {
       const temp = teamA;
@@ -116,21 +125,29 @@ const ConstructorComparisonPage: React.FC = () => {
             <div className="absolute -top-24 -right-24 w-80 h-80 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative z-10 space-y-2">
-               <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
-                  <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
-                     Constructor Battle Telemetry
-                  </span>
+            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+               <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                        Constructor Battle Telemetry
+                     </span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
+                     <Swords className="w-8 h-8 text-f1-red shrink-0" />
+                     Constructor <span className="gradient-text">Battle</span>
+                  </h1>
+
+                  <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                     Team rivalries, point splits, and championship gap evolution for the {season} season.
+                  </p>
                </div>
 
-               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
-                  <Swords className="w-8 h-8 text-f1-red shrink-0" />
-                  Constructor <span className="gradient-text">Battle</span>
-               </h1>
-
-               <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
-                  Team rivalries, point splits, and championship gap evolution.
-               </p>
+               <SeasonSelector
+                  selectedSeason={season}
+                  onSelectSeason={(yr) => setSeason(yr || 2026)}
+                  label="Select Season"
+               />
             </div>
          </div>
 

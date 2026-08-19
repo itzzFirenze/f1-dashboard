@@ -157,14 +157,8 @@ const ConstructorsPage: React.FC = () => {
                               </span>
                            </div>
 
-                           {/* Favorite + Arrow */}
+                           {/* Arrow */}
                            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-                              <button
-                                 onClick={(e) => { e.preventDefault(); toggleFavoriteTeam(team.id); }}
-                                 className="p-1 sm:p-2 rounded-lg hover:bg-white/[0.06] transition-colors"
-                              >
-                                 <Star className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isTeamFavorite(team.id) ? 'fill-amber-400 text-amber-400' : 'text-f1-silver/30'}`} />
-                              </button>
                               <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-f1-silver/40 group-hover:text-f1-white group-hover:translate-x-0.5 transition-all" />
                            </div>
                         </div>

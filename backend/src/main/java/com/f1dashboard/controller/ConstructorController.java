@@ -21,9 +21,10 @@ public class ConstructorController {
    private final ConstructorService constructorService;
 
    @GetMapping
-   @Operation(summary = "Get constructor standings")
-   public ResponseEntity<ApiResponse<List<ConstructorDto>>> getAllConstructors() {
-      return ResponseEntity.ok(ApiResponse.success(constructorService.getAllConstructors()));
+   @Operation(summary = "Get constructor standings", description = "Returns constructor standings, optionally filtered by season")
+   public ResponseEntity<ApiResponse<List<ConstructorDto>>> getAllConstructors(
+         @RequestParam(required = false) Integer season) {
+      return ResponseEntity.ok(ApiResponse.success(constructorService.getAllConstructors(season)));
    }
 
    @GetMapping("/{id}")

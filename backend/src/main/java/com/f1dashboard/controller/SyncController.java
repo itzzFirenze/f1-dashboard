@@ -33,4 +33,16 @@ public class SyncController {
          return ResponseEntity.status(500).body(ApiResponse.error("Failed to sync data: " + e.getMessage()));
       }
    }
+
+   @PostMapping("/backfill/{season}")
+   @Operation(summary = "Backfill historical race/qualifying/sprint results for a past season")
+   public ResponseEntity<ApiResponse<String>> triggerBackfill(@PathVariable Integer season) {
+      try {
+         dataSyncService.backfillSeason(season);
+         return ResponseEntity.ok(ApiResponse.success("Backfill successful for season " + season));
+      } catch (Exception e) {
+         return ResponseEntity.status(500)
+               .body(ApiResponse.error("Failed to backfill season " + season + ": " + e.getMessage()));
+      }
+   }
 }

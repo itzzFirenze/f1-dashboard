@@ -3,15 +3,19 @@ package com.f1dashboard.service;
 import com.f1dashboard.dto.DriverDto;
 import com.f1dashboard.dto.DriverDetailDto;
 import com.f1dashboard.entity.Driver;
+import com.f1dashboard.entity.RaceResult;
+import com.f1dashboard.enums.SessionType;
 import com.f1dashboard.exception.ResourceNotFoundException;
 import com.f1dashboard.repository.DriverRepository;
+import com.f1dashboard.repository.RaceResultRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service for driver-related business logic.
@@ -23,13 +27,79 @@ import java.util.List;
 public class DriverService {
 
     private final DriverRepository driverRepository;
+    private final RaceResultRepository raceResultRepository;
 
     /** Get all drivers ordered by championship position */
     public List<DriverDto> getAllDrivers() {
-        return driverRepository.findAllByOrderByChampionshipPositionAsc()
-                .stream()
-                .map(this::toDto)
-                .toList();
+        return getAllDrivers(null);
+    }
+
+    /** Get all drivers for a specific season (or current season if null) */
+    public List<DriverDto> getAllDrivers(Integer season) {
+        if (season == null) {
+            return driverRepository.findAllByOrderByChampionshipPositionAsc()
+                    .stream()
+                    .map(this::toDto)
+                    .toList();
+        }
+
+        List<Driver> allDrivers = driverRepository.findAll();
+        List<RaceResult> results = raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season, SessionType.RACE);
+        
+        Map<Long, List<RaceResult>> resultsByDriver = results.stream()
+                .filter(r -> r.getDriver() != null)
+                .collect(Collectors.groupingBy(r -> r.getDriver().getId()));
+                
+        List<DriverDto> dtoList = new ArrayList<>();
+        for (Driver d : allDrivers) {
+            List<RaceResult> dResults = resultsByDriver.getOrDefault(d.getId(), Collections.emptyList());
+            if (dResults.isEmpty()) {
+                continue;
+            }
+            double points = dResults.stream().mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0.0).sum();
+            int wins = (int) dResults.stream().filter(r -> r.getPosition() != null && r.getPosition() == 1).count();
+            int podiums = (int) dResults.stream().filter(r -> r.getPosition() != null && r.getPosition() <= 3).count();
+            
+            DriverDto dto = new DriverDto(
+                d.getId(),
+                d.getCode(),
+                d.getFirstName(),
+                d.getLastName(),
+                d.getNumber(),
+                d.getNationality(),
+                d.getImageUrl(),
+                points,
+                wins,
+                podiums,
+                0,
+                d.getConstructor() != null ? d.getConstructor().getName() : null,
+                d.getConstructor() != null ? d.getConstructor().getColor() : null
+            );
+            dtoList.add(dto);
+        }
+        
+        dtoList.sort(Comparator.comparingDouble(DriverDto::points).reversed()
+                .thenComparingInt(DriverDto::wins).reversed());
+                
+        List<DriverDto> rankedList = new ArrayList<>();
+        for (int i = 0; i < dtoList.size(); i++) {
+            DriverDto d = dtoList.get(i);
+            rankedList.add(new DriverDto(
+                d.id(), d.code(), d.firstName(), d.lastName(), d.number(),
+                d.nationality(), d.imageUrl(), d.points(), d.wins(), d.podiums(),
+                i + 1, d.constructorName(), d.constructorColor()
+            ));
+        }
+
+        // If no results for that season yet, fallback to all drivers
+        if (rankedList.isEmpty()) {
+            return driverRepository.findAllByOrderByChampionshipPositionAsc()
+                    .stream()
+                    .map(this::toDto)
+                    .toList();
+        }
+
+        return rankedList;
     }
 
     /** Get drivers with pagination, ordered by points */

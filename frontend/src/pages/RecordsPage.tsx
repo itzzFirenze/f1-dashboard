@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Award, Trophy, Medal, TrendingUp, Users, Percent, Shield } from 'lucide-react';
 import { ResponsiveBar } from '@nivo/bar';
 import { recordsService } from '../services/recordsService';
+import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import type { RecordsData, DriverRecord, ConstructorRecord } from '../types';
 
@@ -18,16 +19,18 @@ const CATEGORIES: { key: RecordCategory; label: string; icon: React.ElementType;
 ];
 
 const RecordsPage: React.FC = () => {
+   const [season, setSeason] = useState<number | null>(2026);
    const [data, setData] = useState<RecordsData | null>(null);
    const [loading, setLoading] = useState(true);
    const [activeCategory, setActiveCategory] = useState<RecordCategory>('driver-wins');
 
    useEffect(() => {
-      recordsService.getAll()
+      setLoading(true);
+      recordsService.getAll(season || undefined)
          .then(setData)
          .catch(console.error)
          .finally(() => setLoading(false));
-   }, []);
+   }, [season]);
 
    const activeRecords = useMemo(() => {
       if (!data) return [];
@@ -67,21 +70,31 @@ const RecordsPage: React.FC = () => {
             <div className="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-f1-red/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative z-10 space-y-2">
-               <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/25 backdrop-blur-md">
-                  <span className="text-amber-300 text-xs font-mono font-bold tracking-[0.2em] uppercase">
-                     FIA Archive Database
-                  </span>
+            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+               <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/25 backdrop-blur-md">
+                     <span className="text-amber-300 text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                        FIA Archive Database
+                     </span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
+                     <Award className="w-8 h-8 text-amber-400" />
+                     Historical <span className="gradient-text">Records Vault</span>
+                  </h1>
+
+                  <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                     {season ? `${season} season` : 'All-time'} Grand Prix race records, wins, podiums & scoring milestones.
+                  </p>
                </div>
 
-               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
-                  <Award className="w-8 h-8 text-amber-400" />
-                  Historical <span className="gradient-text">Records Vault</span>
-               </h1>
-
-               <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
-                  Grand Prix race records from the seasons currently synced in the database.
-               </p>
+               <SeasonSelector
+                  selectedSeason={season}
+                  onSelectSeason={setSeason}
+                  allowAll={true}
+                  allLabel="All-Time Records"
+                  label="Select Archive Scope"
+               />
             </div>
          </div>
 

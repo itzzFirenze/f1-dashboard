@@ -3,6 +3,7 @@ import { Grid3x3, Target, Radio, ArrowDownLeft, ArrowUpRight } from 'lucide-reac
 import { ResponsiveHeatMap } from '@nivo/heatmap';
 import { ResponsiveScatterPlot } from '@nivo/scatterplot';
 import { analyticsService } from '../services/analyticsService';
+import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import type { ConsistencyData } from '../types';
 
@@ -15,15 +16,17 @@ const getFinishColor = (value: number | null) => {
 };
 
 const ConsistencyPage: React.FC = () => {
+   const [season, setSeason] = useState<number>(2026);
    const [data, setData] = useState<ConsistencyData | null>(null);
    const [loading, setLoading] = useState(true);
 
    useEffect(() => {
-      analyticsService.getConsistency()
+      setLoading(true);
+      analyticsService.getConsistency(season)
          .then(setData)
          .catch(console.error)
          .finally(() => setLoading(false));
-   }, []);
+   }, [season]);
 
    const heatmapData = useMemo(() => {
       if (!data) return [];
@@ -71,22 +74,30 @@ const ConsistencyPage: React.FC = () => {
             <div className="absolute -top-24 -right-24 w-80 h-80 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative z-10 space-y-2">
-               <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
-                  <Radio className="w-3.5 h-3.5 text-f1-red-light" />
-                  <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
-                     Reliability Engineering
-                  </span>
+            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+               <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <Radio className="w-3.5 h-3.5 text-f1-red-light" />
+                     <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                        Reliability Engineering
+                     </span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
+                     <Grid3x3 className="w-8 h-8 text-f1-red" />
+                     Consistency <span className="gradient-text">Analysis</span>
+                  </h1>
+
+                  <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                     Who delivers every single weekend? Season-long results, volatility & scoring reliability for the {season} season.
+                  </p>
                </div>
 
-               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
-                  <Grid3x3 className="w-8 h-8 text-f1-red" />
-                  Consistency <span className="gradient-text">Analysis</span>
-               </h1>
-
-               <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
-                  Who delivers every single weekend? Season-long results, volatility & scoring reliability.
-               </p>
+               <SeasonSelector
+                  selectedSeason={season}
+                  onSelectSeason={(yr) => setSeason(yr || 2026)}
+                  label="Select Season"
+               />
             </div>
          </div>
 

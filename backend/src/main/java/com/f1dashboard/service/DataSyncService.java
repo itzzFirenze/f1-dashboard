@@ -58,9 +58,14 @@ public class DataSyncService {
    }
 
    public void syncRaceCalendar() {
+      syncRaceCalendar(null);
+   }
+
+   public void syncRaceCalendar(Integer season) {
       log.info("Syncing race calendar dynamically from Jolpica API...");
       try {
-         String url = jolpicaBaseUrl + "/current.json";
+         String seasonPath = (season != null) ? String.valueOf(season) : "current";
+         String url = jolpicaBaseUrl + "/" + seasonPath + ".json";
          String jsonResponse = restTemplate.getForObject(url, String.class);
          if (jsonResponse == null)
             return;
@@ -72,13 +77,12 @@ public class DataSyncService {
 
          if (raceList.isArray()) {
             for (JsonNode raceNode : raceList) {
-               int season = raceNode.path("season").asInt();
+               int raceSeason = raceNode.path("season").asInt();
                int round = raceNode.path("round").asInt();
                String raceName = raceNode.path("raceName").asText();
                String dateStr = raceNode.path("date").asText();
                String timeStr = raceNode.path("time").asText();
 
-               // Process Circuit
                JsonNode circuitNode = raceNode.path("Circuit");
                String circuitId = circuitNode.path("circuitId").asText();
                String circuitName = circuitNode.path("circuitName").asText();
@@ -95,7 +99,6 @@ public class DataSyncService {
                Circuit circuit;
                if (circuitOpt.isPresent()) {
                   circuit = circuitOpt.get();
-                  // Always update with real data in case it was previously set to defaults
                   circuit.setLengthKm(stats.getLengthKm());
                   circuit.setCorners(stats.getCorners());
                   circuit.setLapRecord(stats.getLapRecord());
@@ -117,13 +120,13 @@ public class DataSyncService {
                   circuit = circuitRepository.save(circuit);
                }
 
-               Optional<Race> raceOpt = raceRepository.findBySeasonAndRound(season, round);
+               Optional<Race> raceOpt = raceRepository.findBySeasonAndRound(raceSeason, round);
                Race race;
                if (raceOpt.isPresent()) {
                   race = raceOpt.get();
                } else {
                   race = new Race();
-                  race.setSeason(season);
+                  race.setSeason(raceSeason);
                   race.setRound(round);
                   race.setSprintWeekend(raceNode.has("Sprint"));
                }
@@ -133,12 +136,10 @@ public class DataSyncService {
                if (!dateStr.isEmpty()) {
                   LocalDate raceDate = LocalDate.parse(dateStr);
                   race.setRaceDate(raceDate);
-                  // Dynamically set status based on race date
                   if (race.getStatus() != RaceStatus.COMPLETED) {
                      race.setStatus(raceDate.isBefore(LocalDate.now()) ? RaceStatus.COMPLETED : RaceStatus.UPCOMING);
                   }
                } else {
-                  // No date available, default to UPCOMING
                   if (race.getStatus() == null) {
                      race.setStatus(RaceStatus.UPCOMING);
                   }
@@ -153,10 +154,8 @@ public class DataSyncService {
                }
                race = raceRepository.save(race);
 
-               // Clear existing sessions to update
                raceSessionRepository.deleteByRaceId(race.getId());
 
-               // Create Race session
                if (race.getRaceDate() != null) {
                   RaceSession raceSession = RaceSession.builder()
                         .race(race)
@@ -168,7 +167,6 @@ public class DataSyncService {
                   raceSessionRepository.save(raceSession);
                }
 
-               // Process other sessions
                saveSessionIfPresent(raceNode, "FirstPractice", com.f1dashboard.enums.SessionType.FP1, race);
                saveSessionIfPresent(raceNode, "SecondPractice", com.f1dashboard.enums.SessionType.FP2, race);
                saveSessionIfPresent(raceNode, "ThirdPractice", com.f1dashboard.enums.SessionType.FP3, race);
@@ -347,15 +345,20 @@ public class DataSyncService {
    }
 
    public void syncRaceResults() {
+      syncRaceResults(null);
+   }
+
+   public void syncRaceResults(Integer season) {
       log.info("Syncing race results dynamically from Jolpica API...");
       int offset = 0;
       int limit = 100;
       boolean hasMoreData = true;
       Set<Long> clearedRaceIds = new HashSet<>();
+      String seasonPath = (season != null) ? String.valueOf(season) : "current";
 
       while (hasMoreData) {
          try {
-            String url = jolpicaBaseUrl + "/current/results.json?limit=" + limit + "&offset=" + offset;
+            String url = jolpicaBaseUrl + "/" + seasonPath + "/results.json?limit=" + limit + "&offset=" + offset;
             String jsonResponse = restTemplate.getForObject(url, String.class);
             if (jsonResponse == null)
                break;
@@ -367,12 +370,12 @@ public class DataSyncService {
             if (raceList.isArray() && raceList.size() > 0) {
                for (JsonNode raceNode : raceList) {
                   try {
-                     int season = raceNode.path("season").asInt();
+                     int raceSeason = raceNode.path("season").asInt();
                      int round = raceNode.path("round").asInt();
                      String dateStr = raceNode.path("date").asText();
                      String timeStr = raceNode.path("time").asText();
 
-                     Optional<Race> raceOpt = raceRepository.findBySeasonAndRound(season, round);
+                     Optional<Race> raceOpt = raceRepository.findBySeasonAndRound(raceSeason, round);
                      if (raceOpt.isPresent()) {
                         Race race = raceOpt.get();
                         race.setStatus(RaceStatus.COMPLETED);
@@ -389,7 +392,6 @@ public class DataSyncService {
                         }
                         raceRepository.save(race);
 
-                        // Clear existing RACE results only once per race across all pages
                         if (!clearedRaceIds.contains(race.getId())) {
                            raceResultRepository.deleteByRaceIdAndSessionType(race.getId(),
                                  com.f1dashboard.enums.SessionType.RACE);
@@ -445,8 +447,16 @@ public class DataSyncService {
             hasMoreData = false;
          }
       }
-      // Update driver podium counts based on race results
       updatePodiums();
+   }
+
+   public void backfillSeason(Integer season) {
+      log.info("Backfilling historical data for season {}...", season);
+      syncRaceCalendar(season);
+      syncRaceResults(season);
+      syncSprintResults(season);
+      syncQualifyingResults(season);
+      log.info("Backfill for season {} completed.", season);
    }
 
    public void updatePodiums() {
@@ -461,15 +471,20 @@ public class DataSyncService {
    }
 
    public void syncSprintResults() {
+      syncSprintResults(null);
+   }
+
+   public void syncSprintResults(Integer season) {
       log.info("Syncing sprint results dynamically from Jolpica API...");
       int offset = 0;
       int limit = 100;
       boolean hasMoreData = true;
       Set<Long> clearedRaceIds = new HashSet<>();
+      String seasonPath = (season != null) ? String.valueOf(season) : "current";
 
       while (hasMoreData) {
          try {
-            String url = jolpicaBaseUrl + "/current/sprint.json?limit=" + limit + "&offset=" + offset;
+            String url = jolpicaBaseUrl + "/" + seasonPath + "/sprint.json?limit=" + limit + "&offset=" + offset;
             String jsonResponse = restTemplate.getForObject(url, String.class);
             if (jsonResponse == null)
                break;
@@ -481,14 +496,13 @@ public class DataSyncService {
             if (raceList.isArray() && raceList.size() > 0) {
                for (JsonNode raceNode : raceList) {
                   try {
-                     int season = raceNode.path("season").asInt();
+                     int raceSeason = raceNode.path("season").asInt();
                      int round = raceNode.path("round").asInt();
-                     Optional<Race> raceOpt = raceRepository.findBySeasonAndRound(season, round);
+                     Optional<Race> raceOpt = raceRepository.findBySeasonAndRound(raceSeason, round);
 
                      if (raceOpt.isPresent()) {
                         Race race = raceOpt.get();
 
-                        // Clear existing SPRINT results only once per race
                         if (!clearedRaceIds.contains(race.getId())) {
                            raceResultRepository.deleteByRaceIdAndSessionType(race.getId(),
                                  com.f1dashboard.enums.SessionType.SPRINT);
@@ -546,15 +560,20 @@ public class DataSyncService {
    }
 
    public void syncQualifyingResults() {
+      syncQualifyingResults(null);
+   }
+
+   public void syncQualifyingResults(Integer season) {
       log.info("Syncing qualifying results dynamically from Jolpica API...");
       int offset = 0;
       int limit = 100;
       boolean hasMoreData = true;
       Set<Long> clearedRaceIds = new HashSet<>();
+      String seasonPath = (season != null) ? String.valueOf(season) : "current";
 
       while (hasMoreData) {
          try {
-            String url = jolpicaBaseUrl + "/current/qualifying.json?limit=" + limit + "&offset=" + offset;
+            String url = jolpicaBaseUrl + "/" + seasonPath + "/qualifying.json?limit=" + limit + "&offset=" + offset;
             String jsonResponse = restTemplate.getForObject(url, String.class);
             if (jsonResponse == null)
                break;
@@ -566,14 +585,13 @@ public class DataSyncService {
             if (raceList.isArray() && raceList.size() > 0) {
                for (JsonNode raceNode : raceList) {
                   try {
-                     int season = raceNode.path("season").asInt();
+                     int raceSeason = raceNode.path("season").asInt();
                      int round = raceNode.path("round").asInt();
-                     Optional<Race> raceOpt = raceRepository.findBySeasonAndRound(season, round);
+                     Optional<Race> raceOpt = raceRepository.findBySeasonAndRound(raceSeason, round);
 
                      if (raceOpt.isPresent()) {
                         Race race = raceOpt.get();
 
-                        // Clear existing QUALIFYING results only once per race
                         if (!clearedRaceIds.contains(race.getId())) {
                            raceResultRepository.deleteByRaceIdAndSessionType(race.getId(),
                                  com.f1dashboard.enums.SessionType.QUALIFYING);
@@ -586,8 +604,6 @@ public class DataSyncService {
                               int position = resNode.path("position").asInt();
                               String driverId = resNode.path("Driver").path("driverId").asText();
 
-                              // Q1/Q2/Q3 are plain string fields in the Jolpica response,
-                              // e.g. "1:19.507". Missing node -> null (driver didn't set a time).
                               String q1 = resNode.has("Q1") ? resNode.path("Q1").asText() : null;
                               String q2 = resNode.has("Q2") ? resNode.path("Q2").asText() : null;
                               String q3 = resNode.has("Q3") ? resNode.path("Q3").asText() : null;

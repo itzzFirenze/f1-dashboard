@@ -23,12 +23,13 @@ public class DriverController {
    private final DriverService driverService;
 
    @GetMapping
-   @Operation(summary = "Get all drivers", description = "Returns driver standings. Supports search via ?search= query param.")
+   @Operation(summary = "Get all drivers", description = "Returns driver standings. Supports search via ?search= and season via ?season= query param.")
    public ResponseEntity<ApiResponse<List<DriverDto>>> getAllDrivers(
-         @RequestParam(required = false) String search) {
+         @RequestParam(required = false) String search,
+         @RequestParam(required = false) Integer season) {
       List<DriverDto> drivers = (search != null && !search.isBlank())
             ? driverService.searchDrivers(search)
-            : driverService.getAllDrivers();
+            : driverService.getAllDrivers(season);
       return ResponseEntity.ok(ApiResponse.success(drivers));
    }
 

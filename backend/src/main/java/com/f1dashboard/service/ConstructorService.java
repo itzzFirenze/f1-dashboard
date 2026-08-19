@@ -4,14 +4,17 @@ import com.f1dashboard.dto.ConstructorDto;
 import com.f1dashboard.dto.ConstructorDetailDto;
 import com.f1dashboard.dto.DriverDto;
 import com.f1dashboard.entity.Constructor;
+import com.f1dashboard.entity.RaceResult;
+import com.f1dashboard.enums.SessionType;
 import com.f1dashboard.exception.ResourceNotFoundException;
 import com.f1dashboard.repository.ConstructorRepository;
 import com.f1dashboard.repository.DriverRepository;
+import com.f1dashboard.repository.RaceResultRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * Service for constructor-related business logic.
@@ -23,13 +26,65 @@ public class ConstructorService {
 
     private final ConstructorRepository constructorRepository;
     private final DriverRepository driverRepository;
+    private final RaceResultRepository raceResultRepository;
 
     /** Get all constructors ordered by championship position */
     public List<ConstructorDto> getAllConstructors() {
-        return constructorRepository.findAllByOrderByChampionshipPositionAsc()
-                .stream()
-                .map(this::toDto)
-                .toList();
+        return getAllConstructors(null);
+    }
+
+    /** Get all constructors for a specific season */
+    public List<ConstructorDto> getAllConstructors(Integer season) {
+        if (season == null) {
+            return constructorRepository.findAllByOrderByChampionshipPositionAsc()
+                    .stream()
+                    .map(this::toDto)
+                    .toList();
+        }
+
+        List<Constructor> allConstructors = constructorRepository.findAll();
+        List<RaceResult> results = raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season, SessionType.RACE);
+        
+        List<ConstructorDto> dtoList = new ArrayList<>();
+        for (Constructor c : allConstructors) {
+            List<RaceResult> cResults = results.stream()
+                    .filter(r -> r.getDriver() != null && r.getDriver().getConstructor() != null && r.getDriver().getConstructor().getId().equals(c.getId()))
+                    .toList();
+            if (cResults.isEmpty()) {
+                continue;
+            }
+            double points = cResults.stream().mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0.0).sum();
+            int wins = (int) cResults.stream().filter(r -> r.getPosition() != null && r.getPosition() == 1).count();
+            
+            ConstructorDto dto = new ConstructorDto(
+                c.getId(), c.getName(), c.getNationality(),
+                c.getLogoUrl(), c.getColor(), points,
+                wins, 0
+            );
+            dtoList.add(dto);
+        }
+        
+        dtoList.sort(Comparator.comparingDouble(ConstructorDto::points).reversed()
+                .thenComparingInt(ConstructorDto::wins).reversed());
+                
+        List<ConstructorDto> rankedList = new ArrayList<>();
+        for (int i = 0; i < dtoList.size(); i++) {
+            ConstructorDto c = dtoList.get(i);
+            rankedList.add(new ConstructorDto(
+                c.id(), c.name(), c.nationality(), c.logoUrl(),
+                c.color(), c.points(), c.wins(), i + 1
+            ));
+        }
+
+        // If no results for that season yet, fallback to all constructors
+        if (rankedList.isEmpty()) {
+            return constructorRepository.findAllByOrderByChampionshipPositionAsc()
+                    .stream()
+                    .map(this::toDto)
+                    .toList();
+        }
+
+        return rankedList;
     }
 
     /** Get detailed constructor with driver lineup */

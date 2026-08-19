@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Calendar, Trophy, AlertTriangle, TrendingUp, ArrowUp, Clock, Filter, Radio, Zap } from 'lucide-react';
 import { ResponsiveLine } from '@nivo/line';
 import { analyticsService } from '../services/analyticsService';
+import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import type { TimelineData, TimelineEvent } from '../types';
 
@@ -31,16 +32,18 @@ const TelemetryStat: React.FC<{ label: string; value: number | string; colorHex:
 );
 
 const SeasonTimelinePage: React.FC = () => {
+   const [season, setSeason] = useState<number>(2026);
    const [data, setData] = useState<TimelineData | null>(null);
    const [loading, setLoading] = useState(true);
    const [filter, setFilter] = useState<'all' | 'completed' | 'upcoming'>('all');
 
    useEffect(() => {
-      analyticsService.getTimeline()
+      setLoading(true);
+      analyticsService.getTimeline(season)
          .then(setData)
          .catch(console.error)
          .finally(() => setLoading(false));
-   }, []);
+   }, [season]);
 
    const filteredEvents = useMemo(() => {
       if (!data) return [];
@@ -80,21 +83,29 @@ const SeasonTimelinePage: React.FC = () => {
             <div className="absolute -top-24 -right-24 w-80 h-80 bg-f1-red/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative z-10 space-y-2">
-               <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
-                  <Radio className="w-3.5 h-3.5 text-f1-red-light" />
-                  <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
-                     SEASON LOG / RACE-BY-RACE FEED
-                  </span>
+            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+               <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <Radio className="w-3.5 h-3.5 text-f1-red-light" />
+                     <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                        SEASON LOG / RACE-BY-RACE FEED
+                     </span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
+                     SEASON <span className="gradient-text">TIMELINE</span>
+                  </h1>
+
+                  <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
+                     Every race, every turning point — the full telemetry trace of the {season} championship battle.
+                  </p>
                </div>
 
-               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
-                  SEASON <span className="gradient-text">TIMELINE</span>
-               </h1>
-
-               <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
-                  Every race, every turning point — the full telemetry trace of the championship battle.
-               </p>
+               <SeasonSelector
+                  selectedSeason={season}
+                  onSelectSeason={(yr) => setSeason(yr || 2026)}
+                  label="Select Season"
+               />
             </div>
          </div>
 
