@@ -18,20 +18,28 @@ public class RaceResult {
    @ManyToOne(fetch = FetchType.LAZY)
    @JoinColumn(name = "race_id", nullable = false)
    private Race race;
+
    @ManyToOne(fetch = FetchType.EAGER)
    @JoinColumn(name = "driver_id", nullable = false)
    private Driver driver;
+
+   @ManyToOne(fetch = FetchType.LAZY)
+   @JoinColumn(name = "constructor_id")
+   private Constructor constructor;
+
    @Enumerated(EnumType.STRING)
+
    @Column(nullable = false)
    @Builder.Default
    private SessionType sessionType = SessionType.RACE;
    private Integer position;
+
    @Column(nullable = false)
    private Double points;
    private String status;
+
    @Column(nullable = false)
    private Boolean fastestLap;
-
    private Integer gridPosition;
 
    @Column(name = "q1_time")

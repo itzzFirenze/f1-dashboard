@@ -26,113 +26,115 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class DriverService {
 
-    private final DriverRepository driverRepository;
-    private final RaceResultRepository raceResultRepository;
+   private final DriverRepository driverRepository;
+   private final RaceResultRepository raceResultRepository;
 
-    /** Get all drivers ordered by championship position */
-    public List<DriverDto> getAllDrivers() {
-        return getAllDrivers(null);
-    }
+   /** Get all drivers ordered by championship position */
+   public List<DriverDto> getAllDrivers() {
+      return getAllDrivers(null);
+   }
 
-    /** Get all drivers for a specific season (or current season if null) */
-    public List<DriverDto> getAllDrivers(Integer season) {
-        if (season == null) {
-            return driverRepository.findAllByOrderByChampionshipPositionAsc()
-                    .stream()
-                    .map(this::toDto)
-                    .toList();
-        }
+   /** Get all drivers for a specific season (or current season if null) */
+   public List<DriverDto> getAllDrivers(Integer season) {
+      if (season == null) {
+         return driverRepository.findAllByOrderByChampionshipPositionAsc()
+               .stream()
+               .map(this::toDto)
+               .toList();
+      }
 
-        List<Driver> allDrivers = driverRepository.findAll();
-        List<RaceResult> results = raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season, SessionType.RACE);
-        
-        Map<Long, List<RaceResult>> resultsByDriver = results.stream()
-                .filter(r -> r.getDriver() != null)
-                .collect(Collectors.groupingBy(r -> r.getDriver().getId()));
-                
-        List<DriverDto> dtoList = new ArrayList<>();
-        for (Driver d : allDrivers) {
-            List<RaceResult> dResults = resultsByDriver.getOrDefault(d.getId(), Collections.emptyList());
-            if (dResults.isEmpty()) {
-                continue;
-            }
-            double points = dResults.stream().mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0.0).sum();
-            int wins = (int) dResults.stream().filter(r -> r.getPosition() != null && r.getPosition() == 1).count();
-            int podiums = (int) dResults.stream().filter(r -> r.getPosition() != null && r.getPosition() <= 3).count();
-            
-            DriverDto dto = new DriverDto(
-                d.getId(),
-                d.getCode(),
-                d.getFirstName(),
-                d.getLastName(),
-                d.getNumber(),
-                d.getNationality(),
-                d.getImageUrl(),
-                points,
-                wins,
-                podiums,
-                0,
-                d.getConstructor() != null ? d.getConstructor().getName() : null,
-                d.getConstructor() != null ? d.getConstructor().getColor() : null
-            );
-            dtoList.add(dto);
-        }
-        
-        dtoList.sort(Comparator.comparingDouble(DriverDto::points).reversed()
-                .thenComparingInt(DriverDto::wins).reversed());
-                
-        List<DriverDto> rankedList = new ArrayList<>();
-        for (int i = 0; i < dtoList.size(); i++) {
-            DriverDto d = dtoList.get(i);
-            rankedList.add(new DriverDto(
-                d.id(), d.code(), d.firstName(), d.lastName(), d.number(),
-                d.nationality(), d.imageUrl(), d.points(), d.wins(), d.podiums(),
-                i + 1, d.constructorName(), d.constructorColor()
-            ));
-        }
+      List<Driver> allDrivers = driverRepository.findAll();
+      List<RaceResult> results = raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season,
+            SessionType.RACE);
+      List<RaceResult> sprintResults = raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season,
+            SessionType.SPRINT);
 
-        // If no results for that season yet, fallback to all drivers
-        if (rankedList.isEmpty()) {
-            return driverRepository.findAllByOrderByChampionshipPositionAsc()
-                    .stream()
-                    .map(this::toDto)
-                    .toList();
-        }
+      Map<Long, List<RaceResult>> resultsByDriver = results.stream()
+            .filter(r -> r.getDriver() != null)
+            .collect(Collectors.groupingBy(r -> r.getDriver().getId()));
 
-        return rankedList;
-    }
+      Map<Long, List<RaceResult>> sprintResultsByDriver = sprintResults.stream()
+            .filter(r -> r.getDriver() != null)
+            .collect(Collectors.groupingBy(r -> r.getDriver().getId()));
 
-    /** Get drivers with pagination, ordered by points */
-    public Page<DriverDto> getDriversPaginated(Pageable pageable) {
-        return driverRepository.findAllByOrderByPointsDesc(pageable)
-                .map(this::toDto);
-    }
+      List<DriverDto> dtoList = new ArrayList<>();
+      for (Driver d : allDrivers) {
+         List<RaceResult> dResults = resultsByDriver.getOrDefault(d.getId(), Collections.emptyList());
+         if (dResults.isEmpty()) {
+            continue;
+         }
+         List<RaceResult> dSprintResults = sprintResultsByDriver.getOrDefault(d.getId(), Collections.emptyList());
 
-    /** Search drivers by name or code */
-    public List<DriverDto> searchDrivers(String query) {
-        return driverRepository.searchDrivers(query)
-                .stream()
-                .map(this::toDto)
-                .toList();
-    }
+         double racePoints = dResults.stream().mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0.0).sum();
+         double sprintPoints = dSprintResults.stream().mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0.0)
+               .sum();
+         double points = racePoints + sprintPoints;
 
-    /** Get detailed driver info by ID */
-    public DriverDetailDto getDriverById(Long id) {
-        Driver driver = driverRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", id));
-        return toDetailDto(driver);
-    }
+         int wins = (int) dResults.stream().filter(r -> r.getPosition() != null && r.getPosition() == 1).count();
+         int podiums = (int) dResults.stream().filter(r -> r.getPosition() != null && r.getPosition() <= 3).count();
 
-    /** Get the championship leader */
-    public DriverDto getChampionshipLeader() {
-        Driver leader = driverRepository.findByChampionshipPosition(1);
-        return leader != null ? toDto(leader) : null;
-    }
+         DriverDto dto = new DriverDto(
+               d.getId(), d.getCode(), d.getFirstName(), d.getLastName(), d.getNumber(),
+               d.getNationality(), d.getImageUrl(), points, wins, podiums, 0,
+               d.getConstructor() != null ? d.getConstructor().getName() : null,
+               d.getConstructor() != null ? d.getConstructor().getColor() : null);
+         dtoList.add(dto);
+      }
 
-    // ---- Mapping methods ----
+      dtoList.sort(
+            Comparator.comparingDouble(DriverDto::points).reversed()
+                  .thenComparing(DriverDto::wins, Comparator.reverseOrder()));
 
-    public DriverDto toDto(Driver d) {
-        return new DriverDto(
+      List<DriverDto> rankedList = new ArrayList<>();
+      for (int i = 0; i < dtoList.size(); i++) {
+         DriverDto d = dtoList.get(i);
+         rankedList.add(new DriverDto(
+               d.id(), d.code(), d.firstName(), d.lastName(), d.number(),
+               d.nationality(), d.imageUrl(), d.points(), d.wins(), d.podiums(),
+               i + 1, d.constructorName(), d.constructorColor()));
+      }
+
+      if (rankedList.isEmpty()) {
+         return driverRepository.findAllByOrderByChampionshipPositionAsc()
+               .stream()
+               .map(this::toDto)
+               .toList();
+      }
+
+      return rankedList;
+   }
+
+   /** Get drivers with pagination, ordered by points */
+   public Page<DriverDto> getDriversPaginated(Pageable pageable) {
+      return driverRepository.findAllByOrderByPointsDesc(pageable)
+            .map(this::toDto);
+   }
+
+   /** Search drivers by name or code */
+   public List<DriverDto> searchDrivers(String query) {
+      return driverRepository.searchDrivers(query)
+            .stream()
+            .map(this::toDto)
+            .toList();
+   }
+
+   /** Get detailed driver info by ID */
+   public DriverDetailDto getDriverById(Long id) {
+      Driver driver = driverRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", id));
+      return toDetailDto(driver);
+   }
+
+   /** Get the championship leader */
+   public DriverDto getChampionshipLeader() {
+      Driver leader = driverRepository.findByChampionshipPosition(1);
+      return leader != null ? toDto(leader) : null;
+   }
+
+   // ---- Mapping methods ----
+
+   public DriverDto toDto(Driver d) {
+      return new DriverDto(
             d.getId(),
             d.getCode(),
             d.getFirstName(),
@@ -145,12 +147,11 @@ public class DriverService {
             d.getPodiums(),
             d.getChampionshipPosition(),
             d.getConstructor() != null ? d.getConstructor().getName() : null,
-            d.getConstructor() != null ? d.getConstructor().getColor() : null
-        );
-    }
+            d.getConstructor() != null ? d.getConstructor().getColor() : null);
+   }
 
-    private DriverDetailDto toDetailDto(Driver d) {
-        return new DriverDetailDto(
+   private DriverDetailDto toDetailDto(Driver d) {
+      return new DriverDetailDto(
             d.getId(),
             d.getCode(),
             d.getFirstName(),
@@ -165,7 +166,6 @@ public class DriverService {
             d.getChampionshipPosition(),
             d.getConstructor() != null ? d.getConstructor().getName() : null,
             d.getConstructor() != null ? d.getConstructor().getColor() : null,
-            d.getConstructor() != null ? d.getConstructor().getId() : null
-        );
-    }
+            d.getConstructor() != null ? d.getConstructor().getId() : null);
+   }
 }

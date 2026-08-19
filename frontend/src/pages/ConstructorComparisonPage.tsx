@@ -24,10 +24,8 @@ const ConstructorComparisonPage: React.FC = () => {
       constructorService.getAll(season)
          .then((cList) => {
             setConstructors(cList);
-            if (cList.length >= 2) {
-               setTeamA((prev) => (prev ? cList.find(c => c.id === prev.id) || cList[0] : cList[0]));
-               setTeamB((prev) => (prev ? cList.find(c => c.id === prev.id) || cList[1] : cList[1]));
-            }
+            setTeamA((prev) => (prev ? cList.find(c => c.id === prev.id) ?? null : null));
+            setTeamB((prev) => (prev ? cList.find(c => c.id === prev.id) ?? null : null));
          })
          .catch(console.error)
          .finally(() => setConstructorsLoading(false));

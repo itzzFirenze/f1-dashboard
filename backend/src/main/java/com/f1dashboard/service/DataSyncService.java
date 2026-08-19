@@ -215,9 +215,14 @@ public class DataSyncService {
    }
 
    public void syncConstructorStandings() {
+      syncConstructorStandings(null);
+   }
+
+   public void syncConstructorStandings(Integer season) {
       log.info("Syncing constructor standings dynamically from Jolpica API...");
       try {
-         String url = jolpicaBaseUrl + "/current/constructorStandings.json";
+         String seasonPath = (season != null) ? String.valueOf(season) : "current";
+         String url = jolpicaBaseUrl + "/" + seasonPath + "/constructorStandings.json";
          String jsonResponse = restTemplate.getForObject(url, String.class);
          if (jsonResponse == null)
             return;
@@ -253,9 +258,11 @@ public class DataSyncService {
 
                   constructor.setName(name);
                   constructor.setNationality(nationality);
-                  constructor.setPoints(points);
-                  constructor.setWins(wins);
-                  constructor.setChampionshipPosition(position);
+                  if (season == null) {
+                     constructor.setPoints(points);
+                     constructor.setWins(wins);
+                     constructor.setChampionshipPosition(position);
+                  }
 
                   constructorRepository.save(constructor);
                }
@@ -268,9 +275,14 @@ public class DataSyncService {
    }
 
    public void syncDriverStandings() {
+      syncDriverStandings(null);
+   }
+
+   public void syncDriverStandings(Integer season) {
       log.info("Syncing driver standings dynamically from Jolpica API...");
       try {
-         String url = jolpicaBaseUrl + "/current/driverStandings.json";
+         String seasonPath = (season != null) ? String.valueOf(season) : "current";
+         String url = jolpicaBaseUrl + "/" + seasonPath + "/driverStandings.json";
          String jsonResponse = restTemplate.getForObject(url, String.class);
          if (jsonResponse == null)
             return;
@@ -327,11 +339,13 @@ public class DataSyncService {
                   if (!dateOfBirthStr.isEmpty()) {
                      driver.setDateOfBirth(LocalDate.parse(dateOfBirthStr));
                   }
-                  driver.setPoints(points);
-                  driver.setWins(wins);
-                  driver.setChampionshipPosition(position);
-                  if (constructor != null) {
-                     driver.setConstructor(constructor);
+                  if (season == null) {
+                     driver.setPoints(points);
+                     driver.setWins(wins);
+                     driver.setChampionshipPosition(position);
+                     if (constructor != null) {
+                        driver.setConstructor(constructor);
+                     }
                   }
 
                   driverRepository.save(driver);
@@ -406,10 +420,15 @@ public class DataSyncService {
                               String status = resNode.path("status").asText();
                               int grid = resNode.path("grid").asInt();
                               String driverId = resNode.path("Driver").path("driverId").asText();
+                              String constructorId = resNode.path("Constructor").path("constructorId").asText();
 
                               Optional<Driver> driverOpt = driverRepository.findByDriverRef(driverId);
-                              if (driverOpt.isPresent()) {
+                              Optional<Constructor> constructorOpt = constructorRepository
+                                    .findByConstructorRef(constructorId);
+
+                              if (driverOpt.isPresent() && constructorOpt.isPresent()) {
                                  Driver driver = driverOpt.get();
+                                 Constructor constructor = constructorOpt.get();
                                  boolean fastestLap = false;
                                  JsonNode fastestLapNode = resNode.path("FastestLap");
                                  if (!fastestLapNode.isMissingNode() && fastestLapNode.path("rank").asInt() == 1) {
@@ -419,6 +438,7 @@ public class DataSyncService {
                                  RaceResult result = RaceResult.builder()
                                        .race(race)
                                        .driver(driver)
+                                       .constructor(constructor)
                                        .sessionType(com.f1dashboard.enums.SessionType.RACE)
                                        .position(position)
                                        .points(points)
@@ -428,6 +448,9 @@ public class DataSyncService {
                                        .build();
 
                                  raceResultRepository.save(result);
+                              } else {
+                                 log.warn("Skipping result — unresolved driver='{}' or constructor='{}' for race {}/{}",
+                                       driverId, constructorId, raceSeason, round);
                               }
                            }
                         }
@@ -453,6 +476,8 @@ public class DataSyncService {
    public void backfillSeason(Integer season) {
       log.info("Backfilling historical data for season {}...", season);
       syncRaceCalendar(season);
+      syncConstructorStandings(season); // ADD
+      syncDriverStandings(season); // ADD
       syncRaceResults(season);
       syncSprintResults(season);
       syncQualifyingResults(season);
@@ -517,9 +542,13 @@ public class DataSyncService {
                               String status = resNode.path("status").asText();
                               int grid = resNode.path("grid").asInt();
                               String driverId = resNode.path("Driver").path("driverId").asText();
+                              String constructorId = resNode.path("Constructor").path("constructorId").asText();
 
                               Optional<Driver> driverOpt = driverRepository.findByDriverRef(driverId);
-                              if (driverOpt.isPresent()) {
+                              Optional<Constructor> constructorOpt = constructorRepository
+                                    .findByConstructorRef(constructorId);
+
+                              if (driverOpt.isPresent() && constructorOpt.isPresent()) {
                                  boolean fastestLap = false;
                                  JsonNode fastestLapNode = resNode.path("FastestLap");
                                  if (!fastestLapNode.isMissingNode() && fastestLapNode.path("rank").asInt() == 1) {
@@ -529,6 +558,7 @@ public class DataSyncService {
                                  RaceResult result = RaceResult.builder()
                                        .race(race)
                                        .driver(driverOpt.get())
+                                       .constructor(constructorOpt.get())
                                        .sessionType(com.f1dashboard.enums.SessionType.SPRINT)
                                        .position(position)
                                        .points(points)
@@ -538,6 +568,9 @@ public class DataSyncService {
                                        .build();
 
                                  raceResultRepository.save(result);
+                              } else {
+                                 log.warn("Skipping result — unresolved driver='{}' or constructor='{}' for race {}/{}",
+                                       driverId, constructorId, raceSeason, round);
                               }
                            }
                         }
@@ -603,16 +636,21 @@ public class DataSyncService {
                            for (JsonNode resNode : qualiResultsNode) {
                               int position = resNode.path("position").asInt();
                               String driverId = resNode.path("Driver").path("driverId").asText();
+                              String constructorId = resNode.path("Constructor").path("constructorId").asText();
 
                               String q1 = resNode.has("Q1") ? resNode.path("Q1").asText() : null;
                               String q2 = resNode.has("Q2") ? resNode.path("Q2").asText() : null;
                               String q3 = resNode.has("Q3") ? resNode.path("Q3").asText() : null;
 
                               Optional<Driver> driverOpt = driverRepository.findByDriverRef(driverId);
-                              if (driverOpt.isPresent()) {
+                              Optional<Constructor> constructorOpt = constructorRepository
+                                    .findByConstructorRef(constructorId);
+
+                              if (driverOpt.isPresent() && constructorOpt.isPresent()) {
                                  RaceResult result = RaceResult.builder()
                                        .race(race)
                                        .driver(driverOpt.get())
+                                       .constructor(constructorOpt.get())
                                        .sessionType(com.f1dashboard.enums.SessionType.QUALIFYING)
                                        .position(position)
                                        .points(0.0)
@@ -625,6 +663,9 @@ public class DataSyncService {
                                        .build();
 
                                  raceResultRepository.save(result);
+                              } else {
+                                 log.warn("Skipping result — unresolved driver='{}' or constructor='{}' for race {}/{}",
+                                       driverId, constructorId, raceSeason, round);
                               }
                            }
                         }

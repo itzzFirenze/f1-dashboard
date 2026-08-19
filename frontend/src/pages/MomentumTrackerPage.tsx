@@ -23,14 +23,10 @@ const MomentumTrackerPage: React.FC = () => {
       driverService.getAll(undefined, season)
          .then((data) => {
             setDrivers(data);
-            if (data.length > 0) {
-               setSelected((prev) => {
-                  const match = prev ? data.find((d) => d.id === prev.id) : null;
-                  return match || data[0];
-               });
-            } else {
-               setSelected(null);
-            }
+            setSelected((prev) => {
+               const match = prev ? data.find((d) => d.id === prev.id) : null;
+               return match ?? null;
+            });
          })
          .catch(console.error)
          .finally(() => setDriversLoading(false));

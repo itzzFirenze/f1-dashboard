@@ -24,10 +24,8 @@ const DriverComparisonPage: React.FC = () => {
       driverService.getAll(undefined, season)
          .then((dList) => {
             setDrivers(dList);
-            if (dList.length >= 2) {
-               setDriverA((prev) => (prev ? dList.find(d => d.id === prev.id) || dList[0] : dList[0]));
-               setDriverB((prev) => (prev ? dList.find(d => d.id === prev.id) || dList[1] : dList[1]));
-            }
+            setDriverA((prev) => (prev ? dList.find(d => d.id === prev.id) ?? null : null));
+            setDriverB((prev) => (prev ? dList.find(d => d.id === prev.id) ?? null : null));
          })
          .catch(console.error)
          .finally(() => setDriversLoading(false));

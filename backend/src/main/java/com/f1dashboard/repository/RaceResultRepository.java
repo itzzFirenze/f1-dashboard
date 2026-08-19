@@ -24,4 +24,7 @@ public interface RaceResultRepository extends JpaRepository<RaceResult, Long> {
 
    List<RaceResult> findByDriverIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(Long driverId, Integer season,
          SessionType sessionType);
+
+   List<RaceResult> findByConstructorIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(Long constructorId,
+         Integer season, SessionType sessionType);
 }
