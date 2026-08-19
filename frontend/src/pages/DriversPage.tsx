@@ -119,7 +119,7 @@ const DriversPage: React.FC = () => {
                            <th className="text-left text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3 hidden md:table-cell">Nationality</th>
                            <th className="text-right text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-2.5 sm:px-4 py-3 w-16 sm:w-auto">Points</th>
                            <th className="text-right text-[10px] font-mono text-f1-silver/50 uppercase tracking-widest px-4 py-3 hidden sm:table-cell">Wins</th>
-                           <th className="w-8 sm:w-12 px-1.5 sm:px-4 py-3"></th>
+                           {/* <th className="w-8 sm:w-12 px-1.5 sm:px-4 py-3"></th> */}
                         </tr>
                      </thead>
                      <tbody>
@@ -175,7 +175,7 @@ const DriversPage: React.FC = () => {
                                     </div>
                                  )}
                               </td>
-                              <td className="px-1.5 sm:px-4 py-3 sm:py-4 text-center">
+                              {/* <td className="px-1.5 sm:px-4 py-3 sm:py-4 text-center">
                                  <button
                                     onClick={(e) => { e.preventDefault(); toggleFavoriteDriver(driver.id); }}
                                     className="p-1 sm:p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
@@ -186,7 +186,7 @@ const DriversPage: React.FC = () => {
                                           }`}
                                     />
                                  </button>
-                              </td>
+                              </td> */}
                            </tr>
                         ))}
                      </tbody>

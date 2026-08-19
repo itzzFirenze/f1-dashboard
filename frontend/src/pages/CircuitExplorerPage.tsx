@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowUpRight, Compass, Flag, Radio, Ruler, Search, Timer, Zap } from 'lucide-react';
 import InteractiveCircuitMap from '../components/circuit/InteractiveCircuitMap';
+import CircuitTrackThumbnail from '../components/circuit/CircuitTrackThumbnail';
 import { circuits } from '../data/circuits';
 
 const CircuitExplorerPage: React.FC = () => {
@@ -114,8 +115,8 @@ const CircuitExplorerPage: React.FC = () => {
                               style={{ background: 'linear-gradient(90deg, transparent, #E10600, transparent)' }}
                            />
 
-                           <div className="mb-4 flex items-start justify-between">
-                              <div className="min-w-0">
+                           <div className="mb-4 flex items-center justify-between gap-3">
+                              <div className="min-w-0 flex-1">
                                  <h3 className="font-display text-base sm:text-lg font-black text-f1-white uppercase tracking-tight group-hover:text-f1-red-light transition-colors duration-0 truncate">
                                     {circuit.name}
                                  </h3>
@@ -123,21 +124,24 @@ const CircuitExplorerPage: React.FC = () => {
                                     {circuit.location}, {circuit.country}
                                  </p>
                               </div>
-                              <ArrowUpRight className="w-4 h-4 text-f1-silver/30 shrink-0 group-hover:text-f1-red-light group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-0" />
+                              <div className="flex items-center gap-2 shrink-0">
+                                 <CircuitTrackThumbnail trackPath={circuit.trackPath} name={circuit.name} />
+                                 <ArrowUpRight className="w-4 h-4 text-f1-silver/30 shrink-0 group-hover:text-f1-red-light group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-0" />
+                              </div>
                            </div>
 
                            <div className="mt-auto grid grid-cols-3 gap-2 text-center">
-                              <div className="rounded-xl py-2.5 border border-white/[0.06]" style={{ backgroundColor: '#E1060015' }}>
-                                 <Ruler className="mx-auto mb-1 h-3.5 w-3.5 text-f1-red" />
-                                 <span className="font-mono font-bold text-f1-white text-[11px]">{circuit.lengthKm} km</span>
+                              <div className="rounded-lg py-1.5 border border-white/[0.06]" style={{ backgroundColor: '#E1060015' }}>
+                                 <Ruler className="mx-auto mb-0.5 h-3 w-3 text-f1-red" />
+                                 <span className="font-mono font-bold text-f1-white text-[10px]">{circuit.lengthKm} km</span>
                               </div>
-                              <div className="rounded-xl py-2.5 border border-white/[0.06]" style={{ backgroundColor: '#10b98115' }}>
-                                 <Flag className="mx-auto mb-1 h-3.5 w-3.5 text-emerald-400" />
-                                 <span className="font-mono font-bold text-f1-white text-[11px]">{circuit.laps} laps</span>
+                              <div className="rounded-lg py-1.5 border border-white/[0.06]" style={{ backgroundColor: '#10b98115' }}>
+                                 <Flag className="mx-auto mb-0.5 h-3 w-3 text-emerald-400" />
+                                 <span className="font-mono font-bold text-f1-white text-[10px]">{circuit.laps} laps</span>
                               </div>
-                              <div className="rounded-xl py-2.5 border border-white/[0.06]" style={{ backgroundColor: '#f59e0b15' }}>
-                                 <Zap className="mx-auto mb-1 h-3.5 w-3.5 text-amber-300" />
-                                 <span className="font-mono font-bold text-f1-white text-[11px]">{circuit.corners} turns</span>
+                              <div className="rounded-lg py-1.5 border border-white/[0.06]" style={{ backgroundColor: '#f59e0b15' }}>
+                                 <Zap className="mx-auto mb-0.5 h-3 w-3 text-amber-300" />
+                                 <span className="font-mono font-bold text-f1-white text-[10px]">{circuit.corners} turns</span>
                               </div>
                            </div>
 
