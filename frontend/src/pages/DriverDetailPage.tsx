@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trophy, Medal, Hash, Globe, Calendar, Radio, ChevronRight } from 'lucide-react';
 import { driverService } from '../services/driverService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
@@ -8,6 +8,7 @@ import type { DriverDetail } from '../types';
 
 const DriverDetailPage: React.FC = () => {
    const { id } = useParams<{ id: string }>();
+   const navigate = useNavigate();
    const [driver, setDriver] = useState<DriverDetail | null>(null);
    const [loading, setLoading] = useState(true);
    const [imgError, setImgError] = useState(false);
@@ -40,10 +41,10 @@ const DriverDetailPage: React.FC = () => {
 
    return (
       <div className="h-full flex flex-col gap-3 animate-fade-in overflow-hidden">
-         <Link to="/drivers" className="inline-flex items-center gap-2 text-f1-silver hover:text-f1-white transition-colors shrink-0 group w-fit">
+         <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-f1-silver hover:text-f1-white transition-colors shrink-0 group w-fit">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="text-xs font-mono uppercase tracking-widest">Back to Standings</span>
-         </Link>
+            <span className="text-xs font-mono uppercase tracking-widest">Back</span>
+         </button>
 
          {/* ─── Driver Hero HUD Card ─── */}
          <div className="telemetry-card overflow-hidden shrink-0">
