@@ -30,7 +30,7 @@ const ConsistencyPage: React.FC = () => {
 
    const heatmapData = useMemo(() => {
       if (!data) return [];
-      return data.drivers.slice(0, 20).map(d => ({
+      return data.drivers.map(d => ({
          id: d.driver.code,
          data: data.races.map(race => {
             const val = d.resultsByRace[race];

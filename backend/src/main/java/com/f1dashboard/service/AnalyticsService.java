@@ -291,7 +291,10 @@ public class AnalyticsService {
                sumPos += r.getPosition();
                count++;
             }
-            String resStr = (r.getPosition() != null && r.getPosition() > 0) ? String.valueOf(r.getPosition()) : "DNF";
+            boolean isDnf = "DNF".equalsIgnoreCase(r.getStatus()) || "Retired".equalsIgnoreCase(r.getStatus());
+            String resStr = isDnf
+                  ? "DNF"
+                  : (r.getPosition() != null && r.getPosition() > 0 ? String.valueOf(r.getPosition()) : "DNF");
             raceResMap.put(r.getRace().getName(), resStr);
          }
 
