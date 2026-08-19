@@ -252,8 +252,12 @@ public class DataSyncService {
                   } else {
                      constructor = new Constructor();
                      constructor.setConstructorRef(constructorId);
-                     // Assign matching colors for team UI styling
                      constructor.setColor(getTeamColor(constructorId));
+                     // New constructors need non-null defaults regardless of which season triggered
+                     // creation
+                     constructor.setPoints(0.0);
+                     constructor.setWins(0);
+                     constructor.setChampionshipPosition(0);
                   }
 
                   constructor.setName(name);
@@ -328,8 +332,10 @@ public class DataSyncService {
                      driver = new Driver();
                      driver.setDriverRef(driverId);
                      driver.setPodiums(0);
+                     driver.setPoints(0.0);
+                     driver.setWins(0);
+                     driver.setChampionshipPosition(0);
                   }
-
                   driver.setCode(
                         code.isEmpty() ? driverId.substring(0, Math.min(3, driverId.length())).toUpperCase() : code);
                   driver.setFirstName(firstName);
