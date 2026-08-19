@@ -9,6 +9,7 @@ import com.f1dashboard.util.CircuitDataSeeder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,7 @@ public class DataSyncService {
    private final RaceResultRepository raceResultRepository;
    private final CircuitRepository circuitRepository;
    private final RaceSessionRepository raceSessionRepository;
+   private final CircuitSyncHelper circuitSyncHelper;
 
    private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -105,19 +107,17 @@ public class DataSyncService {
                   circuit.setLapRecordHolder(stats.getLapRecordHolder());
                   circuit = circuitRepository.save(circuit);
                } else {
-                  circuit = Circuit.builder()
-                        .circuitRef(circuitId)
-                        .name(circuitName)
-                        .country(country)
-                        .location(locality)
-                        .latitude(lat)
-                        .longitude(lon)
-                        .lengthKm(stats.getLengthKm())
-                        .corners(stats.getCorners())
-                        .lapRecord(stats.getLapRecord())
-                        .lapRecordHolder(stats.getLapRecordHolder())
-                        .build();
-                  circuit = circuitRepository.save(circuit);
+                  try {
+                     circuit = circuitSyncHelper.createCircuit(circuitId, circuitName, country, locality, lat, lon,
+                           stats);
+                  } catch (DataIntegrityViolationException e) {
+                     // Lost the race to a concurrent sync run — the other transaction already
+                     // committed this circuit. Our outer transaction is still healthy since
+                     // the failed insert happened in its own REQUIRES_NEW transaction.
+                     log.warn("Circuit '{}' already inserted concurrently, fetching existing row", circuitId);
+                     circuit = circuitRepository.findByCircuitRef(circuitId)
+                           .orElseThrow(() -> e);
+                  }
                }
 
                Optional<Race> raceOpt = raceRepository.findBySeasonAndRound(raceSeason, round);
