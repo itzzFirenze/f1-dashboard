@@ -27,7 +27,6 @@ export const CircuitTrackThumbnail: React.FC<CircuitTrackThumbnailProps> = ({
                setViewBox(`${x} ${y} ${w} ${h}`);
             }
          } catch {
-            // Keep default viewBox if getBBox is unavailable
          }
       }
    }, [trackPath]);

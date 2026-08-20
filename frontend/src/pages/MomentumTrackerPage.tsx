@@ -13,7 +13,7 @@ const MomentumTrackerPage: React.FC = () => {
    const [season, setSeason] = useState<number>(2026);
    const [drivers, setDrivers] = useState<Driver[]>([]);
    const [selected, setSelected] = useState<Driver | null>(null);
-   const [window, setWindow] = useState(5);
+   const [range, setRange] = useState<'FIRST_10' | 'LAST_10' | 'ALL'>('LAST_10');
    const [data, setData] = useState<MomentumData | null>(null);
    const [loading, setLoading] = useState(false);
    const [driversLoading, setDriversLoading] = useState(true);
@@ -35,14 +35,14 @@ const MomentumTrackerPage: React.FC = () => {
    useEffect(() => {
       if (selected) {
          setLoading(true);
-         analyticsService.getMomentum(selected.id, window, season)
+         analyticsService.getMomentum(selected.id, range, season)
             .then(setData)
             .catch(console.error)
             .finally(() => setLoading(false));
       } else {
          setData(null);
       }
-   }, [selected, window, season]);
+   }, [selected, range, season]);
 
    if (driversLoading) return <PageSkeleton />;
 
@@ -134,19 +134,23 @@ const MomentumTrackerPage: React.FC = () => {
             <DriverSelector drivers={drivers} selected={selected} onSelect={setSelected} label="Select Driver" />
             <div>
                <label className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-2 block">
-                  Sample Window
+                  Race Range
                </label>
                <div className="flex gap-2">
-                  {[3, 5, 10].map(w => (
+                  {([
+                     { value: 'FIRST_10', label: 'First 10' },
+                     { value: 'LAST_10', label: 'Last 10' },
+                     { value: 'ALL', label: 'All Races' },
+                  ] as const).map(({ value, label }) => (
                      <button
-                        key={w}
-                        onClick={() => setWindow(w)}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-mono font-semibold tracking-wider uppercase transition-all border ${window === w
+                        key={value}
+                        onClick={() => setRange(value)}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-mono font-semibold tracking-wider uppercase transition-all border ${range === value
                            ? 'bg-f1-red/15 text-f1-red-light border-f1-red/30'
                            : 'bg-white/[0.03] text-f1-silver/70 border-white/[0.06] hover:border-white/[0.12]'
                            }`}
                      >
-                        Last {w}
+                        {label}
                      </button>
                   ))}
                </div>

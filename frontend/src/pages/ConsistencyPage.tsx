@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Grid3x3, Target, Radio, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { ResponsiveHeatMap } from '@nivo/heatmap';
 import { ResponsiveScatterPlot } from '@nivo/scatterplot';
@@ -19,6 +20,11 @@ const ConsistencyPage: React.FC = () => {
    const [season, setSeason] = useState<number>(2026);
    const [data, setData] = useState<ConsistencyData | null>(null);
    const [loading, setLoading] = useState(true);
+   const scatterContainerRef = useRef<HTMLDivElement>(null);
+   const tooltipRef = useRef<HTMLDivElement>(null);
+   const rafRef = useRef<number | null>(null);
+   const scatterTooltipContent = useRef<{ driver: string; x: number; y: number; color: string } | null>(null);
+   const [scatterTooltipVisible, setScatterTooltipVisible] = useState(false);
 
    useEffect(() => {
       setLoading(true);
@@ -27,6 +33,12 @@ const ConsistencyPage: React.FC = () => {
          .catch(console.error)
          .finally(() => setLoading(false));
    }, [season]);
+
+   useEffect(() => {
+      return () => {
+         if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      };
+   }, []);
 
    const heatmapData = useMemo(() => {
       if (!data) return [];
@@ -58,10 +70,69 @@ const ConsistencyPage: React.FC = () => {
       return Object.values(groups);
    }, [data]);
 
+   const teamLegend = useMemo(() => {
+      return scatterData.map(group => ({
+         name: group.id,
+         color: group.data[0]?.color || '#888',
+      }));
+   }, [scatterData]);
+
    const sortedByRate = useMemo(() => {
       if (!data) return [];
       return [...data.drivers].sort((a, b) => b.pointsFinishRate - a.pointsFinishRate);
    }, [data]);
+
+   const applyTooltipPosition = (clientX: number, clientY: number) => {
+      const container = scatterContainerRef.current;
+      const tooltip = tooltipRef.current;
+      if (!container || !tooltip) return;
+
+      const rect = container.getBoundingClientRect();
+      const relativeY = clientY - rect.top;
+      const flipped = relativeY < 110;
+
+      const clampedLeft = Math.min(Math.max(clientX, 90), window.innerWidth - 90);
+      const top = flipped ? clientY + 18 : clientY - 18;
+
+      tooltip.style.left = `${clampedLeft}px`;
+      tooltip.style.top = `${top}px`;
+      tooltip.style.transform = `translate(-50%, ${flipped ? '0%' : '-100%'})`;
+   };
+
+   const handleScatterHover = (node: any, event: React.MouseEvent) => {
+      scatterTooltipContent.current = {
+         driver: node.data.driver,
+         x: node.data.x,
+         y: node.data.y,
+         color: node.data.color,
+      };
+      if (!scatterTooltipVisible) setScatterTooltipVisible(true);
+
+      const clientX = event.clientX;
+      const clientY = event.clientY;
+
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+         applyTooltipPosition(clientX, clientY);
+
+         const tooltip = tooltipRef.current;
+         if (tooltip && scatterTooltipContent.current) {
+            const { driver, x, y, color } = scatterTooltipContent.current;
+            const strong = tooltip.querySelector('strong');
+            const span = tooltip.querySelector('span');
+            if (strong) {
+               strong.textContent = driver;
+               (strong as HTMLElement).style.color = color;
+            }
+            if (span) span.textContent = `Avg Finish: P${x} · StdDev: ${y}`;
+         }
+      });
+   };
+
+   const handleScatterLeave = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      setScatterTooltipVisible(false);
+   };
 
    if (loading) return <PageSkeleton />;
    if (!data) return null;
@@ -196,7 +267,7 @@ const ConsistencyPage: React.FC = () => {
                   Bottom-left = consistent &amp; fast. Top-right = inconsistent &amp; slow.
                </p>
                <div className="overflow-x-auto">
-                  <div className="h-96 min-w-[500px] sm:min-w-0">
+                  <div className="h-96 min-w-[500px] sm:min-w-0" ref={scatterContainerRef}>
                      <ResponsiveScatterPlot
                         data={scatterData}
                         margin={{ top: 20, right: 30, bottom: 60, left: 60 }}
@@ -219,16 +290,10 @@ const ConsistencyPage: React.FC = () => {
                         }}
                         animate={true}
                         useMesh={true}
-                        tooltip={({ node }) => {
-                           const d = node.data as any;
-                           return (
-                              <div className="bg-f1-carbon border border-white/[0.08] rounded-lg px-3 py-2 text-sm font-mono">
-                                 <strong className="text-f1-white">{d.driver}</strong>
-                                 <br />
-                                 <span className="text-f1-silver/70">Avg Finish: P{d.x} · StdDev: {d.y}</span>
-                              </div>
-                           );
-                        }}
+                        tooltip={() => null}
+                        onMouseEnter={(node, event) => handleScatterHover(node, event as unknown as React.MouseEvent)}
+                        onMouseMove={(node, event) => handleScatterHover(node, event as unknown as React.MouseEvent)}
+                        onMouseLeave={handleScatterLeave}
                         theme={{
                            text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' },
                            axis: {
@@ -237,20 +302,23 @@ const ConsistencyPage: React.FC = () => {
                            },
                            grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
                         }}
-                        legends={[
-                           {
-                              anchor: 'bottom-right',
-                              direction: 'column',
-                              translateX: 10,
-                              itemWidth: 130,
-                              itemHeight: 18,
-                              symbolSize: 10,
-                              symbolShape: 'circle',
-                              itemTextColor: '#9ca3af',
-                           },
-                        ]}
                      />
                   </div>
+               </div>
+
+               {/* Team Legend */}
+               <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t border-white/[0.04]">
+                  {teamLegend.map(team => (
+                     <div key={team.name} className="flex items-center gap-1.5">
+                        <span
+                           className="w-2.5 h-2.5 rounded-full shrink-0"
+                           style={{ backgroundColor: team.color }}
+                        />
+                        <span className="text-[11px] font-mono text-f1-silver/60 truncate max-w-[120px]">
+                           {team.name}
+                        </span>
+                     </div>
+                  ))}
                </div>
 
                {/* Quadrant Labels */}
@@ -271,6 +339,19 @@ const ConsistencyPage: React.FC = () => {
                   </div>
                </div>
             </div>
+         )}
+
+         {scatterTooltipVisible && createPortal(
+            <div
+               ref={tooltipRef}
+               className="fixed z-[9999] pointer-events-none bg-f1-carbon border border-white/[0.08] rounded-lg px-3 py-2 text-sm font-mono shadow-xl"
+               style={{ left: 0, top: 0 }}
+            >
+               <strong />
+               <br />
+               <span className="text-f1-silver/70" />
+            </div>,
+            document.body
          )}
       </div>
    );

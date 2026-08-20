@@ -67,7 +67,7 @@ const TooltipPanel: React.FC<{ tooltip: Tooltip }> = ({ tooltip }) => {
 };
 
 const Stat: React.FC<{ icon: React.ReactNode; label: string; value: string | number; colorHex: string }> = ({ icon, label, value, colorHex }) => (
-   <div className="telemetry-chip rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 flex items-center justify-between gap-2 hover:border-white/[0.12] transition-colors">
+   <div className="telemetry-chip rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2 flex flex-col gap-1 hover:border-white/[0.12] transition-colors">
       <div className="flex items-center gap-2 min-w-0">
          <div
             className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 border border-white/[0.06]"
@@ -79,7 +79,9 @@ const Stat: React.FC<{ icon: React.ReactNode; label: string; value: string | num
             {label}
          </span>
       </div>
-      <p className="text-xs md:text-sm font-black text-f1-white font-mono shrink-0">{value}</p>
+      <p className="text-xs md:text-sm font-black text-f1-white font-mono pl-8">
+         {value}
+      </p>
    </div>
 );
 
@@ -430,10 +432,10 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
             </div>
          </motion.div>
 
-         {/* Right Sidebar: Equal Sized 50/50 Cards, telemetry/diagonal-card styling */}
+         {/* Right Sidebar: Equal Sized 50/50 Cards */}
          <aside className="flex flex-col gap-3.5 h-auto lg:h-full lg:min-h-0 lg:overflow-hidden">
             {/* Card 1 (Top 50%): Circuit Vital Stats */}
-            <div className="telemetry-card p-4 h-auto lg:flex-1 lg:min-h-0 flex flex-col justify-between overflow-hidden relative">
+            <div className="telemetry-card p-4 h-auto lg:flex-[3] lg:min-h-0 flex flex-col justify-between overflow-hidden relative">
                <div
                   className="absolute top-0 inset-x-0 h-[2px] opacity-75"
                   style={{ background: 'linear-gradient(90deg, transparent, #E10600, transparent)' }}
@@ -468,11 +470,11 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                </div>
             </div>
 
-            {/* Card 2 (Bottom 50%): Circuit Facts & Lore (Auto-Rotating) — diagonal-card accent bar like leaderboard cards */}
+            {/* Card 2 (Bottom 50%): Circuit Facts & Lore (Auto-Rotating) */}
             <div
                onMouseEnter={() => setIsFactHovered(true)}
                onMouseLeave={() => setIsFactHovered(false)}
-               className="diagonal-card p-4 h-auto lg:flex-1 lg:min-h-0 flex flex-col justify-between overflow-hidden relative group"
+               className="diagonal-card p-4 h-auto lg:flex-[2] lg:min-h-0 flex flex-col justify-between overflow-hidden relative group"
             >
                {/* Dynamic accent line matching current fact's tag color */}
                <div
@@ -560,12 +562,6 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                            </p>
                         </div>
 
-                        <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[10px] text-f1-silver/40 font-mono uppercase tracking-wider">
-                           <span className="flex items-center gap-1">
-                              <BookOpen className="w-3 h-3 text-f1-red" />
-                              <span>F1 Grand Prix Archives</span>
-                           </span>
-                        </div>
                      </motion.div>
                   )}
                </AnimatePresence>

@@ -4,6 +4,7 @@ import { ResponsiveBar } from '@nivo/bar';
 import { recordsService } from '../services/recordsService';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import { resolveTheme, getDriverImage } from '../config/teamThemes';
 import type { RecordsData, DriverRecord, ConstructorRecord } from '../types';
 
 type RecordCategory = 'driver-wins' | 'driver-podiums' | 'driver-points' | 'driver-winrate' | 'constructor-wins' | 'constructor-podiums' | 'constructor-points';
@@ -17,6 +18,99 @@ const CATEGORIES: { key: RecordCategory; label: string; icon: React.ElementType;
    { key: 'constructor-podiums', label: 'Most Podiums', icon: Medal, group: 'constructor', accent: '#38bdf8' },
    { key: 'constructor-points', label: 'Most Points', icon: TrendingUp, group: 'constructor', accent: '#10b981' },
 ];
+
+/**
+ * Resolves the correct image to show for a record row:
+ * - Driver records -> driver headshot via getDriverImage(theme, firstName, lastName)
+ * - Constructor records -> team logo via theme.teamLogoUrl
+ */
+const getRecordImage = (record: DriverRecord | ConstructorRecord): string | undefined => {
+   const isDriver = 'driverCode' in record;
+   const constructorName = isDriver
+      ? (record as DriverRecord).constructorName
+      : (record as ConstructorRecord).constructorName;
+   const theme = resolveTheme(constructorName);
+
+   if (isDriver) {
+      const dr = record as DriverRecord;
+      const [firstName, ...rest] = dr.driverName.split(' ');
+      const lastName = rest.join(' ');
+      return getDriverImage(theme, firstName, lastName) ?? undefined;
+   }
+   return theme.teamLogoUrl ?? undefined;
+};
+
+/** Small avatar/logo component with graceful fallback to initials/code on error or missing image */
+const RecordAvatar: React.FC<{
+   record: DriverRecord | ConstructorRecord;
+   fallbackText: string;
+   color: string;
+   size?: 'sm' | 'lg';
+}> = ({ record, fallbackText, color, size = 'sm' }) => {
+   const [imgError, setImgError] = useState(false);
+   const isDriver = 'driverCode' in record;
+   const imgUrl = getRecordImage(record);
+   const showImg = imgUrl && !imgError;
+
+   const dims = size === 'lg' ? 'w-14 h-14 rounded-2xl' : 'w-7 h-7 rounded-lg';
+
+   return (
+      <div
+         className={`${dims} overflow-hidden flex items-center justify-center font-display font-black shrink-0 border border-white/[0.08] shadow-lg`}
+         style={{ backgroundColor: `${color}30` }}
+      >
+         {showImg ? (
+            <img
+               src={imgUrl}
+               alt={fallbackText}
+               className={isDriver ? 'w-full h-full object-cover object-top' : 'w-2/3 h-2/3 object-contain'}
+               onError={() => setImgError(true)}
+            />
+         ) : (
+            <span className={`font-mono text-white ${size === 'lg' ? 'text-lg' : 'text-[10px]'}`}>
+               {fallbackText}
+            </span>
+         )}
+      </div>
+   );
+};
+
+/**
+ * Custom bar label layer. Renders each value just outside the end of its bar
+ * (rather than nivo's default centered-inside placement) so zero-value bars
+ * — which have zero width — don't collapse their label onto the axis/driver
+ * name column.
+ */
+const BarValueLabelsLayer = (activeRecords: (DriverRecord | ConstructorRecord)[]) =>
+   ({ bars }: any) => (
+      <g>
+         {bars.map((bar: any) => {
+            const { x, y, width, height, data, key } = bar;
+            const record = activeRecords.find(r => {
+               if ('driverCode' in r) return (r as DriverRecord).driverCode === data.indexValue;
+               return (r as ConstructorRecord).constructorName === data.indexValue;
+            });
+            const labelText = record?.displayValue ?? String(data.value);
+            return (
+               <text
+                  key={key}
+                  x={x + width + 8}
+                  y={y + height / 2}
+                  textAnchor="start"
+                  dominantBaseline="central"
+                  style={{
+                     fill: '#fff',
+                     fontSize: 11,
+                     fontFamily: 'ui-monospace, monospace',
+                     fontWeight: 700,
+                  }}
+               >
+                  {labelText}
+               </text>
+            );
+         })}
+      </g>
+   );
 
 const RecordsPage: React.FC = () => {
    const [season, setSeason] = useState<number | null>(2026);
@@ -193,12 +287,12 @@ const RecordsPage: React.FC = () => {
                            </div>
 
                            <div className="flex items-center gap-4">
-                              <div
-                                 className="w-14 h-14 rounded-2xl flex items-center justify-center font-display font-black text-lg text-white shrink-0 border border-white/[0.08] shadow-lg"
-                                 style={{ backgroundColor: `${color}30` }}
-                              >
-                                 <span className="font-mono">{code}</span>
-                              </div>
+                              <RecordAvatar
+                                 record={record}
+                                 fallbackText={code}
+                                 color={color}
+                                 size="lg"
+                              />
                               <div className="flex-1 min-w-0">
                                  <h3 className="text-lg font-display font-black text-f1-white truncate">{name}</h3>
                                  {sub && (
@@ -255,7 +349,7 @@ const RecordsPage: React.FC = () => {
                      keys={['value']}
                      indexBy="id"
                      layout="horizontal"
-                     margin={{ top: 10, right: 30, bottom: 40, left: 80 }}
+                     margin={{ top: 10, right: 56, bottom: 40, left: 80 }}
                      padding={0.3}
                      colors={({ data }) => (data as { color?: string }).color || '#e11d48'}
                      theme={{
@@ -265,15 +359,8 @@ const RecordsPage: React.FC = () => {
                         tooltip: { container: { background: '#1a1a2e', color: '#fff', border: '1px solid #333' } },
                      }}
                      axisBottom={{ legend: 'Value', legendPosition: 'middle', legendOffset: 32 }}
-                     enableLabel={true}
-                     label={d => {
-                        const record = activeRecords.find(r => {
-                           if ('driverCode' in r) return (r as DriverRecord).driverCode === d.indexValue;
-                           return (r as ConstructorRecord).constructorName === d.indexValue;
-                        });
-                        return record?.displayValue || String(d.value);
-                     }}
-                     labelTextColor="#fff"
+                     enableLabel={false}
+                     layers={['grid', 'axes', 'bars', BarValueLabelsLayer(activeRecords), 'markers', 'legends']}
                      animate={true}
                      motionConfig="gentle"
                   />
@@ -312,6 +399,8 @@ const RecordsPage: React.FC = () => {
                         const dr = isDriver ? record as DriverRecord : null;
                         const cr = !isDriver ? record as ConstructorRecord : null;
                         const color = dr?.constructorColor || cr?.constructorColor || '#666';
+                        const name = dr ? dr.driverName : cr?.constructorName || '';
+                        const fallbackText = dr ? dr.driverCode : (cr?.constructorName || '').substring(0, 3).toUpperCase();
 
                         return (
                            <tr key={idx} className="border-b border-white/[0.03] hover:bg-white/[0.03] transition-colors">
@@ -322,8 +411,14 @@ const RecordsPage: React.FC = () => {
                               </td>
                               <td className="py-2.5 px-2">
                                  <div className="flex items-center gap-2.5">
-                                    <div className="w-1 h-6 rounded-full" style={{ backgroundColor: color }} />
-                                    <span className="font-semibold text-f1-white">{dr ? dr.driverName : cr?.constructorName}</span>
+                                    <div className="w-1 h-6 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                    <RecordAvatar
+                                       record={record}
+                                       fallbackText={fallbackText}
+                                       color={color}
+                                       size="sm"
+                                    />
+                                    <span className="font-semibold text-f1-white">{name}</span>
                                     {dr && <span className="text-[10px] text-f1-silver/50 font-mono">{dr.driverCode}</span>}
                                  </div>
                               </td>

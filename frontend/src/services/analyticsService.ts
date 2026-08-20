@@ -9,9 +9,9 @@ export const analyticsService = {
       return data.data;
    },
 
-   getMomentum: async (driverId: number, window: number = 5, season: number = 2026): Promise<MomentumData> => {
+   getMomentum: async (driverId: number, range: 'FIRST_10' | 'LAST_10' | 'ALL' = 'LAST_10', season: number = 2026): Promise<MomentumData> => {
       const { data } = await api.get<ApiResponse<MomentumData>>('/analytics/momentum', {
-         params: { driverId, window, season }
+         params: { driverId, range, season }
       });
       return data.data;
    },

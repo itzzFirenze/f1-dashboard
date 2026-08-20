@@ -19,7 +19,10 @@ const DriverSelector: React.FC<DriverSelectorProps> = ({
 
    useEffect(() => {
       const handler = (e: MouseEvent) => {
-         if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+         if (ref.current && !ref.current.contains(e.target as Node)) {
+            setOpen(false);
+            setSearch('');
+         }
       };
       document.addEventListener('mousedown', handler);
       return () => document.removeEventListener('mousedown', handler);
@@ -39,7 +42,6 @@ const DriverSelector: React.FC<DriverSelectorProps> = ({
             className="telemetry-card w-full p-4 flex items-center gap-3 text-left transition-all relative overflow-hidden group"
             style={{ borderColor: selected ? `${selected.constructorColor}55` : undefined }}
          >
-            {/* Top accent bar, mirrors StatGaugeCard treatment */}
             <div
                className="absolute top-0 inset-x-0 h-[2px] opacity-75 transition-opacity group-hover:opacity-100"
                style={{

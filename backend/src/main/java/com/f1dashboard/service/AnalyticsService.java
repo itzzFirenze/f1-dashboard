@@ -197,23 +197,43 @@ public class AnalyticsService {
       return stats;
    }
 
-   @Cacheable(cacheNames = CacheConfig.ANALYTICS, key = "'momentum:' + #driverId + ':' + #window + ':' + #season")
-   public MomentumDto getDriverMomentum(Long driverId, Integer window, Integer season) {
+   @Cacheable(cacheNames = CacheConfig.ANALYTICS, key = "'momentum:' + #driverId + ':' + #range + ':' + #season")
+   public MomentumDto getDriverMomentum(Long driverId, String range, Integer season) {
       Driver driver = driverRepository.findById(driverId)
             .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
 
       List<RaceResult> allResults = raceResultRepository
             .findByDriverIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(driverId, season, SessionType.RACE);
-      // Ensure sorted by round
       allResults.sort(Comparator.comparing(r -> r.getRace().getRound()));
 
       MomentumDto dto = new MomentumDto();
       dto.setDriver(driverService.toDto(driver));
 
-      List<MomentumDto.RaceMomentum> recentRaces = new ArrayList<>();
-      int startIndex = Math.max(0, allResults.size() - window);
+      int size = allResults.size();
+      String normalizedRange = range == null ? "LAST_10" : range.toUpperCase();
 
-      for (int i = startIndex; i < allResults.size(); i++) {
+      int startIndex;
+      int endIndexExclusive;
+      switch (normalizedRange) {
+         case "FIRST_10":
+            startIndex = 0;
+            endIndexExclusive = Math.min(10, size);
+            break;
+         case "ALL":
+            startIndex = 0;
+            endIndexExclusive = size;
+            break;
+         case "LAST_10":
+         default:
+            endIndexExclusive = size;
+            startIndex = Math.max(0, size - 10);
+            break;
+      }
+
+      List<MomentumDto.RaceMomentum> recentRaces = new ArrayList<>();
+      final int rollingWindow = 3; // fixed trend-line window, independent of the selected range
+
+      for (int i = startIndex; i < endIndexExclusive; i++) {
          RaceResult r = allResults.get(i);
          MomentumDto.RaceMomentum rm = new MomentumDto.RaceMomentum();
          rm.setRaceName(r.getRace().getName());
@@ -225,11 +245,11 @@ public class AnalyticsService {
                      : 0);
          rm.setPoints(r.getPoints() != null ? r.getPoints() : 0.0);
 
-         // Rolling avg logic (simplified to window)
+         // Rolling avg logic — always looks back within the selected slice only
          double sumFinish = 0;
          double sumPoints = 0;
          int count = 0;
-         int rollStart = Math.max(0, i - window + 1);
+         int rollStart = Math.max(startIndex, i - rollingWindow + 1);
          for (int j = rollStart; j <= i; j++) {
             sumFinish += allResults.get(j).getPosition() != null ? allResults.get(j).getPosition() : 20;
             sumPoints += allResults.get(j).getPoints();

@@ -32,9 +32,9 @@ public class AnalyticsController {
    @GetMapping("/momentum")
    public ResponseEntity<ApiResponse<MomentumDto>> getMomentum(
          @RequestParam Long driverId,
-         @RequestParam(defaultValue = "5") Integer window,
+         @RequestParam(defaultValue = "LAST_10") String range,
          @RequestParam(defaultValue = "2026") Integer season) {
-      return ResponseEntity.ok(ApiResponse.success(analyticsService.getDriverMomentum(driverId, window, season)));
+      return ResponseEntity.ok(ApiResponse.success(analyticsService.getDriverMomentum(driverId, range, season)));
    }
 
    @GetMapping("/consistency")

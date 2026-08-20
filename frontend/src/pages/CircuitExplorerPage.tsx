@@ -13,7 +13,7 @@ const CircuitExplorerPage: React.FC = () => {
       const query = search.trim().toLowerCase();
       if (!query) return circuits;
       return circuits.filter((circuit) =>
-         [circuit.name, circuit.country, circuit.location].some((value) => value.toLowerCase().includes(query))
+         [circuit.name, circuit.location].some((value) => value.toLowerCase().startsWith(query))
       );
    }, [search]);
 
@@ -34,7 +34,10 @@ const CircuitExplorerPage: React.FC = () => {
                   {/* Slim Top Action Bar */}
                   <div className="flex items-center justify-between pb-3 mb-2 border-b border-white/[0.06] flex-shrink-0">
                      <button
-                        onClick={() => setSelectedId(null)}
+                        onClick={() => {
+                           setSelectedId(null);
+                           setSearch('');
+                        }}
                         className="pill-button gap-2 px-3.5 py-1.5 hover:border-f1-red/40 transition-colors"
                      >
                         <ArrowLeft className="h-4 w-4 text-f1-red" />
