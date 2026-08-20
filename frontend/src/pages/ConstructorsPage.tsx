@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Star, Trophy, ChevronRight, Shield, Gauge } from 'lucide-react';
 import { constructorService } from '../services/constructorService';
 import { useFavorites } from '../context/FavoritesContext';
@@ -8,18 +9,14 @@ import { resolveTheme } from '../config/teamThemes';
 import type { Constructor } from '../types';
 
 const ConstructorsPage: React.FC = () => {
-   const [constructors, setConstructors] = useState<Constructor[]>([]);
-   const [loading, setLoading] = useState(true);
    const { toggleFavoriteTeam, isTeamFavorite } = useFavorites();
 
-   useEffect(() => {
-      constructorService.getAll(2026)
-         .then(setConstructors)
-         .catch(console.error)
-         .finally(() => setLoading(false));
-   }, []);
+   const { data: constructors = [], isLoading } = useQuery<Constructor[]>({
+      queryKey: ['constructors', 2026],
+      queryFn: () => constructorService.getAll(2026),
+   });
 
-   if (loading) return <PageSkeleton />;
+   if (isLoading) return <PageSkeleton />;
 
    const leader = constructors[0];
    const maxPoints = leader?.points || 1;

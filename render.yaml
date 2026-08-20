@@ -5,7 +5,7 @@ services:
     dockerfilePath: backend/Dockerfile
     dockerContext: backend
     plan: free
-    region: oregon
+    region: singapore
     healthCheckPath: /actuator/health
     envVars:
       - key: PORT

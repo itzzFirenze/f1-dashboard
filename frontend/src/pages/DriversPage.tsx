@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Star, Trophy, Users, Radio, ChevronRight } from 'lucide-react';
 import { driverService } from '../services/driverService';
 import { useFavorites } from '../context/FavoritesContext';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import SearchInput from '../components/ui/SearchInput';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import EmptyState from '../components/ui/EmptyState';
@@ -28,22 +30,16 @@ const PositionBadge: React.FC<{ position: number }> = ({ position }) => {
 };
 
 const DriversPage: React.FC = () => {
-   const [drivers, setDrivers] = useState<Driver[]>([]);
-   const [loading, setLoading] = useState(true);
    const [search, setSearch] = useState('');
+   const debouncedSearch = useDebouncedValue(search, search ? 300 : 0);
    const { toggleFavoriteDriver, isDriverFavorite } = useFavorites();
 
-   useEffect(() => {
-      const timer = setTimeout(() => {
-         driverService.getAll(search || undefined, 2026)
-            .then(setDrivers)
-            .catch(console.error)
-            .finally(() => setLoading(false));
-      }, search ? 300 : 0);
-      return () => clearTimeout(timer);
-   }, [search]);
+   const { data: drivers = [], isLoading } = useQuery<Driver[]>({
+      queryKey: ['drivers', debouncedSearch, 2026],
+      queryFn: () => driverService.getAll(debouncedSearch || undefined, 2026),
+   });
 
-   if (loading) return <PageSkeleton />;
+   if (isLoading) return <PageSkeleton />;
 
    return (
       <div className="space-y-7 animate-fade-in">

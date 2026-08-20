@@ -1,6 +1,7 @@
 package com.f1dashboard.controller;
 
 import com.f1dashboard.dto.ApiResponse;
+import com.f1dashboard.service.CacheWarmupService;
 import com.f1dashboard.service.DataSyncService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 public class SyncController {
 
    private final DataSyncService dataSyncService;
+   private final CacheWarmupService cacheWarmupService;
 
    @PostMapping
    @Operation(summary = "Manually trigger 2026 season data sync", description = "Fetches latest driver standings, constructor standings, and race results from external APIs.")
@@ -28,6 +30,7 @@ public class SyncController {
          dataSyncService.syncQualifyingResults();
          dataSyncService.updateRaceStatusesByDate();
          dataSyncService.clearReadCaches();
+         cacheWarmupService.warmCommonCaches();
          return ResponseEntity.ok(
                ApiResponse.success("Synchronization successful! Live 2026 standings, calendar, and results updated."));
       } catch (Exception e) {

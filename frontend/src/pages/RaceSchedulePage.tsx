@@ -1,29 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Calendar, MapPin, ChevronRight, Zap, Flag, Radio } from 'lucide-react';
 import { raceService } from '../services/raceService';
 import SearchInput from '../components/ui/SearchInput';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import EmptyState from '../components/ui/EmptyState';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import type { Race } from '../types';
 
 const RaceSchedulePage: React.FC = () => {
-   const [races, setRaces] = useState<Race[]>([]);
-   const [loading, setLoading] = useState(true);
    const [search, setSearch] = useState('');
    const [statusFilter, setStatusFilter] = useState<string>('');
+   const debouncedSearch = useDebouncedValue(search, search ? 300 : 0);
 
-   useEffect(() => {
-      const timer = setTimeout(() => {
-         raceService.getAll(2026, statusFilter || undefined, search || undefined)
-            .then(setRaces)
-            .catch(console.error)
-            .finally(() => setLoading(false));
-      }, search ? 300 : 0);
-      return () => clearTimeout(timer);
-   }, [search, statusFilter]);
+   const { data: races = [], isLoading } = useQuery<Race[]>({
+      queryKey: ['races', 2026, statusFilter, debouncedSearch],
+      queryFn: () => raceService.getAll(2026, statusFilter || undefined, debouncedSearch || undefined),
+   });
 
-   if (loading) return <PageSkeleton />;
+   if (isLoading) return <PageSkeleton />;
 
    const formatDate = (date: string) =>
       new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });

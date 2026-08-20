@@ -19,6 +19,7 @@
     "@nivo/scatterplot": "^0.99.0",
     "@nivo/tooltip": "^0.99.0",
     "@supabase/supabase-js": "^2.112.3",
+    "@tanstack/react-query": "5.62.0",
     "axios": "^1.7.9",
     "framer-motion": "^12.43.0",
     "lucide-react": "^0.468.0",

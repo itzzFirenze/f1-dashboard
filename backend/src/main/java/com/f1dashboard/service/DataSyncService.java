@@ -43,6 +43,7 @@ public class DataSyncService {
    private final RaceSessionRepository raceSessionRepository;
    private final CircuitSyncHelper circuitSyncHelper;
    private final CacheManager cacheManager;
+   private final CacheWarmupService cacheWarmupService;
 
    private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -58,6 +59,7 @@ public class DataSyncService {
          syncQualifyingResults();
          updateRaceStatusesByDate(); // Reconcile statuses based on today's date
          clearReadCaches();
+         cacheWarmupService.warmCommonCaches();
          log.info("Data synchronization completed successfully.");
       } catch (Exception e) {
          log.warn("Data sync failed. Error: {}", e.getMessage(), e);
@@ -512,6 +514,7 @@ public class DataSyncService {
       syncSprintResults(season);
       syncQualifyingResults(season);
       clearReadCaches();
+      cacheWarmupService.warmCommonCaches();
       log.info("Backfill for season {} completed.", season);
    }
 

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
    Trophy, Flag, Users, Calendar, Timer, ChevronRight, TrendingUp, Zap,
    Radio, Activity, Compass, Shield, ArrowUpRight, Gauge
@@ -111,19 +112,15 @@ const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
 };
 
 const DashboardPage: React.FC = () => {
-   const [data, setData] = useState<DashboardData | null>(null);
-   const [loading, setLoading] = useState(true);
    const [driverImgError, setDriverImgError] = useState(false);
    const [logoError, setLogoError] = useState(false);
 
-   useEffect(() => {
-      dashboardService.getData()
-         .then(setData)
-         .catch(console.error)
-         .finally(() => setLoading(false));
-   }, []);
+   const { data, isLoading } = useQuery<DashboardData>({
+      queryKey: ['dashboard'],
+      queryFn: dashboardService.getData,
+   });
 
-   if (loading) return <PageSkeleton />;
+   if (isLoading) return <PageSkeleton />;
    if (!data) return null;
 
    const driverTheme = data.driverChampionshipLeader
