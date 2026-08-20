@@ -2,12 +2,15 @@ package com.f1dashboard.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.f1dashboard.config.CacheConfig;
 import com.f1dashboard.entity.*;
 import com.f1dashboard.enums.RaceStatus;
 import com.f1dashboard.repository.*;
 import com.f1dashboard.util.CircuitDataSeeder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -39,6 +42,7 @@ public class DataSyncService {
    private final CircuitRepository circuitRepository;
    private final RaceSessionRepository raceSessionRepository;
    private final CircuitSyncHelper circuitSyncHelper;
+   private final CacheManager cacheManager;
 
    private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -53,10 +57,30 @@ public class DataSyncService {
          syncSprintResults();
          syncQualifyingResults();
          updateRaceStatusesByDate(); // Reconcile statuses based on today's date
+         clearReadCaches();
          log.info("Data synchronization completed successfully.");
       } catch (Exception e) {
          log.warn("Data sync failed. Error: {}", e.getMessage(), e);
+         clearReadCaches();
       }
+   }
+
+   public void clearReadCaches() {
+      List.of(
+            CacheConfig.DASHBOARD,
+            CacheConfig.DRIVERS,
+            CacheConfig.CONSTRUCTORS,
+            CacheConfig.RACES,
+            CacheConfig.CIRCUITS,
+            CacheConfig.WEATHER,
+            CacheConfig.ANALYTICS,
+            CacheConfig.RECORDS)
+            .forEach(cacheName -> {
+               Cache cache = cacheManager.getCache(cacheName);
+               if (cache != null) {
+                  cache.clear();
+               }
+            });
    }
 
    public void syncRaceCalendar() {
@@ -487,6 +511,7 @@ public class DataSyncService {
       syncRaceResults(season);
       syncSprintResults(season);
       syncQualifyingResults(season);
+      clearReadCaches();
       log.info("Backfill for season {} completed.", season);
    }
 

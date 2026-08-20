@@ -1,6 +1,7 @@
 package com.f1dashboard.service;
 
 import com.f1dashboard.dto.RecordsDto;
+import com.f1dashboard.config.CacheConfig;
 import com.f1dashboard.entity.Constructor;
 import com.f1dashboard.entity.Driver;
 import com.f1dashboard.entity.RaceResult;
@@ -9,6 +10,7 @@ import com.f1dashboard.repository.ConstructorRepository;
 import com.f1dashboard.repository.DriverRepository;
 import com.f1dashboard.repository.RaceResultRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -26,6 +28,7 @@ public class RecordsService {
       return getHistoricalRecords(null);
    }
 
+   @Cacheable(cacheNames = CacheConfig.RECORDS, key = "'historical:' + (#season == null ? 'all' : #season)")
    public RecordsDto getHistoricalRecords(Integer season) {
       RecordsDto dto = new RecordsDto();
 

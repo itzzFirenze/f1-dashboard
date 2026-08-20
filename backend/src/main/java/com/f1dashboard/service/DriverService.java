@@ -2,6 +2,7 @@ package com.f1dashboard.service;
 
 import com.f1dashboard.dto.DriverDto;
 import com.f1dashboard.dto.DriverDetailDto;
+import com.f1dashboard.config.CacheConfig;
 import com.f1dashboard.entity.Driver;
 import com.f1dashboard.entity.RaceResult;
 import com.f1dashboard.enums.SessionType;
@@ -9,6 +10,7 @@ import com.f1dashboard.exception.ResourceNotFoundException;
 import com.f1dashboard.repository.DriverRepository;
 import com.f1dashboard.repository.RaceResultRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,7 @@ public class DriverService {
    }
 
    /** Get all drivers for a specific season (or current season if null) */
+   @Cacheable(cacheNames = CacheConfig.DRIVERS, key = "'all:' + (#season == null ? 'current' : #season)")
    public List<DriverDto> getAllDrivers(Integer season) {
       if (season == null) {
          return driverRepository.findAllByOrderByChampionshipPositionAsc()
@@ -122,6 +125,7 @@ public class DriverService {
    }
 
    /** Search drivers by name or code */
+   @Cacheable(cacheNames = CacheConfig.DRIVERS, key = "'search:' + #query")
    public List<DriverDto> searchDrivers(String query) {
       return driverRepository.searchDrivers(query)
             .stream()
@@ -130,6 +134,7 @@ public class DriverService {
    }
 
    /** Get detailed driver info by ID */
+   @Cacheable(cacheNames = CacheConfig.DRIVERS, key = "'detail:' + #id")
    public DriverDetailDto getDriverById(Long id) {
       Driver driver = driverRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", id));
@@ -137,6 +142,7 @@ public class DriverService {
    }
 
    /** Get the championship leader */
+   @Cacheable(cacheNames = CacheConfig.DRIVERS, key = "'leader'")
    public DriverDto getChampionshipLeader() {
       Driver leader = driverRepository.findByChampionshipPosition(1);
       return leader != null ? toDto(leader) : null;

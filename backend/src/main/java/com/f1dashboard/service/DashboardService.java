@@ -1,6 +1,7 @@
 package com.f1dashboard.service;
 
 import com.f1dashboard.dto.*;
+import com.f1dashboard.config.CacheConfig;
 import com.f1dashboard.entity.Race;
 import com.f1dashboard.entity.WeatherData;
 import com.f1dashboard.enums.RaceStatus;
@@ -8,6 +9,7 @@ import com.f1dashboard.repository.RaceRepository;
 import com.f1dashboard.repository.RaceSessionRepository;
 import com.f1dashboard.repository.WeatherDataRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class DashboardService {
     private final RaceSessionRepository raceSessionRepository;
 
     /** Build the complete dashboard payload */
+    @Cacheable(cacheNames = CacheConfig.DASHBOARD, key = "'home'")
     public DashboardDto getDashboardData() {
         long totalRaces = raceRepository.findBySeasonOrderByRoundAsc(CURRENT_SEASON).size();
         long completed = raceRepository.countBySeasonAndStatus(CURRENT_SEASON, RaceStatus.COMPLETED);

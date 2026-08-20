@@ -3,6 +3,7 @@ package com.f1dashboard.service;
 import com.f1dashboard.dto.ConstructorDto;
 import com.f1dashboard.dto.ConstructorDetailDto;
 import com.f1dashboard.dto.DriverDto;
+import com.f1dashboard.config.CacheConfig;
 import com.f1dashboard.entity.Constructor;
 import com.f1dashboard.entity.RaceResult;
 import com.f1dashboard.enums.SessionType;
@@ -11,6 +12,7 @@ import com.f1dashboard.repository.ConstructorRepository;
 import com.f1dashboard.repository.DriverRepository;
 import com.f1dashboard.repository.RaceResultRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class ConstructorService {
    }
 
    /** Get all constructors for a specific season */
+   @Cacheable(cacheNames = CacheConfig.CONSTRUCTORS, key = "'all:' + (#season == null ? 'current' : #season)")
    public List<ConstructorDto> getAllConstructors(Integer season) {
       if (season == null) {
          return constructorRepository.findAllByOrderByChampionshipPositionAsc()
@@ -99,6 +102,7 @@ public class ConstructorService {
    }
 
    /** Get detailed constructor with driver lineup */
+   @Cacheable(cacheNames = CacheConfig.CONSTRUCTORS, key = "'detail:' + #id")
    public ConstructorDetailDto getConstructorById(Long id) {
       Constructor c = constructorRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Constructor", "id", id));
@@ -121,6 +125,7 @@ public class ConstructorService {
    }
 
    /** Get the constructor championship leader */
+   @Cacheable(cacheNames = CacheConfig.CONSTRUCTORS, key = "'leader'")
    public ConstructorDto getChampionshipLeader() {
       Constructor leader = constructorRepository.findByChampionshipPosition(1);
       return leader != null ? toDto(leader) : null;

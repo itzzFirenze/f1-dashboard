@@ -3,6 +3,7 @@ package com.f1dashboard.service;
 import com.f1dashboard.dto.ConsistencyDto;
 import com.f1dashboard.dto.DriverComparisonDto;
 import com.f1dashboard.dto.ConstructorComparisonDto;
+import com.f1dashboard.config.CacheConfig;
 import com.f1dashboard.dto.ConstructorDto;
 import com.f1dashboard.dto.DriverDto;
 import com.f1dashboard.dto.MomentumDto;
@@ -19,6 +20,7 @@ import com.f1dashboard.repository.RaceRepository;
 import com.f1dashboard.repository.RaceResultRepository;
 import com.f1dashboard.repository.ConstructorRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +39,7 @@ public class AnalyticsService {
    private final DriverService driverService;
    private final ConstructorService constructorService;
 
+   @Cacheable(cacheNames = CacheConfig.ANALYTICS, key = "'compareDrivers:' + #driverAId + ':' + #driverBId + ':' + #season")
    public DriverComparisonDto compareDrivers(Long driverAId, Long driverBId, Integer season) {
       Driver driverA = driverRepository.findById(driverAId)
             .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverAId));
@@ -194,6 +197,7 @@ public class AnalyticsService {
       return stats;
    }
 
+   @Cacheable(cacheNames = CacheConfig.ANALYTICS, key = "'momentum:' + #driverId + ':' + #window + ':' + #season")
    public MomentumDto getDriverMomentum(Long driverId, Integer window, Integer season) {
       Driver driver = driverRepository.findById(driverId)
             .orElseThrow(() -> new ResourceNotFoundException("Driver", "id", driverId));
@@ -257,6 +261,7 @@ public class AnalyticsService {
       return dto;
    }
 
+   @Cacheable(cacheNames = CacheConfig.ANALYTICS, key = "'consistency:' + #season")
    public ConsistencyDto getConsistencyAnalytics(Integer season) {
       List<Race> races = raceRepository.findBySeasonOrderByRoundAsc(season);
       List<String> raceNames = races.stream().map(Race::getName).collect(Collectors.toList());
@@ -323,6 +328,7 @@ public class AnalyticsService {
       return dto;
    }
 
+   @Cacheable(cacheNames = CacheConfig.ANALYTICS, key = "'compareConstructors:' + #teamAId + ':' + #teamBId + ':' + #season")
    public ConstructorComparisonDto getConstructorComparison(Long teamAId, Long teamBId, Integer season) {
       Constructor teamA = constructorRepository.findById(teamAId)
             .orElseThrow(() -> new ResourceNotFoundException("Constructor", "id", teamAId));
@@ -451,6 +457,7 @@ public class AnalyticsService {
       return splits;
    }
 
+   @Cacheable(cacheNames = CacheConfig.ANALYTICS, key = "'timeline:' + #season")
    public TimelineDto getSeasonTimeline(Integer season) {
       List<Race> races = raceRepository.findBySeasonOrderByRoundAsc(season);
       List<RaceResult> allRaceResults = raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season,

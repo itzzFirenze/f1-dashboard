@@ -7,6 +7,11 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME:f1admin}
     password: ${DB_PASSWORD:f1password}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:5}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:10000}
+      idle-timeout: ${DB_IDLE_TIMEOUT_MS:300000}
 
   h2:
     console:

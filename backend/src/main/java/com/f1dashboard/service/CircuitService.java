@@ -1,10 +1,12 @@
 package com.f1dashboard.service;
 
 import com.f1dashboard.dto.CircuitDto;
+import com.f1dashboard.config.CacheConfig;
 import com.f1dashboard.entity.Circuit;
 import com.f1dashboard.exception.ResourceNotFoundException;
 import com.f1dashboard.repository.CircuitRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ public class CircuitService {
     private final CircuitRepository circuitRepository;
 
     /** Get all circuits */
+    @Cacheable(cacheNames = CacheConfig.CIRCUITS, key = "'all'")
     public List<CircuitDto> getAllCircuits() {
         return circuitRepository.findAll()
                 .stream()
@@ -29,6 +32,7 @@ public class CircuitService {
     }
 
     /** Search circuits by name, country, or location */
+    @Cacheable(cacheNames = CacheConfig.CIRCUITS, key = "'search:' + #query")
     public List<CircuitDto> searchCircuits(String query) {
         return circuitRepository.searchCircuits(query)
                 .stream()
@@ -37,6 +41,7 @@ public class CircuitService {
     }
 
     /** Get circuit by ID */
+    @Cacheable(cacheNames = CacheConfig.CIRCUITS, key = "'detail:' + #id")
     public CircuitDto getCircuitById(Long id) {
         Circuit c = circuitRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Circuit", "id", id));

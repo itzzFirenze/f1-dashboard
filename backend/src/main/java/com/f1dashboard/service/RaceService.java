@@ -1,6 +1,7 @@
 package com.f1dashboard.service;
 
 import com.f1dashboard.dto.*;
+import com.f1dashboard.config.CacheConfig;
 import com.f1dashboard.entity.Race;
 import com.f1dashboard.entity.RaceResult;
 import com.f1dashboard.entity.RaceSession;
@@ -9,6 +10,7 @@ import com.f1dashboard.enums.RaceStatus;
 import com.f1dashboard.exception.ResourceNotFoundException;
 import com.f1dashboard.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class RaceService {
    private final WeatherDataRepository weatherRepository;
 
    /** Get all races for a season */
+   @Cacheable(cacheNames = CacheConfig.RACES, key = "'season:' + #season")
    public List<RaceDto> getRacesBySeason(Integer season) {
       return raceRepository.findBySeasonOrderByRoundAsc(season)
             .stream()
@@ -38,6 +41,7 @@ public class RaceService {
    }
 
    /** Get races filtered by status */
+   @Cacheable(cacheNames = CacheConfig.RACES, key = "'status:' + #season + ':' + #status")
    public List<RaceDto> getRacesByStatus(Integer season, RaceStatus status) {
       return raceRepository.findBySeasonAndStatusOrderByRoundAsc(season, status)
             .stream()
@@ -46,6 +50,7 @@ public class RaceService {
    }
 
    /** Search races by name or country */
+   @Cacheable(cacheNames = CacheConfig.RACES, key = "'search:' + #season + ':' + #query")
    public List<RaceDto> searchRaces(Integer season, String query) {
       return raceRepository.searchRaces(season, query)
             .stream()
@@ -54,6 +59,7 @@ public class RaceService {
    }
 
    /** Get detailed race info with sessions, results, and weather */
+   @Cacheable(cacheNames = CacheConfig.RACES, key = "'detail:' + #id")
    public RaceDetailDto getRaceById(Long id) {
       Race race = raceRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Race", "id", id));
@@ -95,6 +101,7 @@ public class RaceService {
    }
 
    /** Get the next upcoming race */
+   @Cacheable(cacheNames = CacheConfig.RACES, key = "'next'")
    public Race getNextRace() {
       return raceRepository.findNextUpcomingRace();
    }

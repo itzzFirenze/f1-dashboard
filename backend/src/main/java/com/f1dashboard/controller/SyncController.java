@@ -27,6 +27,7 @@ public class SyncController {
          dataSyncService.syncSprintResults();
          dataSyncService.syncQualifyingResults();
          dataSyncService.updateRaceStatusesByDate();
+         dataSyncService.clearReadCaches();
          return ResponseEntity.ok(
                ApiResponse.success("Synchronization successful! Live 2026 standings, calendar, and results updated."));
       } catch (Exception e) {

@@ -2,6 +2,7 @@ package com.f1dashboard.service;
 
 import com.f1dashboard.dto.WeatherDto;
 import com.f1dashboard.dto.WeekendWeatherDto;
+import com.f1dashboard.config.CacheConfig;
 import com.f1dashboard.entity.Race;
 import com.f1dashboard.entity.WeatherData;
 import com.f1dashboard.enums.RaceStatus;
@@ -9,6 +10,7 @@ import com.f1dashboard.repository.RaceRepository;
 import com.f1dashboard.repository.WeatherDataRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,7 @@ public class WeatherService {
     private final RaceRepository raceRepository;
 
     /** Get weather for a specific race from cache */
+    @Cacheable(cacheNames = CacheConfig.WEATHER, key = "'race:' + #raceId")
     public WeatherDto getWeatherForRace(Long raceId) {
         return weatherRepository.findByRaceId(raceId)
                 .map(w -> new WeatherDto(
@@ -41,6 +44,7 @@ public class WeatherService {
     }
 
     /** Get weekend forecast for all upcoming races */
+    @Cacheable(cacheNames = CacheConfig.WEATHER, key = "'upcoming:' + #season")
     public List<WeekendWeatherDto> getUpcomingWeekendForecasts(Integer season) {
         List<Race> upcomingRaces = raceRepository.findBySeasonOrderByRoundAsc(season).stream()
                 .filter(r -> r.getStatus() == RaceStatus.UPCOMING || r.getStatus() == RaceStatus.IN_PROGRESS)
