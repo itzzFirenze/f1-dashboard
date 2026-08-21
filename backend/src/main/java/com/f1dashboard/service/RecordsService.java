@@ -39,6 +39,11 @@ public class RecordsService {
             : raceResultRepository.findAll().stream()
                   .filter(r -> r.getSessionType() == SessionType.RACE)
                   .toList());
+      List<RaceResult> sprintResults = (season != null
+            ? raceResultRepository.findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(season, SessionType.SPRINT)
+            : raceResultRepository.findAll().stream()
+                  .filter(r -> r.getSessionType() == SessionType.SPRINT)
+                  .toList());
 
       // 1. Most Wins (Driver)
       dto.setMostWinsDriver(drivers.stream()
@@ -67,7 +72,12 @@ public class RecordsService {
             .map(d -> {
                List<RaceResult> dResults = results.stream()
                      .filter(r -> r.getDriver() != null && r.getDriver().getId().equals(d.getId())).toList();
-               double points = dResults.stream().mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0).sum();
+               List<RaceResult> dSprintResults = sprintResults.stream()
+                     .filter(r -> r.getDriver() != null && r.getDriver().getId().equals(d.getId())).toList();
+               double racePoints = dResults.stream().mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0).sum();
+               double sprintPoints = dSprintResults.stream().mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0)
+                     .sum();
+               double points = racePoints + sprintPoints;
                return createDriverRecord(d, points, String.format("%.0f Pts", points), dResults, season);
             })
             .sorted(Comparator.comparingDouble(RecordsDto.DriverRecord::getValue).reversed())
@@ -112,9 +122,13 @@ public class RecordsService {
       // 7. Most Points (Constructor)
       dto.setMostPointsConstructor(constructors.stream()
             .map(c -> {
-               double points = results.stream()
+               double racePoints = results.stream()
                      .filter(r -> r.getConstructor() != null && r.getConstructor().getId().equals(c.getId()))
                      .mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0).sum();
+               double sprintPoints = sprintResults.stream()
+                     .filter(r -> r.getConstructor() != null && r.getConstructor().getId().equals(c.getId()))
+                     .mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0).sum();
+               double points = racePoints + sprintPoints;
                return createConstructorRecord(c, points, String.format("%.0f Pts", points));
             })
             .sorted(Comparator.comparingDouble(RecordsDto.ConstructorRecord::getValue).reversed())
