@@ -7,6 +7,7 @@ import { ResponsiveLine } from '@nivo/line';
 import { weatherService, WeekendWeatherDto } from '../services/weatherService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import EmptyState from '../components/ui/EmptyState';
+import SearchInput from '../components/ui/SearchInput';
 import { Link } from 'react-router-dom';
 
 /** Small circular HUD dial, matching the dashboard's StatGaugeCard telemetry dial */
@@ -46,6 +47,7 @@ const HudDial: React.FC<{ percent: number; colorHex: string; size?: number }> = 
 const WeatherForecastPage: React.FC = () => {
    const [forecasts, setForecasts] = useState<WeekendWeatherDto[]>([]);
    const [loading, setLoading] = useState(true);
+   const [search, setSearch] = useState('');
 
    useEffect(() => {
       weatherService.getUpcomingForecasts()
@@ -53,6 +55,15 @@ const WeatherForecastPage: React.FC = () => {
          .catch(console.error)
          .finally(() => setLoading(false));
    }, []);
+
+   const filteredForecasts = useMemo(() => {
+      if (!search.trim()) return forecasts;
+      const q = search.toLowerCase();
+      return forecasts.filter(f =>
+         f.raceName.toLowerCase().startsWith(q) ||
+         f.country.toLowerCase().startsWith(q)
+      );
+   }, [forecasts, search]);
 
    if (loading) return <PageSkeleton />;
 
@@ -86,15 +97,23 @@ const WeatherForecastPage: React.FC = () => {
                      Session-by-session atmospheric projections for every upcoming Grand Prix weekend.
                   </p>
                </div>
+
+               <div className="w-full sm:w-64">
+                  <SearchInput value={search} onChange={setSearch} placeholder="Search races or countries..." />
+               </div>
             </div>
          </div>
 
          {/* ─── Weekend Forecast Telemetry Blocks ─── */}
-         <div className="space-y-6">
-            {forecasts.map(forecast => (
-               <WeekendForecast key={forecast.raceId} forecast={forecast} />
-            ))}
-         </div>
+         {filteredForecasts.length === 0 ? (
+            <EmptyState title="No matching races" message="Try a different search term." />
+         ) : (
+            <div className="space-y-6">
+               {filteredForecasts.map(forecast => (
+                  <WeekendForecast key={forecast.raceId} forecast={forecast} />
+               ))}
+            </div>
+         )}
       </div>
    );
 };
