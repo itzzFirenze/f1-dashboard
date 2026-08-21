@@ -29,6 +29,7 @@ const SVG_KEY_TO_CIRCUIT_ID: Record<string, string> = {
    lasVegas: 'las-vegas', mexico: 'mexico', miami: 'miami', monaco: 'monaco', monza: 'monza',
    netherlands: 'netherlands', qatar: 'qatar', saudiArabia: 'saudi-arabia',
    silverstone: 'silverstone', singapore: 'singapore', spain: 'spain',
+   madring: 'madring',
 };
 
 const CIRCUIT_ID_TO_SVG_KEY = Object.fromEntries(

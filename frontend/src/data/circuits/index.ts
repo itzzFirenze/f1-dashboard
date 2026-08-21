@@ -30,7 +30,8 @@ export const circuits = [
       cornerTypes: Array.from({ length: 27 }, (_, i) => (i % 7 === 0 ? 'Chicane' : i % 3 === 0 ? 'High-speed' : 'Kink')),
       cornerPositions: [15.5, 16.7, 18.8, 23.9, 25.9, 28.3, 30.1, 31.2, 33.8, 35.8, 37.1, 38.5, 47.1, 52.3, 55.8, 57.6, 59.4, 61.8, 64.8, 68.9, 73.5, 77.4, 79.1, 81.1, 85.4, 93, 97.8],
       activeAeroRanges: [[8, 18], [48, 59], [83, 97]], overtakeDetectionPercent: 80, speedTrapPercent: 92, speedTrapLocation: 'Start-finish straight', topSpeedKmh: 342,
-    sector1StartPercent: 0, sector2StartPercent: 33.4, sector3StartPercent: 66.7, overtakeActivationPercent: 80, pitLaneEntryPercent: 3.9, pitLaneExitPercent: 16.8}),
+      sector1StartPercent: 0, sector2StartPercent: 33.4, sector3StartPercent: 66.7, overtakeActivationPercent: 80, pitLaneEntryPercent: 3.9, pitLaneExitPercent: 16.8
+   }),
    buildCircuit({
       id: 'australia', name: 'Albert Park Circuit', country: 'Australia', location: 'Melbourne',
       lengthKm: 5.278, laps: 58, corners: 14, lapRecord: '1:19.813', lapRecordHolder: 'Charles Leclerc',
@@ -39,7 +40,8 @@ export const circuits = [
       cornerPositions: [15.1, 17.6, 29, 31.7, 35.9, 43.7, 45.5, 49.3, 71, 73.4, 86.3, 91.5, 96.1, 98.8],
       activeAeroRanges: [[18.4, 27.9], [51.9, 70.3], [74.9, 85.1]], overtakeDetectionPercent: 96.8, speedTrapPercent: 12.3, speedTrapLocation: 'Main straight', topSpeedKmh: 330,
       sector1StartPercent: 6.7, sector2StartPercent: 41.5, sector3StartPercent: 69.1, overtakeActivationPercent: 98
-   , pitLaneEntryPercent: 97.8, pitLaneExitPercent: 12.9}),
+      , pitLaneEntryPercent: 97.8, pitLaneExitPercent: 12.9
+   }),
    buildCircuit({
       id: 'japan', name: 'Suzuka Circuit', country: 'Japan', location: 'Suzuka',
       lengthKm: 5.807, laps: 53, corners: 18, lapRecord: '1:30.983', lapRecordHolder: 'Lewis Hamilton',
@@ -49,7 +51,8 @@ export const circuits = [
       cornerTypes: ['High-speed', 'High-speed', 'Esses', 'Esses', 'Esses', 'High-speed', 'Medium-speed', 'Medium-speed', 'Hairpin', 'Kink', 'Kink', 'High-speed', 'High-speed', 'High-speed', 'Chicane', 'Chicane', 'Kink', 'Kink'],
       activeAeroRanges: [[84, 97]], overtakeDetectionPercent: 52.4, speedTrapPercent: 46.3, speedTrapLocation: 'Main straight', topSpeedKmh: 329,
       sector1StartPercent: 58, sector2StartPercent: 95.5, sector3StartPercent: 38.5, overtakeActivationPercent: 55
-   , pitLaneEntryPercent: 53.5, pitLaneExitPercent: 66}),
+      , pitLaneEntryPercent: 53.5, pitLaneExitPercent: 66
+   }),
    buildCircuit({
       id: 'china', name: 'Shanghai International Circuit', country: 'China', location: 'Shanghai',
       lengthKm: 5.451, laps: 56, corners: 16, lapRecord: '1:32.238', lapRecordHolder: 'Michael Schumacher',
@@ -58,7 +61,8 @@ export const circuits = [
       cornerPositions: [50.6, 47.3, 44.5, 42.9, 37.3, 32.4, 24, 18.4, 14.7, 12.9, 5, 2.2, 99.4, 73.9, 71.9, 67],
       activeAeroRanges: [[11, 21], [66, 84]], overtakeDetectionPercent: 67.2, speedTrapPercent: 78.4, speedTrapLocation: 'Back straight', topSpeedKmh: 340,
       sector1StartPercent: 62.8, sector2StartPercent: 35.2, sector3StartPercent: 7.5, overtakeActivationPercent: 65.5
-   , pitLaneEntryPercent: 66.9, pitLaneExitPercent: 56.4}),
+      , pitLaneEntryPercent: 66.9, pitLaneExitPercent: 56.4
+   }),
    buildCircuit({
       id: 'miami', name: 'Miami International Autodrome', country: 'United States', location: 'Miami Gardens',
       lengthKm: 5.412, laps: 57, corners: 19, lapRecord: '1:29.708', lapRecordHolder: 'Max Verstappen',
@@ -67,7 +71,8 @@ export const circuits = [
       cornerPositions: [4.2, 5.7, 7.7, 17.8, 20.4, 23.1, 25.9, 27.3, 37.6, 44.8, 54.8, 57.1, 59.4, 60.6, 61.2, 62.8, 87.7, 90.6, 93.9],
       activeAeroRanges: [[7, 18], [47, 60], [80, 94]], overtakeDetectionPercent: 88.7, speedTrapPercent: 83.8, speedTrapLocation: 'Longest straight', topSpeedKmh: 334,
       sector1StartPercent: 96.5, sector2StartPercent: 29.8, sector3StartPercent: 64.9, overtakeActivationPercent: 91.7
-   , pitLaneEntryPercent: 90.5, pitLaneExitPercent: 6.1}),
+      , pitLaneEntryPercent: 90.5, pitLaneExitPercent: 6.1
+   }),
    buildCircuit({
       id: 'imola', name: 'Autodromo Enzo e Dino Ferrari', country: 'Italy', location: 'Imola',
       lengthKm: 4.909, laps: 63, corners: 19, lapRecord: '1:15.484', lapRecordHolder: 'Lewis Hamilton',
@@ -76,7 +81,8 @@ export const circuits = [
       cornerPositions: [93.1, 6.7, 7.9, 10.9, 19.9, 21.6, 27.8, 35.5, 40, 44.3, 48.6, 51, 52.4, 60.9, 62, 73, 77.1, 79.8, 86.6],
       activeAeroRanges: [[78, 96]], overtakeDetectionPercent: 74, speedTrapPercent: 90, speedTrapLocation: 'Pit straight', topSpeedKmh: 333,
       sector1StartPercent: 88, sector2StartPercent: 24.6, sector3StartPercent: 58.4, overtakeActivationPercent: 74
-   , pitLaneEntryPercent: 92.3, pitLaneExitPercent: 0.5}),
+      , pitLaneEntryPercent: 92.3, pitLaneExitPercent: 0.5
+   }),
    buildCircuit({
       id: 'monaco', name: 'Circuit de Monaco', country: 'Monaco', location: 'Monte Carlo',
       lengthKm: 3.337, laps: 78, corners: 19, lapRecord: '1:12.909', lapRecordHolder: 'Lewis Hamilton',
@@ -85,7 +91,8 @@ export const circuits = [
       cornerPositions: [35.9, 47.1, 52.4, 56.7, 63.3, 67.3, 70, 72.5, 81.1, 91.7, 92.8, 0.4, 5.6, 6.7, 10.1, 11.3, 14, 17.1, 20],
       activeAeroRanges: [[78, 93]], overtakeDetectionPercent: 13.5, speedTrapPercent: 85.5, speedTrapLocation: 'Pit straight', topSpeedKmh: 290,
       sector1StartPercent: 29.6, sector2StartPercent: 61.9, sector3StartPercent: 2.5, overtakeActivationPercent: 18.5
-   , pitLaneEntryPercent: 20, pitLaneExitPercent: 33.6}),
+      , pitLaneEntryPercent: 20, pitLaneExitPercent: 33.6
+   }),
    buildCircuit({
       id: 'canada', name: 'Circuit Gilles Villeneuve', country: 'Canada', location: 'Montreal',
       lengthKm: 4.361, laps: 70, corners: 14, lapRecord: '1:13.078', lapRecordHolder: 'Valtteri Bottas',
@@ -94,7 +101,8 @@ export const circuits = [
       cornerPositions: [47, 49.3, 57.8, 59.5, 64.3, 70, 72.1, 87.4, 89.2, 3.3, 6.3, 14.2, 30.6, 31.9],
       activeAeroRanges: [[53, 66], [78, 96]], overtakeDetectionPercent: 30.2, speedTrapPercent: 26.1, speedTrapLocation: 'Casino straight', topSpeedKmh: 345,
       sector1StartPercent: 41.6, sector2StartPercent: 66.5, sector3StartPercent: 98.6, overtakeActivationPercent: 33.1
-   , pitLaneEntryPercent: 30.8, pitLaneExitPercent: 49.2}),
+      , pitLaneEntryPercent: 30.8, pitLaneExitPercent: 49.2
+   }),
    buildCircuit({
       id: 'spain', name: 'Circuit de Barcelona-Catalunya', country: 'Spain', location: 'Montmelo',
       lengthKm: 4.657, laps: 66, corners: 14, lapRecord: '1:16.330', lapRecordHolder: 'Max Verstappen',
@@ -103,7 +111,8 @@ export const circuits = [
       cornerPositions: [22.9, 25.1, 30.6, 42.2, 50.8, 55.6, 59.7, 61.5, 67.3, 79.8, 82.1, 86.3, 92.2, 98.3],
       activeAeroRanges: [[7, 20], [73, 95]], overtakeDetectionPercent: 69, speedTrapPercent: 16.8, speedTrapLocation: 'Main straight', topSpeedKmh: 334,
       sector1StartPercent: 4.5, sector2StartPercent: 39.4, sector3StartPercent: 78.1, overtakeActivationPercent: 69
-   , pitLaneEntryPercent: 96.8, pitLaneExitPercent: 17}),
+      , pitLaneEntryPercent: 96.8, pitLaneExitPercent: 17
+   }),
    buildCircuit({
       id: 'austria', name: 'Red Bull Ring', country: 'Austria', location: 'Spielberg',
       lengthKm: 4.318, laps: 71, corners: 10, lapRecord: '1:05.619', lapRecordHolder: 'Carlos Sainz',
@@ -112,7 +121,8 @@ export const circuits = [
       cornerPositions: [76.9, 61.9, 54.9, 35.6, 30.5, 23.8, 16.7, 12.5, 99.9, 94.6],
       activeAeroRanges: [[3, 17], [25, 40], [72, 96]], overtakeDetectionPercent: 96, speedTrapPercent: 40, speedTrapLocation: 'Back straight', topSpeedKmh: 331,
       sector1StartPercent: 87.1, sector2StartPercent: 59.8, sector3StartPercent: 19.1, overtakeActivationPercent: 91.7
-   , pitLaneEntryPercent: 97.1, pitLaneExitPercent: 82.3}),
+      , pitLaneEntryPercent: 97.1, pitLaneExitPercent: 82.3
+   }),
    buildCircuit({
       id: 'silverstone', name: 'Silverstone Circuit', country: 'United Kingdom', location: 'Silverstone',
       lengthKm: 5.891, laps: 52, corners: 18, lapRecord: '1:27.097', lapRecordHolder: 'Max Verstappen',
@@ -121,7 +131,8 @@ export const circuits = [
       cornerPositions: [0.8, 4.5, 9, 11.6, 15.1, 27.4, 31.4, 37.3, 46.4, 55.1, 56.9, 59.8, 62.2, 64.9, 79.6, 87.5, 89, 91.7],
       activeAeroRanges: [[10, 23], [64, 79]], overtakeDetectionPercent: 60, speedTrapPercent: 76.2, speedTrapLocation: 'Hangar Straight', topSpeedKmh: 336,
       sector1StartPercent: 94.9, sector2StartPercent: 24.6, sector3StartPercent: 67.4, overtakeActivationPercent: 60
-   , pitLaneEntryPercent: 86.3, pitLaneExitPercent: 2.7}),
+      , pitLaneEntryPercent: 86.3, pitLaneExitPercent: 2.7
+   }),
    buildCircuit({
       id: 'belgium', name: 'Circuit de Spa-Francorchamps', country: 'Belgium', location: 'Stavelot',
       lengthKm: 7.004, laps: 44, corners: 19, lapRecord: '1:46.286', lapRecordHolder: 'Valtteri Bottas',
@@ -130,7 +141,8 @@ export const circuits = [
       cornerPositions: [0.4, 9.2, 11.2, 13.3, 29.2, 30.5, 32.6, 38.4, 41.9, 49.5, 52.4, 59.1, 61.5, 65.4, 68.7, 79, 84, 91.1, 92.2],
       activeAeroRanges: [[8, 24], [78, 95]], overtakeDetectionPercent: 92.1, speedTrapPercent: 14.1, speedTrapLocation: 'Kemmel Straight', topSpeedKmh: 345,
       sector1StartPercent: 95, sector2StartPercent: 27, sector3StartPercent: 66.6, overtakeActivationPercent: 93.4
-   , pitLaneEntryPercent: 92, pitLaneExitPercent: 3.5}),
+      , pitLaneEntryPercent: 92, pitLaneExitPercent: 3.5
+   }),
    buildCircuit({
       id: 'hungary', name: 'Hungaroring', country: 'Hungary', location: 'Budapest',
       lengthKm: 4.381, laps: 70, corners: 14, lapRecord: '1:16.627', lapRecordHolder: 'Lewis Hamilton',
@@ -139,7 +151,8 @@ export const circuits = [
       cornerPositions: [0.7, 12.3, 16.8, 27.4, 33.3, 40.7, 41.6, 45.6, 48.7, 53.2, 57.2, 66.9, 73, 79.7],
       activeAeroRanges: [[5, 20], [84, 97]], overtakeDetectionPercent: 80, speedTrapPercent: 93.2, speedTrapLocation: 'Main straight', topSpeedKmh: 322,
       sector1StartPercent: 87.5, sector2StartPercent: 25.3, sector3StartPercent: 60, overtakeActivationPercent: 80
-   , pitLaneEntryPercent: 76.4, pitLaneExitPercent: 96.7}),
+      , pitLaneEntryPercent: 76.4, pitLaneExitPercent: 96.7
+   }),
    buildCircuit({
       id: 'netherlands', name: 'Circuit Zandvoort', country: 'Netherlands', location: 'Zandvoort',
       lengthKm: 4.259, laps: 72, corners: 14, lapRecord: '1:11.097', lapRecordHolder: 'Lewis Hamilton',
@@ -148,7 +161,8 @@ export const circuits = [
       cornerPositions: [16.9, 24.2, 28.3, 33.3, 37.9, 41.9, 48.4, 56.2, 61.5, 67.2, 80.8, 82.8, 90.7, 97.7],
       activeAeroRanges: [[35, 48], [79, 98]], overtakeDetectionPercent: 75, speedTrapPercent: 14.4, speedTrapLocation: 'Main straight', topSpeedKmh: 326,
       sector1StartPercent: 8.3, sector2StartPercent: 43.1, sector3StartPercent: 78.8, overtakeActivationPercent: 75
-   , pitLaneEntryPercent: 1.1, pitLaneExitPercent: 17.9}),
+      , pitLaneEntryPercent: 1.1, pitLaneExitPercent: 17.9
+   }),
    buildCircuit({
       id: 'monza', name: 'Autodromo Nazionale Monza', country: 'Italy', location: 'Monza',
       lengthKm: 5.793, laps: 53, corners: 11, lapRecord: '1:21.046', lapRecordHolder: 'Rubens Barrichello',
@@ -157,7 +171,8 @@ export const circuits = [
       cornerPositions: [85.1, 86, 93.5, 5.9, 6.9, 13, 18.9, 37.2, 39, 40.6, 58.8],
       activeAeroRanges: [[6, 19], [74, 96]], overtakeDetectionPercent: 70, speedTrapPercent: 83.3, speedTrapLocation: 'Main straight', topSpeedKmh: 355,
       sector1StartPercent: 66, sector2StartPercent: 3.4, sector3StartPercent: 35, overtakeActivationPercent: 70
-   , pitLaneEntryPercent: 65.5, pitLaneExitPercent: 82.4}),
+      , pitLaneEntryPercent: 65.5, pitLaneExitPercent: 82.4
+   }),
    buildCircuit({
       id: 'azerbaijan', name: 'Baku City Circuit', country: 'Azerbaijan', location: 'Baku',
       lengthKm: 6.003, laps: 51, corners: 20, lapRecord: '1:43.009', lapRecordHolder: 'Charles Leclerc',
@@ -166,7 +181,8 @@ export const circuits = [
       cornerPositions: [99.3, 4.1, 19.6, 21.8, 27, 28.2, 34.1, 37.3, 37.7, 38.5, 38.8, 40.1, 47.1, 50.9, 55.5, 62.3, 65.8, 70, 71.9, 78.3],
       activeAeroRanges: [[18, 31], [75, 98]], overtakeDetectionPercent: 71, speedTrapPercent: 81.7, speedTrapLocation: 'Start-finish straight', topSpeedKmh: 351,
       sector1StartPercent: 92.9, sector2StartPercent: 25.9, sector3StartPercent: 61.2, overtakeActivationPercent: 71
-   , pitLaneEntryPercent: 85.7, pitLaneExitPercent: 1.6}),
+      , pitLaneEntryPercent: 85.7, pitLaneExitPercent: 1.6
+   }),
    buildCircuit({
       id: 'singapore', name: 'Marina Bay Street Circuit', country: 'Singapore', location: 'Marina Bay',
       lengthKm: 4.940, laps: 62, corners: 19, lapRecord: '1:35.867', lapRecordHolder: 'Lewis Hamilton',
@@ -175,7 +191,8 @@ export const circuits = [
       cornerPositions: [13.5, 14.7, 16.4, 19, 24.6, 33.2, 41, 45.6, 49.9, 59, 61.3, 63, 67.1, 78.1, 83.3, 93, 94.5, 0.4, 2.5],
       activeAeroRanges: [[7, 18], [42, 55], [78, 95]], overtakeDetectionPercent: 74, speedTrapPercent: 10.9, speedTrapLocation: 'Pit straight', topSpeedKmh: 323,
       sector1StartPercent: 4.4, sector2StartPercent: 38, sector3StartPercent: 76.3, overtakeActivationPercent: 74
-   , pitLaneEntryPercent: 99.3, pitLaneExitPercent: 14.8}),
+      , pitLaneEntryPercent: 99.3, pitLaneExitPercent: 14.8
+   }),
    buildCircuit({
       id: 'austin', name: 'Circuit of the Americas', country: 'United States', location: 'Austin',
       lengthKm: 5.513, laps: 56, corners: 20, lapRecord: '1:36.169', lapRecordHolder: 'Charles Leclerc',
@@ -184,7 +201,8 @@ export const circuits = [
       cornerPositions: [65.1, 69.8, 74.4, 76.3, 78, 80.5, 84.1, 87.2, 88.7, 92.2, 0.2, 21.9, 26, 27.1, 31.2, 35.1, 37.4, 39.5, 44.3, 50],
       activeAeroRanges: [[8, 20], [48, 66]], overtakeDetectionPercent: 44, speedTrapPercent: 20, speedTrapLocation: 'Back straight', topSpeedKmh: 342,
       sector1StartPercent: 52.1, sector2StartPercent: 82.7, sector3StartPercent: 24.3, overtakeActivationPercent: 44
-   , pitLaneEntryPercent: 47.3, pitLaneExitPercent: 62.2}),
+      , pitLaneEntryPercent: 47.3, pitLaneExitPercent: 62.2
+   }),
    buildCircuit({
       id: 'mexico', name: 'Autodromo Hermanos Rodriguez', country: 'Mexico', location: 'Mexico City',
       lengthKm: 4.304, laps: 71, corners: 17, lapRecord: '1:17.774', lapRecordHolder: 'Valtteri Bottas',
@@ -193,7 +211,8 @@ export const circuits = [
       cornerPositions: [27.8, 30.4, 31.6, 46.8, 49, 53.7, 62.5, 65.1, 67, 71.1, 73.6, 85.9, 90.2, 91.5, 92.5, 94.6, 98.1],
       activeAeroRanges: [[5, 20], [24, 37]], overtakeDetectionPercent: 2, speedTrapPercent: 23.7, speedTrapLocation: 'Main straight', topSpeedKmh: 350,
       sector1StartPercent: 1.2, sector2StartPercent: 44.1, sector3StartPercent: 82.1, overtakeActivationPercent: 2
-   , pitLaneEntryPercent: 98.6, pitLaneExitPercent: 22.8}),
+      , pitLaneEntryPercent: 98.6, pitLaneExitPercent: 22.8
+   }),
    buildCircuit({
       id: 'brazil', name: 'Autodromo Jose Carlos Pace', country: 'Brazil', location: 'Sao Paulo',
       lengthKm: 4.309, laps: 71, corners: 15, lapRecord: '1:10.540', lapRecordHolder: 'Valtteri Bottas',
@@ -202,7 +221,8 @@ export const circuits = [
       cornerPositions: [27.2, 29.6, 34.1, 51.8, 56.2, 66.5, 69.4, 73.4, 76.7, 83.5, 88.7, 95.2, 98.4, 4.9, 12.8],
       activeAeroRanges: [[7, 19], [76, 97]], overtakeDetectionPercent: 72, speedTrapPercent: 24.9, speedTrapLocation: 'Reta Oposta', topSpeedKmh: 334,
       sector1StartPercent: 20.3, sector2StartPercent: 48.8, sector3StartPercent: 92.7, overtakeActivationPercent: 72
-   , pitLaneEntryPercent: 11.2, pitLaneExitPercent: 33.5}),
+      , pitLaneEntryPercent: 11.2, pitLaneExitPercent: 33.5
+   }),
    buildCircuit({
       id: 'las-vegas', name: 'Las Vegas Strip Circuit', country: 'United States', location: 'Las Vegas',
       lengthKm: 6.201, laps: 50, corners: 17, lapRecord: '1:34.876', lapRecordHolder: 'Lando Norris',
@@ -211,7 +231,8 @@ export const circuits = [
       cornerPositions: [51.8, 53.6, 56.1, 58.3, 72.3, 77.3, 79.9, 81, 82.9, 91, 95.7, 99.4, 8.9, 30.6, 31.8, 32.7, 45.5],
       activeAeroRanges: [[15, 34], [63, 84]], overtakeDetectionPercent: 60, speedTrapPercent: 28.9, speedTrapLocation: 'Las Vegas Boulevard', topSpeedKmh: 352,
       sector1StartPercent: 47.8, sector2StartPercent: 73.9, sector3StartPercent: 3, overtakeActivationPercent: 60
-   , pitLaneEntryPercent: 45.7, pitLaneExitPercent: 52.9}),
+      , pitLaneEntryPercent: 45.7, pitLaneExitPercent: 52.9
+   }),
    buildCircuit({
       id: 'qatar', name: 'Lusail International Circuit', country: 'Qatar', location: 'Lusail',
       lengthKm: 5.419, laps: 57, corners: 16, lapRecord: '1:24.319', lapRecordHolder: 'Max Verstappen',
@@ -220,7 +241,8 @@ export const circuits = [
       cornerPositions: [9.5, 15.5, 19.9, 27.3, 30.4, 35.8, 43.2, 47.2, 49.8, 53.7, 57, 65.4, 69, 72.5, 78.5, 87],
       activeAeroRanges: [[77, 98]], overtakeDetectionPercent: 73, speedTrapPercent: 6.6, speedTrapLocation: 'Main straight', topSpeedKmh: 333,
       sector1StartPercent: 0.5, sector2StartPercent: 33.9, sector3StartPercent: 63.6, overtakeActivationPercent: 73
-   , pitLaneEntryPercent: 90.5, pitLaneExitPercent: 6.5}),
+      , pitLaneEntryPercent: 90.5, pitLaneExitPercent: 6.5
+   }),
    buildCircuit({
       id: 'abu-dhabi', name: 'Yas Marina Circuit', country: 'United Arab Emirates', location: 'Abu Dhabi',
       lengthKm: 5.281, laps: 58, corners: 16, lapRecord: '1:26.103', lapRecordHolder: 'Max Verstappen',
@@ -229,7 +251,46 @@ export const circuits = [
       cornerPositions: [30.1, 25.6, 21.4, 17.8, 10.7, 88, 86.7, 83.1, 67.3, 60.6, 58, 55.4, 53.2, 50.9, 45.2, 40.9],
       activeAeroRanges: [[25, 42], [55, 72]], overtakeDetectionPercent: 22, speedTrapPercent: 91.9, speedTrapLocation: 'Back straight', topSpeedKmh: 337,
       sector1StartPercent: 37.9, sector2StartPercent: 14.1, sector3StartPercent: 70.5, overtakeActivationPercent: 22
-   , pitLaneEntryPercent: 42.8, pitLaneExitPercent: 22.7}),
+      , pitLaneEntryPercent: 42.8, pitLaneExitPercent: 22.7
+   }),
+   buildCircuit({
+      id: 'madring',
+      name: 'Circuito de Madring',
+      country: 'Spain',
+      location: 'Madrid, Spain',
+      lengthKm: 5.416,
+      laps: 57,
+      corners: 22,
+      lapRecord: 'Not yet set',
+      lapRecordHolder: 'Circuit debuts 11–13 September 2026',
+      trackPath: circuitSvgPaths.madring,
+      cornerNames: [
+         'Turn 1', 'Turn 2', 'Hortaleza', 'Turn 4', 'Turn 5', 'Turn 6',
+         'Subida de las Cárcavas', 'Enlazadas 1', 'Enlazadas 2', 'Enlazadas 3',
+         'Enlazadas 4', 'La Monumental', 'Turn 13', 'Turn 14', 'Turn 15',
+         'Turn 16', 'Turn 17', 'Norte', 'Turn 19', 'Turn 20', 'Turn 21', 'The Park',
+      ],
+      cornerPositions: [10.3, 11.3, 14, 26.9, 30.7, 31.9, 34.6, 37.9, 39.1, 44.3, 46.1, 52.5, 63.5, 66.5, 71.5, 74.6, 76, 80.5, 83.9, 90.4, 93.3, 99],
+      cornerTypes: [
+         'Chicane', 'Chicane', 'High-speed', 'High-speed', 'Chicane', 'Chicane',
+         'Medium-speed', 'Medium-speed', 'Medium-speed', 'Medium-speed', 'Medium-speed',
+         'High-speed', 'Medium-speed', 'Medium-speed', 'Medium-speed', 'Medium-speed',
+         'Medium-speed', 'Medium-speed', 'Medium-speed', 'Medium-speed', 'Medium-speed', 'Medium-speed',
+      ],
+      activeAeroRanges: [
+         [0, 9],
+         [69, 79],
+      ],
+      overtakeDetectionPercent: 65,
+      overtakeActivationPercent: 69,
+      speedTrapPercent: 25,
+      speedTrapLocation: 'Approach to Turn 4',
+      topSpeedKmh: 340,
+      sector1StartPercent: 3.1,
+      sector2StartPercent: 35.9,
+      sector3StartPercent: 73.3,
+      pitLaneSpeedLimitKmh: 80,
+   })
 ];
 
 export const circuitsById = Object.fromEntries(circuits.map((circuit) => [circuit.id, circuit]));
