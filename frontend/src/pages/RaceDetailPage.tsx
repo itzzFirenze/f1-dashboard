@@ -7,6 +7,7 @@ import {
 import { raceService } from '../services/raceService';
 import WeatherCard from '../components/ui/WeatherCard';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import { useTimezone } from '../context/TimezoneContext';
 import type { RaceDetail, RaceResult } from '../types';
 
 type ResultTab = 'race' | 'qualifying' | 'sprint';
@@ -16,6 +17,7 @@ const RaceDetailPage: React.FC = () => {
    const [race, setRace] = useState<RaceDetail | null>(null);
    const [loading, setLoading] = useState(true);
    const [activeTab, setActiveTab] = useState<ResultTab>('race');
+   const { formatSession, resolvedTimeZone, tzAbbr, tzOffset } = useTimezone();
 
    useEffect(() => {
       if (id) {
@@ -33,11 +35,6 @@ const RaceDetailPage: React.FC = () => {
 
    if (loading) return <PageSkeleton />;
    if (!race) return null;
-
-   const formatDate = (date: string) =>
-      new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-
-   const formatTime = (time: string) => time?.substring(0, 5) || '';
 
    const hasRace = race.results.length > 0;
    const hasSprint = race.sprintResults.length > 0;
@@ -135,31 +132,49 @@ const RaceDetailPage: React.FC = () => {
                      className="absolute top-0 inset-x-0 h-[2px] opacity-75"
                      style={{ background: 'linear-gradient(90deg, transparent, #38bdf8, transparent)' }}
                   />
-                  <div className="flex items-center gap-2.5 mb-4">
-                     <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06]" style={{ backgroundColor: '#38bdf815' }}>
-                        <Clock className="w-4 h-4" style={{ color: '#38bdf8' }} />
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                     <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06]" style={{ backgroundColor: '#38bdf815' }}>
+                           <Clock className="w-4 h-4" style={{ color: '#38bdf8' }} />
+                        </div>
+                        <span className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">
+                           Session Schedule
+                        </span>
                      </div>
-                     <span className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">
-                        Session Schedule
+                     <span
+                        className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-sky-200"
+                        title={`Showing times in ${resolvedTimeZone} ${tzOffset}`}
+                     >
+                        <Clock className="w-3 h-3" />
+                        {tzAbbr || resolvedTimeZone}
+                        {tzOffset && <span className="text-sky-200/60">{tzOffset}</span>}
                      </span>
                   </div>
                   <div className="space-y-2">
-                     {race.sessions.map((session) => (
-                        <div
-                           key={session.id}
-                           className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-colors"
-                        >
-                           <div className="flex items-center gap-3">
-                              <div className={`w-2 h-2 rounded-full ${session.status === 'COMPLETED' ? 'bg-emerald-400' : 'bg-f1-red'
-                                 }`} />
-                              <span className="font-medium text-sm">{session.sessionDisplayName}</span>
+                     {race.sessions.map((session) => {
+                        const localSession = formatSession(session.sessionDate, session.sessionTime);
+
+                        return (
+                           <div
+                              key={session.id}
+                              className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-colors"
+                           >
+                              <div className="flex items-center gap-3 min-w-0">
+                                 <div className={`w-2 h-2 rounded-full shrink-0 ${session.status === 'COMPLETED' ? 'bg-emerald-400' : 'bg-f1-red'
+                                    }`} />
+                                 <span className="font-medium text-sm truncate">{session.sessionDisplayName}</span>
+                              </div>
+                              <div className="text-right text-xs font-mono text-f1-silver shrink-0">
+                                 <span className="uppercase tracking-wider">{localSession.dateStr}</span>
+                                 {localSession.timeStr && (
+                                    <span className="ml-3 font-bold text-f1-white">
+                                       {localSession.timeStr} {localSession.tzAbbr}
+                                    </span>
+                                 )}
+                              </div>
                            </div>
-                           <div className="text-right text-xs font-mono text-f1-silver">
-                              <span className="uppercase tracking-wider">{formatDate(session.sessionDate)}</span>
-                              <span className="ml-3 font-bold text-f1-white">{formatTime(session.sessionTime)}</span>
-                           </div>
-                        </div>
-                     ))}
+                        );
+                     })}
                   </div>
                </div>
 

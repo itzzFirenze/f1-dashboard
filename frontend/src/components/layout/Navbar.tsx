@@ -59,13 +59,16 @@ const Navbar: React.FC = () => {
                   })}
                </div>
 
-               {/* Mobile menu button */}
-               <button
-                  onClick={() => setMobileOpen(!mobileOpen)}
-                  className="md:hidden p-2 rounded-lg text-f1-silver/70 hover:text-f1-white hover:bg-white/[0.04] transition-colors"
-               >
-                  {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-               </button>
+               {/* Right side controls */}
+               <div className="flex items-center gap-2">
+                  {/* Mobile menu button */}
+                  <button
+                     onClick={() => setMobileOpen(!mobileOpen)}
+                     className="md:hidden p-2 rounded-lg text-f1-silver/70 hover:text-f1-white hover:bg-white/[0.04] transition-colors"
+                  >
+                     {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                  </button>
+               </div>
             </div>
          </div>
 
