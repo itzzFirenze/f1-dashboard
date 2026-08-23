@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowUpRight, Compass, Flag, Radio, Ruler, Search, Timer, Zap } from 'lucide-react';
 import InteractiveCircuitMap from '../components/circuit/InteractiveCircuitMap';
 import CircuitTrackThumbnail from '../components/circuit/CircuitTrackThumbnail';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import { circuits } from '../data/circuits';
 
 const CircuitExplorerPage: React.FC = () => {
@@ -80,9 +81,7 @@ const CircuitExplorerPage: React.FC = () => {
                               </span>
                            </div>
 
-                           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
-                              CIRCUIT <span className="gradient-text">EXPLORER</span>
-                           </h1>
+                           <PageHeroTitle titlePrefix="CIRCUIT" titleAccent="EXPLORER" />
 
                            <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                               Track layouts, active aero zones, DRS points & apex telemetry for all {circuits.length} Grand Prix circuits.

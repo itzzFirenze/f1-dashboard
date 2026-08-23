@@ -8,6 +8,7 @@ import { analyticsService } from '../services/analyticsService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import type { Constructor, ConstructorComparisonData } from '../types';
 import TeamSelector from '../components/ui/TeamSelector';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import SeasonSelector from '../components/ui/SeasonSelector';
 
 const ConstructorComparisonPage: React.FC = () => {
@@ -131,10 +132,7 @@ const ConstructorComparisonPage: React.FC = () => {
                      </span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
-                     <Swords className="w-8 h-8 text-f1-red shrink-0" />
-                     Constructor <span className="gradient-text">Battle</span>
-                  </h1>
+                  <PageHeroTitle icon={Swords} titlePrefix="Constructor" titleAccent="Battle" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      Team rivalries, point splits, and championship gap evolution for the {season} season.

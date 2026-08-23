@@ -7,6 +7,7 @@ import { analyticsService } from '../services/analyticsService';
 import DriverSelector from '../components/ui/DriverSelector';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import type { Driver, MomentumData } from '../types';
 
 const MomentumTrackerPage: React.FC = () => {
@@ -111,10 +112,7 @@ const MomentumTrackerPage: React.FC = () => {
                      </span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
-                     <Activity className="w-8 h-8 text-f1-red" />
-                     Momentum <span className="gradient-text">Tracker</span>
-                  </h1>
+                  <PageHeroTitle icon={Activity} titlePrefix="Momentum" titleAccent="Tracker" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      Live trajectory analysis, rolling averages & grid-to-flag delta engineering for the {season} season.

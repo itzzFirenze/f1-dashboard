@@ -7,6 +7,7 @@ import { useFavorites } from '../context/FavoritesContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import SearchInput from '../components/ui/SearchInput';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import EmptyState from '../components/ui/EmptyState';
 import type { Driver } from '../types';
 
@@ -57,9 +58,7 @@ const DriversPage: React.FC = () => {
                      </span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
-                     Driver <span className="gradient-text">Standings</span>
-                  </h1>
+                  <PageHeroTitle titlePrefix="Driver" titleAccent="Standings" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      2026 FIA Formula One World Championship — full grid telemetry, ranked by points.

@@ -6,11 +6,12 @@ import {
 import { ResponsiveLine } from '@nivo/line';
 import { weatherService, WeekendWeatherDto } from '../services/weatherService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import EmptyState from '../components/ui/EmptyState';
 import SearchInput from '../components/ui/SearchInput';
 import { Link } from 'react-router-dom';
 
-/** Small circular HUD dial, matching the dashboard's StatGaugeCard telemetry dial */
+/** Small circular HUD dial */
 const HudDial: React.FC<{ percent: number; colorHex: string; size?: number }> = ({
    percent,
    colorHex,
@@ -89,9 +90,7 @@ const WeatherForecastPage: React.FC = () => {
                      </span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
-                     WEATHER <span className="gradient-text">TELEMETRY</span>
-                  </h1>
+                  <PageHeroTitle titlePrefix="WEATHER" titleAccent="TELEMETRY" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      Session-by-session atmospheric projections for every upcoming Grand Prix weekend.

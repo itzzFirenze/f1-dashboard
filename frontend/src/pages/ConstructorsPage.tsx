@@ -5,6 +5,7 @@ import { Star, Trophy, ChevronRight, Shield, Gauge } from 'lucide-react';
 import { constructorService } from '../services/constructorService';
 import { useFavorites } from '../context/FavoritesContext';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import { resolveTheme } from '../config/teamThemes';
 import type { Constructor } from '../types';
 
@@ -38,9 +39,7 @@ const ConstructorsPage: React.FC = () => {
                      </span>
                   </div>
 
-                  <h1 className="text-2xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
-                     TEAM <span className="gradient-text">STANDINGS</span>
-                  </h1>
+                  <PageHeroTitle titlePrefix="Team" titleAccent="Standings" />
 
                   <p className="text-f1-silver text-xs sm:text-base max-w-xl font-medium leading-relaxed">
                      Constructor championship rankings &amp; real-time points telemetry across the grid.

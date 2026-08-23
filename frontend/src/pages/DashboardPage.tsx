@@ -9,6 +9,7 @@ import { dashboardService } from '../services/dashboardService';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import WeatherCard from '../components/ui/WeatherCard';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import { resolveTheme, getDriverImage } from '../config/teamThemes';
 import type { DashboardData } from '../types';
 
@@ -161,9 +162,7 @@ const DashboardPage: React.FC = () => {
                      </span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
-                     {data.currentSeason} <span className="gradient-text">SEASON</span>
-                  </h1>
+                  <PageHeroTitle titlePrefix={data.currentSeason} titleAccent="SEASON" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      Pit wall telemetry, live session status & real-time championship engineering intelligence.

@@ -4,6 +4,7 @@ import { ResponsiveBar } from '@nivo/bar';
 import { recordsService } from '../services/recordsService';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import { resolveTheme, getDriverImage } from '../config/teamThemes';
 import type { RecordsData, DriverRecord, ConstructorRecord } from '../types';
 
@@ -172,10 +173,7 @@ const RecordsPage: React.FC = () => {
                      </span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
-                     <Award className="w-8 h-8 text-amber-400" />
-                     Historical <span className="gradient-text">Records Vault</span>
-                  </h1>
+                  <PageHeroTitle icon={Award} titlePrefix="Historical" titleAccent="Records Vault" iconColorClass="text-amber-400" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      {season ? `${season} season` : 'All-time'} Grand Prix race records, wins, podiums & scoring milestones.

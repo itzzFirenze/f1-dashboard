@@ -5,6 +5,7 @@ import { Calendar, MapPin, ChevronRight, Zap, Flag, Radio } from 'lucide-react';
 import { raceService } from '../services/raceService';
 import SearchInput from '../components/ui/SearchInput';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import EmptyState from '../components/ui/EmptyState';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import type { Race } from '../types';
@@ -41,9 +42,7 @@ const RaceSchedulePage: React.FC = () => {
                      </span>
                   </div>
 
-                  <h1 className="text-2xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
-                     2026 <span className="gradient-text">CALENDAR</span>
-                  </h1>
+                  <PageHeroTitle titlePrefix="2026" titleAccent="Calendar" />
 
                   <p className="text-f1-silver text-xs sm:text-base max-w-xl font-medium leading-relaxed">
                      Full grand prix schedule with live status feed &amp; round-by-round telemetry.

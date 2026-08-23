@@ -107,7 +107,7 @@ const DriverDetailPage: React.FC = () => {
                   <div className="absolute right-0 bottom-0 top-0 w-[140px] sm:w-[230px] z-10">
                      {/* Big driver number sitting behind the image */}
                      <span
-                        className="absolute inset-0 flex items-center justify-start font-display font-black leading-none select-none pointer-events-none text-6xl sm:text-[9rem] -translate-x-12 sm:-translate-x-[90px]"
+                        className="absolute inset-0 flex items-center justify-start font-display font-black leading-none select-none pointer-events-none text-7xl sm:text-[9rem] -translate-x-6 sm:-translate-x-[90px]"
                         style={{
                            color: `${theme.bgTo}60`,
                            zIndex: 0,

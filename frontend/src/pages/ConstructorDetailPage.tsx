@@ -71,30 +71,30 @@ const ConstructorDetailPage: React.FC = () => {
                   </span>
                </div>
 
-               <div className="relative flex items-end justify-between min-h-[150px] sm:min-h-[190px] px-4 sm:px-6 pt-12 pb-3 sm:pb-4 gap-2">
-                  {/* Team info — anchored at bottom */}
-                  <div className="z-10 min-w-0 flex-1">
+               <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between min-h-[170px] sm:min-h-[190px] px-4 sm:px-6 pt-12 pb-3 sm:pb-4 gap-2">
+                  {/* Team info — full width on mobile, anchored bottom on larger screens */}
+                  <div className="z-10 min-w-0 w-full sm:flex-1">
                      {/* Team logo */}
                      {!logoError && (team.logoUrl ?? theme.teamLogoUrl) ? (
                         <img
                            src={team.logoUrl ?? theme.teamLogoUrl}
                            alt={team.name}
-                           className="h-5 sm:h-8 w-auto object-contain mb-1.5 sm:mb-2 drop-shadow-lg"
+                           className="h-6 sm:h-8 w-auto object-contain mb-1.5 sm:mb-2 drop-shadow-lg"
                            onError={() => setLogoError(true)}
                         />
                      ) : null}
-                     <h1 className="text-xl sm:text-3xl font-display font-black tracking-tight text-white drop-shadow-lg uppercase leading-tight truncate">
+                     <h1 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-white drop-shadow-lg uppercase leading-tight truncate">
                         {team.name}
                      </h1>
-                     <p className="text-white/50 text-[11px] sm:text-xs font-mono uppercase tracking-widest mt-0.5 sm:mt-1">{team.nationality}</p>
+                     <p className="text-white/50 text-xs sm:text-xs font-mono uppercase tracking-widest mt-0.5 sm:mt-1">{team.nationality}</p>
                   </div>
 
-                  {/* Car image — increased size on mobile, anchored to bottom right */}
+                  {/* Car image — 2x mobile size, self-aligned right on mobile, larger anchored bottom-right on sm+ */}
                   {!carError && (
                      <img
                         src={theme.carImageUrl}
                         alt={`${team.name} 2026 car`}
-                        className="h-28 sm:h-52 max-w-[210px] sm:max-w-[480px] object-contain object-right-bottom relative z-10 drop-shadow-2xl select-none shrink-0"
+                        className="h-20 sm:h-52 max-w-[300px] sm:max-w-[480px] object-contain object-right-bottom self-end sm:self-auto relative z-10 drop-shadow-2xl select-none shrink-0 ml-auto sm:ml-0"
                         onError={() => setCarError(true)}
                      />
                   )}
@@ -120,7 +120,9 @@ const ConstructorDetailPage: React.FC = () => {
                <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
                <Trophy className="w-5 h-5 text-amber-400 mx-auto mb-1.5" />
                <p className="stat-value text-amber-400 font-mono">P{team.championshipPosition}</p>
-               <p className="stat-label mt-1 text-[10px] font-mono uppercase tracking-widest text-f1-silver/50">Championship</p>
+               <p className="stat-label mt-1 text-[8px] sm:text-[10px] font-mono uppercase tracking-widest text-f1-silver/50">
+                  Championship
+               </p>
             </div>
             <div className="telemetry-card p-4 text-center relative overflow-hidden">
                <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />

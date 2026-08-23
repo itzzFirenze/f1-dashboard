@@ -6,6 +6,7 @@ import { ResponsiveScatterPlot } from '@nivo/scatterplot';
 import { analyticsService } from '../services/analyticsService';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import type { ConsistencyData } from '../types';
 
 const getFinishColor = (value: number | null) => {
@@ -154,10 +155,7 @@ const ConsistencyPage: React.FC = () => {
                      </span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
-                     <Grid3x3 className="w-8 h-8 text-f1-red" />
-                     Consistency <span className="gradient-text">Analysis</span>
-                  </h1>
+                  <PageHeroTitle icon={Grid3x3} titlePrefix="Consistency" titleAccent="Analysis" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      Who delivers every single weekend? Season-long results, volatility & scoring reliability for the {season} season.

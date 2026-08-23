@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { triviaService } from '../services/triviaService';
 import { TriviaQuestion, TriviaCategory, TriviaGameMode } from '../types';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 
 const CATEGORIES: { id: TriviaCategory; label: string; icon: any; accent: string; tag: string }[] = [
    { id: 'all', label: 'All Topics', icon: Sparkles, accent: '#E10600', tag: 'ALL' },
@@ -393,9 +394,7 @@ const TriviaPage: React.FC = () => {
                            </span>
                         </div>
 
-                        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
-                           Trivia <span className="gradient-text">Circuit</span>
-                        </h1>
+                        <PageHeroTitle titlePrefix="Trivia" titleAccent="Circuit" />
 
                         <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                            Test your championship knowledge against the pit wall clock. Choose a mode, pick a topic, and take the lights.

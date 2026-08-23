@@ -168,7 +168,7 @@ const RaceDetailPage: React.FC = () => {
                                  <span className="uppercase tracking-wider">{localSession.dateStr}</span>
                                  {localSession.timeStr && (
                                     <span className="ml-3 font-bold text-f1-white">
-                                       {localSession.timeStr} {localSession.tzAbbr}
+                                       {localSession.timeStr}
                                     </span>
                                  )}
                               </div>
@@ -205,11 +205,12 @@ const RaceDetailPage: React.FC = () => {
                      </div>
 
                      {/* Qualifying Sub-header (Q1/Q2/Q3 column labels) */}
+                     {/* Qualifying Sub-header (Q1/Q2/Q3 column labels) — hide on mobile since times move below name there */}
                      {activeTab === 'qualifying' && (
-                        <div className="flex items-center justify-end gap-2 sm:gap-6 px-2 sm:px-3 pb-2 text-[9px] sm:text-[10px] font-mono font-semibold text-f1-silver/50 uppercase tracking-[0.2em]">
-                           <span className="w-12 sm:w-16 text-center">Q1</span>
-                           <span className="w-12 sm:w-16 text-center">Q2</span>
-                           <span className="w-12 sm:w-16 text-center">Q3</span>
+                        <div className="hidden sm:flex items-center justify-end gap-2 sm:gap-6 px-2 sm:px-3 pb-2 text-[9px] sm:text-[10px] font-mono font-semibold text-f1-silver/50 uppercase tracking-[0.2em]">
+                           <span className="w-20 sm:w-24 text-center">Q1</span>
+                           <span className="w-20 sm:w-24 text-center">Q2</span>
+                           <span className="w-20 sm:w-24 text-center">Q3</span>
                         </div>
                      )}
 
@@ -229,6 +230,15 @@ const RaceDetailPage: React.FC = () => {
                                  <div className="min-w-0">
                                     <span className="font-semibold text-xs sm:text-sm truncate block sm:inline">{result.driverFirstName} {result.driverLastName}</span>
                                     <span className="text-f1-silver/70 text-xs font-mono ml-2 hidden sm:inline">{result.constructorName}</span>
+
+                                    {/* Mobile-only: Q1/Q2/Q3 times shown below the driver name */}
+                                    {activeTab === 'qualifying' && (
+                                       <div className="flex sm:hidden items-center gap-3 mt-1 font-mono text-[10px] text-f1-silver/60">
+                                          <span><span className="text-f1-silver/40">Q1</span> {result.q1 || '—'}</span>
+                                          <span><span className="text-f1-silver/40">Q2</span> {result.q2 || '—'}</span>
+                                          <span className="font-bold text-f1-white"><span className="text-f1-silver/40 font-normal">Q3</span> {result.q3 || '—'}</span>
+                                       </div>
+                                    )}
                                  </div>
                                  {result.fastestLap && (
                                     <span className="text-[9px] sm:text-[10px] font-mono font-bold text-purple-400 bg-purple-400/10 border border-purple-400/20 rounded px-1.5 py-0.5 shrink-0 hidden xs:inline-block">
@@ -238,10 +248,10 @@ const RaceDetailPage: React.FC = () => {
                               </div>
 
                               {activeTab === 'qualifying' ? (
-                                 <div className="flex items-center gap-2 sm:gap-6 font-mono text-xs sm:text-sm shrink-0">
-                                    <span className="w-12 sm:w-16 text-center text-f1-silver/70 truncate">{result.q1 || '—'}</span>
-                                    <span className="w-12 sm:w-16 text-center text-f1-silver/70 truncate">{result.q2 || '—'}</span>
-                                    <span className="w-12 sm:w-16 text-center font-bold text-f1-white truncate">{result.q3 || '—'}</span>
+                                 <div className="hidden sm:flex items-center gap-2 sm:gap-6 font-mono text-xs sm:text-sm shrink-0">
+                                    <span className="w-20 sm:w-24 text-center text-f1-silver/70">{result.q1 || '—'}</span>
+                                    <span className="w-20 sm:w-24 text-center text-f1-silver/70">{result.q2 || '—'}</span>
+                                    <span className="w-20 sm:w-24 text-center font-bold text-f1-white">{result.q3 || '—'}</span>
                                  </div>
                               ) : (
                                  <div className="text-right shrink-0">

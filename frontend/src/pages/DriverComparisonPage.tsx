@@ -8,6 +8,7 @@ import { analyticsService } from '../services/analyticsService';
 import DriverSelector from '../components/ui/DriverSelector';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import type { Driver, DriverComparisonData } from '../types';
 
 const DriverComparisonPage: React.FC = () => {
@@ -133,10 +134,7 @@ const DriverComparisonPage: React.FC = () => {
                      </span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase flex items-center gap-3">
-                     <GitCompare className="w-8 h-8 text-f1-red shrink-0" />
-                     Driver <span className="gradient-text">Comparison</span>
-                  </h1>
+                  <PageHeroTitle icon={GitCompare} titlePrefix="Driver" titleAccent="Comparison" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      Compare any two drivers head-to-head across points, pace and race craft for the {season} season.

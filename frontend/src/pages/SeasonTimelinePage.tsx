@@ -4,6 +4,7 @@ import { ResponsiveLine } from '@nivo/line';
 import { analyticsService } from '../services/analyticsService';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import type { TimelineData, TimelineEvent } from '../types';
 
 /** Compact telemetry stat block (no gauge dial — used for timeline summary strip) */
@@ -92,9 +93,7 @@ const SeasonTimelinePage: React.FC = () => {
                      </span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
-                     SEASON <span className="gradient-text">TIMELINE</span>
-                  </h1>
+                  <PageHeroTitle titlePrefix="Season" titleAccent="Timeline" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      Every race, every turning point — the full telemetry trace of the {season} championship battle.

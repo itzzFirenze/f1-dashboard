@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, Radio } from 'lucide-react';
 import { driverService } from '../services/driverService';
 import { constructorService } from '../services/constructorService';
 import PointsDistributionChart from '../components/charts/PointsDistributionChart';
 import WinsChart from '../components/charts/WinsChart';
 import PodiumsChart from '../components/charts/PodiumsChart';
 import SeasonSelector from '../components/ui/SeasonSelector';
+import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import type { Driver, Constructor } from '../types';
 
@@ -55,15 +56,13 @@ const StatisticsPage: React.FC = () => {
             <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
                <div className="space-y-2">
                   <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
-                     <BarChart3 className="w-3.5 h-3.5 text-f1-red-light" />
+                     <Radio className="w-3.5 h-3.5 text-f1-red-light" />
                      <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
                         Performance Analytics
                      </span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black tracking-tight text-f1-white uppercase">
-                     <span className="gradient-text">Statistics</span>
-                  </h1>
+                  <PageHeroTitle icon={BarChart3} titlePrefix="Statistics" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      {season} season performance analysis — points, wins & podium telemetry across the grid.
