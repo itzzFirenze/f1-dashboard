@@ -36,6 +36,8 @@ const RaceDetailPage: React.FC = () => {
    }, [id]);
 
    if (loading) return <PageSkeleton />;
+   if (!race) return null;
+
    const hasRace = race.results && race.results.length > 0;
    const hasSprint = race.sprintResults && race.sprintResults.length > 0;
    const hasQuali = race.qualifyingResults && race.qualifyingResults.length > 0;
@@ -230,26 +232,65 @@ const RaceDetailPage: React.FC = () => {
                               const hasGridPos = typeof result.gridPosition === 'number' && result.gridPosition > 0;
                               const delta = hasGridPos ? result.gridPosition - result.position : null;
 
+                              const isDnf = !isQualiType && (() => {
+                                 if (!result.status) return false;
+                                 const s = result.status.trim().toLowerCase();
+                                 // Finished, qualified, classified, time deltas (+...), and lapped (+1 Lap, Lapped, 1 Lap) are NOT DNF
+                                 if (
+                                    s === 'finished' ||
+                                    s === 'qualified' ||
+                                    s === 'classified' ||
+                                    s.startsWith('+') ||
+                                    s.includes('lap')
+                                 ) {
+                                    return false;
+                                 }
+                                 return true;
+                              })();
+
+                              const getDnfBadge = (status: string) => {
+                                 const s = status.trim().toLowerCase();
+                                 if (s.includes('disqualif') || s === 'dsq') return 'DSQ';
+                                 if (s.includes('did not start') || s === 'dns') return 'DNS';
+                                 return 'DNF';
+                              };
+
                               return (
-                                 <div key={result.id} className="flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-white/[0.03] transition-colors group gap-2">
-                                    {/* Left: Position badge, team color bar, driver name, fastest lap badge */}
+                                 <div key={result.id} className={`flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-white/[0.03] transition-colors group gap-2 ${isDnf ? 'bg-rose-500/[0.02]' : ''}`}>
+                                    {/* Left: Position badge, team color bar, driver name, fastest lap badge, DNF badge */}
                                     <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                                        <span className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-[11px] sm:text-xs font-mono font-bold shrink-0 ${result.position === 1 ? 'bg-amber-500/20 text-amber-400' :
                                           result.position === 2 ? 'bg-gray-400/20 text-gray-300' :
                                              result.position === 3 ? 'bg-orange-700/20 text-orange-400' :
-                                                'bg-white/[0.04] text-f1-silver'
+                                                isDnf ? 'bg-rose-500/10 text-rose-400/80 border border-rose-500/20' :
+                                                   'bg-white/[0.04] text-f1-silver'
                                           }`}>
                                           {result.position}
                                        </span>
 
                                        <div className="w-1 h-4 sm:h-5 rounded-full shrink-0" style={{ backgroundColor: result.constructorColor }} />
-                                       <div className="min-w-0">
-                                          <span className="font-semibold text-xs sm:text-sm truncate block sm:inline">{result.driverFirstName} {result.driverLastName}</span>
-                                          <span className="text-f1-silver/70 text-xs font-mono ml-2 hidden sm:inline">{result.constructorName}</span>
+                                       <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
+                                          <span className={`font-semibold text-xs sm:text-sm truncate ${isDnf ? 'text-f1-white/90' : 'text-f1-white'}`}>
+                                             {result.driverFirstName} {result.driverLastName}
+                                          </span>
+                                          <span className="text-f1-silver/70 text-xs font-mono hidden sm:inline">{result.constructorName}</span>
+
+                                          {/* DNF / DSQ / DNS Badge */}
+                                          {isDnf && (
+                                             <span
+                                                className="text-[9px] sm:text-[10px] font-mono font-black text-rose-400 bg-rose-500/15 border border-rose-500/30 rounded px-1.5 py-0.5 shrink-0 uppercase tracking-wider inline-flex items-center"
+                                                title={result.status}
+                                             >
+                                                {getDnfBadge(result.status)}
+                                                {result.status && !['dnf', 'dsq', 'dns', 'retired'].includes(result.status.trim().toLowerCase()) && (
+                                                   <span className="ml-1 font-normal opacity-80 hidden md:inline text-[9px] font-sans lowercase capitalize">· {result.status}</span>
+                                                )}
+                                             </span>
+                                          )}
 
                                           {/* Mobile-only: Q1/Q2/Q3 or SQ1/SQ2/SQ3 times shown below the driver name */}
                                           {isQualiType && (
-                                             <div className="flex sm:hidden items-center gap-3 mt-1 font-mono text-[10px] text-f1-silver/60">
+                                             <div className="w-full flex sm:hidden items-center gap-3 mt-1 font-mono text-[10px] text-f1-silver/60">
                                                 <span><span className="text-f1-silver/40">{activeTab === 'sprint_qualifying' ? 'SQ1' : 'Q1'}</span> {result.q1 || '—'}</span>
                                                 <span><span className="text-f1-silver/40">{activeTab === 'sprint_qualifying' ? 'SQ2' : 'Q2'}</span> {result.q2 || '—'}</span>
                                                 <span className="font-bold text-f1-white"><span className="text-f1-silver/40 font-normal">{activeTab === 'sprint_qualifying' ? 'SQ3' : 'Q3'}</span> {result.q3 || '—'}</span>
