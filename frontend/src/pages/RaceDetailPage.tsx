@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
    ArrowLeft, Clock, MapPin, Ruler, CornerDownRight, Timer, Zap, Trophy,
    Compass, Radio, Flag
@@ -14,6 +14,7 @@ type ResultTab = 'race' | 'qualifying' | 'sprint';
 
 const RaceDetailPage: React.FC = () => {
    const { id } = useParams<{ id: string }>();
+   const navigate = useNavigate();
    const [race, setRace] = useState<RaceDetail | null>(null);
    const [loading, setLoading] = useState(true);
    const [activeTab, setActiveTab] = useState<ResultTab>('race');
@@ -67,13 +68,13 @@ const RaceDetailPage: React.FC = () => {
 
    return (
       <div className="space-y-7 animate-fade-in">
-         <Link
-            to="/races"
-            className="inline-flex items-center gap-2 text-f1-silver hover:text-f1-white transition-colors group w-fit"
+         <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 text-f1-silver hover:text-f1-white transition-colors group w-fit cursor-pointer"
          >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="text-sm font-mono uppercase tracking-widest">Back to Schedule</span>
-         </Link>
+            <span className="text-sm font-mono uppercase tracking-widest">Back</span>
+         </button>
 
          {/* ─── Race Header: Mission Control HUD ─── */}
          <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 shadow-2xl dot-grid">

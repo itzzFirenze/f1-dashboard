@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-   Trophy, Flag, Users, Calendar, Timer, ChevronRight, TrendingUp, Zap,
-   Radio, Activity, Compass, Shield, ArrowUpRight, Gauge
+   Trophy, Flag, Users, Calendar, ChevronRight, TrendingUp,
+   Activity, Compass, Shield, ArrowUpRight, Medal
 } from 'lucide-react';
 import { dashboardService } from '../services/dashboardService';
 import CountdownTimer from '../components/ui/CountdownTimer';
@@ -11,7 +11,7 @@ import WeatherCard from '../components/ui/WeatherCard';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import { resolveTheme, getDriverImage } from '../config/teamThemes';
-import type { DashboardData } from '../types';
+import type { DashboardData, RaceResult } from '../types';
 
 /** Gauge stat card with animated circular telemetry arc */
 interface StatGaugeCardProps {
@@ -35,7 +35,6 @@ const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
    glowClass,
    badgeText
 }) => {
-   // SVG Arc calculations (r=38, circum=238.76)
    const radius = 36;
    const circumference = 2 * Math.PI * radius;
    const strokeDashoffset = circumference - (Math.min(Math.max(percent, 0), 100) / 100) * circumference;
@@ -112,6 +111,213 @@ const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
    );
 };
 
+interface FitTextProps {
+   text: string;
+   maxPx: number;
+   minPx: number;
+   className?: string;
+}
+
+const FitText: React.FC<FitTextProps> = ({ text, maxPx, minPx, className }) => {
+   const ref = React.useRef<HTMLSpanElement>(null);
+   const [fontSize, setFontSize] = useState(maxPx);
+
+   React.useLayoutEffect(() => {
+      const el = ref.current;
+      if (!el) return;
+
+      const fit = () => {
+         let size = maxPx;
+         el.style.fontSize = `${size}px`;
+         while (el.scrollWidth > el.clientWidth && size > minPx) {
+            size -= 1;
+            el.style.fontSize = `${size}px`;
+         }
+         setFontSize(size);
+      };
+
+      fit();
+
+      const ro = new ResizeObserver(fit);
+      ro.observe(el);
+      return () => ro.disconnect();
+   }, [text, maxPx, minPx]);
+
+   return (
+      <span
+         ref={ref}
+         className={className}
+         style={{ fontSize: `${fontSize}px`, whiteSpace: 'nowrap', display: 'block', width: '100%' }}
+      >
+         {text}
+      </span>
+   );
+};
+
+/* ─── Podium driver portrait card — F1 social-media style ─── */
+interface PodiumCardProps {
+   result: RaceResult;
+   position: 1 | 2 | 3;
+   elevated?: boolean;
+}
+
+const PodiumCard: React.FC<PodiumCardProps> = ({ result, position, elevated }) => {
+   const [imgErr, setImgErr] = useState(false);
+   const theme = resolveTheme(result.constructorName);
+   const imgUrl = theme ? getDriverImage(theme, result.driverFirstName, result.driverLastName) : null;
+   const initials = `${result.driverFirstName[0]}${result.driverLastName[0]}`;
+
+   const imgHeight = elevated ? 260 : 210;
+
+   return (
+      <div className={`podium-card flex-1 overflow-hidden ${elevated ? 'mt-0' : 'mt-8'}`}>
+         {/* Image + overlays */}
+         <div className="relative w-full" style={{ height: imgHeight }}>
+            {/* Team-coloured gradient background, top → bottom */}
+            <div
+               className="absolute inset-0 z-0"
+               style={{
+                  background: `linear-gradient(180deg, ${result.constructorColor}CC 0%, ${result.constructorColor}CC 50%, #0d0d16 100%)`,
+               }}
+            />
+
+            {/* Giant position number — top-left, white, sits BEHIND the driver image */}
+            <div className="absolute top-1 left-1 sm:top-2 sm:left-3 z-[5] pointer-events-none select-none">
+               <span
+                  className={`leading-none ${elevated ? 'text-[4.75rem] sm:text-[7.5rem]' : 'text-[3.75rem] sm:text-[6.25rem]'}`}
+                  style={{
+                     fontFamily: "'Unbounded', sans-serif",
+                     fontWeight: 900,
+                     letterSpacing: '-0.02em',
+                     lineHeight: 1,
+                     color: '#FFFFFF'
+                  }}
+               >
+                  {position}
+               </span>
+            </div>
+
+            {/* Driver image — above the number, shifted right */}
+            {imgUrl && !imgErr ? (
+               <img
+                  src={imgUrl}
+                  alt={`${result.driverFirstName} ${result.driverLastName}`}
+                  className="absolute inset-y-0 right-0 h-full w-[85%] object-cover object-[center_18%] sm:object-top z-10"
+                  onError={() => setImgErr(true)}
+               />
+            ) : (
+               <div
+                  className="absolute inset-0 flex items-center justify-center font-display font-black text-5xl z-10"
+                  style={{ color: `${result.constructorColor}80` }}
+               >
+                  {initials}
+               </div>
+            )}
+
+            {/* Faint ambient glow at bottom, above the image */}
+            <div
+               className="absolute bottom-0 inset-x-0 h-1/2 pointer-events-none z-20"
+               style={{
+                  background: `linear-gradient(to top, ${result.constructorColor}28 0%, transparent 100%)`,
+               }}
+            />
+
+            {/* Points badge — bottom right */}
+            <div className="absolute bottom-2.5 right-2.5 flex flex-col items-end z-30">
+               <span className="font-display font-black text-xl sm:text-2xl text-white leading-none">
+                  {result.points}
+               </span>
+               <span className="text-[9px] font-mono text-white/60 uppercase tracking-widest">PTS</span>
+            </div>
+         </div>
+
+         {/* Driver name strip — team colour background, centered, bigger name */}
+         {/* Driver name strip — team colour background, centered, bigger name */}
+         <div
+            className="px-3 py-2.5 flex flex-col items-center text-center"
+            style={{ backgroundColor: result.constructorColor }}
+         >
+            <FitText
+               text={result.driverLastName}
+               maxPx={elevated ? 20 : 18}
+               minPx={11}
+               className="font-display font-black text-white text-center uppercase tracking-wide leading-tight"
+            />
+            <span className="text-[10px] font-mono text-white/70 uppercase tracking-widest truncate w-full mt-0.5">
+               {result.constructorName}
+            </span>
+         </div>
+      </div>
+   );
+};
+
+/* ─── Grid row (P4–P10) — F1 broadcast style ─── */
+const DriverGridRow: React.FC<{ result: RaceResult; index: number }> = ({ result, index }) => {
+   const theme = resolveTheme(result.constructorName);
+   return (
+      <div
+         className="grid-row"
+         style={{ animationDelay: `${index * 25}ms`, animationFillMode: 'both' }}
+      >
+         {/* Position pill */}
+         <div
+            className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+            style={{ backgroundColor: '#E10600' }}
+         >
+            <span className="font-display font-black text-xs text-white">{result.position}</span>
+         </div>
+
+         {/* Team colour bar */}
+         <div
+            className="w-1 self-stretch rounded-full shrink-0"
+            style={{ backgroundColor: result.constructorColor }}
+         />
+
+         {/* Driver name */}
+         <div className="flex-1 min-w-0">
+            <span className="text-xs sm:text-sm font-display font-black text-f1-white uppercase tracking-wide truncate block">
+               {result.driverFirstName} {result.driverLastName}
+            </span>
+         </div>
+
+         {/* Constructor name — desktop only, now shares flex space instead of a fixed 80px cap */}
+         <div className="hidden sm:flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+            {theme?.teamLogoUrl && (
+               <img
+                  src={theme.teamLogoUrl}
+                  alt={result.constructorName}
+                  className="h-4 w-auto object-contain opacity-80 shrink-0"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+               />
+            )}
+            <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-f1-silver/60 truncate text-right">
+               {result.constructorName}
+            </span>
+         </div>
+
+         {/* Team logo — mobile only, sits right before points */}
+         {theme?.teamLogoUrl && (
+            <img
+               src={theme.teamLogoUrl}
+               alt={result.constructorName}
+               className="sm:hidden h-4 w-auto object-contain opacity-80 shrink-0"
+               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+         )}
+
+         {/* Points */}
+         <div className="flex flex-col items-end shrink-0 ml-2">
+            <span className="font-display font-black text-base leading-none" style={{ color: '#FBBF24' }}>
+               {result.points > 0 ? result.points : '—'}
+            </span>
+            {result.points > 0 && (
+               <span className="text-[9px] font-mono text-f1-silver/40 uppercase tracking-widest">PTS</span>
+            )}
+         </div>
+      </div>
+   );
+};
+
 const DashboardPage: React.FC = () => {
    const [driverImgError, setDriverImgError] = useState(false);
    const [logoError, setLogoError] = useState(false);
@@ -119,6 +325,12 @@ const DashboardPage: React.FC = () => {
    const { data, isLoading } = useQuery<DashboardData>({
       queryKey: ['dashboard'],
       queryFn: dashboardService.getData,
+   });
+
+   const { data: lastRaceDetail } = useQuery({
+      queryKey: ['lastRaceResults'],
+      queryFn: () => dashboardService.getLastRaceResults(),
+      staleTime: 5 * 60 * 1000,
    });
 
    if (isLoading) return <PageSkeleton />;
@@ -274,6 +486,61 @@ const DashboardPage: React.FC = () => {
                )}
             </div>
          )}
+
+         {/* ─── Last Race Results: Podium & Full Grid ─── */}
+         {lastRaceDetail && lastRaceDetail.results && lastRaceDetail.results.length > 0 && (() => {
+            // Show only positions 1–10 directly (lapped/non-scoring drivers are always P11+)
+            const top10 = [...lastRaceDetail.results]
+               .sort((a, b) => a.position - b.position)
+               .filter(r => r.position >= 1 && r.position <= 10);
+
+            const p1 = top10.find(r => r.position === 1);
+            const p2 = top10.find(r => r.position === 2);
+            const p3 = top10.find(r => r.position === 3);
+            const rest = top10.filter(r => r.position > 3);
+
+            return (
+               <div className="space-y-3">
+                  {/* Section header */}
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-amber-400/10 border border-amber-400/20">
+                           <Medal className="w-4 h-4 text-amber-400" />
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50">Last Race Results</p>
+                           <h3 className="text-base sm:text-lg font-display font-black text-f1-white leading-tight">
+                              {lastRaceDetail.name}
+                           </h3>
+                        </div>
+                     </div>
+                     <Link
+                        to={`/races/${lastRaceDetail.id}`}
+                        className="flex items-center gap-1 text-xs font-mono text-f1-silver/60 hover:text-f1-red-light transition-colors bg-white/[0.04] hover:bg-white/[0.07] px-3 py-1.5 rounded-lg border border-white/[0.06] group"
+                     >
+                        <span>Full Results</span>
+                        <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                     </Link>
+                  </div>
+
+                  {/* Podium — P2 | P1 (elevated) | P3 */}
+                  <div className="flex items-end gap-2 sm:gap-3">
+                     {p2 && <PodiumCard result={p2} position={2} />}
+                     {p1 && <PodiumCard result={p1} position={1} elevated />}
+                     {p3 && <PodiumCard result={p3} position={3} />}
+                  </div>
+
+                  {/* P4–P10 grid — always visible */}
+                  {rest.length > 0 && (
+                     <div className="space-y-1.5 pt-1">
+                        {rest.map((result, idx) => (
+                           <DriverGridRow key={result.id} result={result} index={idx} />
+                        ))}
+                     </div>
+                  )}
+               </div>
+            );
+         })()}
 
          {/* ─── Championship Leaders: Telemetry Standings ─── */}
          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

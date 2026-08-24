@@ -5,6 +5,7 @@ import {
    Menu, X, Flag, ChevronDown, ChevronRight, Activity, GitCompare, Tv, Sparkles,
    ChevronsLeft, ChevronsRight
 } from 'lucide-react';
+import logoPng from '../../assets/pitwall-logo.png'
 
 interface NavItem {
    path?: string;
@@ -115,9 +116,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                   className="flex items-center gap-3 group"
                   onClick={() => setMobileOpen(false)}
                >
-                  <div className="relative w-10 h-10 bg-gradient-to-br from-f1-red via-f1-red-dark to-red-900 rounded-xl flex items-center justify-center animate-logo-pulse shrink-0 border border-f1-red/30 shadow-[0_0_15px_rgba(225,6,0,0.3)]">
-                     <Flag className="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
-                     <div className="absolute inset-0 rounded-xl bg-f1-red/25 blur-md -z-10" />
+                  <div className="relative w-12 h-12 bg-white/[0.07] hover:bg-white/[0.12] rounded-xl flex items-center justify-center shrink-0 border border-white/10 shadow-[0_0_15px_rgba(225,6,0,0.2)] p-1 transition-all">
+                     <img src={logoPng} alt="Pitwall Logo" className="w-full h-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" />
                   </div>
                   {isExpanded && (
                      <div className="flex flex-col">
@@ -261,8 +261,8 @@ const Sidebar: React.FC<SidebarProps> = ({
          {/* Mobile Top Bar */}
          <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-f1-abyss/95 backdrop-blur-xl border-b border-white/[0.05] px-4 h-14 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
-               <div className="w-8 h-8 bg-gradient-to-br from-f1-red to-f1-red-dark rounded-lg flex items-center justify-center animate-logo-pulse border border-f1-red/30 shadow-[0_0_10px_rgba(225,6,0,0.3)]">
-                  <Flag className="w-4 h-4 text-white" />
+               <div className="w-10 h-10 bg-white/[0.07] rounded-lg flex items-center justify-center border border-white/10 shadow-sm p-1">
+                  <img src={logoPng} alt="Pitwall Logo" className="w-full h-full object-contain" />
                </div>
                <span className="font-display font-black tracking-tight text-f1-white">F1 HUD</span>
             </Link>

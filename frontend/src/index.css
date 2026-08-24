@@ -397,6 +397,47 @@
    .hover-tilt:hover {
       transform: perspective(800px) rotateY(-2deg) rotateX(2deg) translateY(-4px);
    }
+
+   /* ─── Podium Card (Last Race F1 social-media style) ─── */
+   .podium-card {
+      position: relative;
+      border-radius: 0.875rem;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background-color: #0d0d16;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+   }
+
+   .podium-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255, 255, 255, 0.14);
+      box-shadow: 0 24px 56px rgba(0, 0, 0, 0.6);
+   }
+
+   /* ─── Full Grid Row ─── */
+   .grid-row {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 0.55rem 0.875rem;
+      border-radius: 0.625rem;
+      background-color: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: all 0.2s ease;
+   }
+
+   .grid-row:hover {
+      background-color: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.08);
+   }
+
+   /* ─── Grid row entrance animation ─── */
+   @keyframes gridExpand {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+   }
 }
 
 @layer utilities {
