@@ -76,6 +76,7 @@ export interface RaceDetail {
    results: RaceResult[];
    sprintResults: RaceResult[];
    qualifyingResults: RaceResult[];
+   sprintQualifyingResults?: RaceResult[];
    weather: Weather | null;
 }
 

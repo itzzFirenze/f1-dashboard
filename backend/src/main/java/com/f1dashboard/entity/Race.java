@@ -49,6 +49,9 @@ public class Race {
    @Column(nullable = false)
    private Boolean sprintWeekend;
 
+   @Column(nullable = true)
+   private String alphaRoundId;
+
    @OneToMany(mappedBy = "race", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
    @Builder.Default
    private List<RaceSession> sessions = new ArrayList<>();

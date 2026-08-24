@@ -28,6 +28,7 @@ public class SyncController {
          dataSyncService.syncRaceResults();
          dataSyncService.syncSprintResults();
          dataSyncService.syncQualifyingResults();
+         dataSyncService.syncSprintQualifyingResults();
          dataSyncService.updateRaceStatusesByDate();
          dataSyncService.clearReadCaches();
          cacheWarmupService.warmCommonCaches();

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
    ArrowLeft, Clock, MapPin, Ruler, CornerDownRight, Timer, Zap, Trophy,
-   Compass, Radio, Flag
+   Compass, Radio, Flag, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { raceService } from '../services/raceService';
 import WeatherCard from '../components/ui/WeatherCard';
@@ -10,7 +10,7 @@ import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import { useTimezone } from '../context/TimezoneContext';
 import type { RaceDetail, RaceResult } from '../types';
 
-type ResultTab = 'race' | 'qualifying' | 'sprint';
+type ResultTab = 'race' | 'qualifying' | 'sprint' | 'sprint_qualifying';
 
 const RaceDetailPage: React.FC = () => {
    const { id } = useParams<{ id: string }>();
@@ -28,6 +28,7 @@ const RaceDetailPage: React.FC = () => {
                if (data.results.length > 0) setActiveTab('race');
                else if (data.qualifyingResults.length > 0) setActiveTab('qualifying');
                else if (data.sprintResults.length > 0) setActiveTab('sprint');
+               else if (data.sprintQualifyingResults && data.sprintQualifyingResults.length > 0) setActiveTab('sprint_qualifying');
             })
             .catch(console.error)
             .finally(() => setLoading(false));
@@ -35,18 +36,19 @@ const RaceDetailPage: React.FC = () => {
    }, [id]);
 
    if (loading) return <PageSkeleton />;
-   if (!race) return null;
-
-   const hasRace = race.results.length > 0;
-   const hasSprint = race.sprintResults.length > 0;
-   const hasQuali = race.qualifyingResults.length > 0;
-   const hasAnyResults = hasRace || hasSprint || hasQuali;
+   const hasRace = race.results && race.results.length > 0;
+   const hasSprint = race.sprintResults && race.sprintResults.length > 0;
+   const hasQuali = race.qualifyingResults && race.qualifyingResults.length > 0;
+   const hasSprintQuali = !!(race.sprintQualifyingResults && race.sprintQualifyingResults.length > 0);
+   const isSprintWeekend = !!race.sprintWeekend;
+   const hasAnyResults = hasRace || hasSprint || hasQuali || hasSprintQuali || isSprintWeekend;
 
    const getActiveResults = (): RaceResult[] => {
       switch (activeTab) {
          case 'race': return race.results;
          case 'sprint': return race.sprintResults;
          case 'qualifying': return race.qualifyingResults;
+         case 'sprint_qualifying': return race.sprintQualifyingResults || [];
          default: return [];
       }
    };
@@ -56,13 +58,15 @@ const RaceDetailPage: React.FC = () => {
          case 'race': return 'Race';
          case 'sprint': return 'Sprint';
          case 'qualifying': return 'Qualifying';
+         case 'sprint_qualifying': return 'Sprint Qualifying';
       }
    };
 
    const tabs: ResultTab[] = [];
    if (hasRace) tabs.push('race');
    if (hasQuali) tabs.push('qualifying');
-   if (hasSprint) tabs.push('sprint');
+   if (hasSprint || isSprintWeekend) tabs.push('sprint');
+   if (hasSprintQuali || isSprintWeekend) tabs.push('sprint_qualifying');
 
    const isCompleted = race.status === 'COMPLETED';
 
@@ -199,69 +203,107 @@ const RaceDetailPage: React.FC = () => {
                                  }`}
                            >
                               {tab === 'race' && <Trophy className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />}
-                              {tab === 'sprint' && <Zap className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />}
+                              {(tab === 'sprint' || tab === 'sprint_qualifying') && <Zap className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />}
                               {getTabLabel(tab)}
                            </button>
                         ))}
                      </div>
 
-                     {/* Qualifying Sub-header (Q1/Q2/Q3 column labels) */}
-                     {/* Qualifying Sub-header (Q1/Q2/Q3 column labels) — hide on mobile since times move below name there */}
-                     {activeTab === 'qualifying' && (
+                     {/* Qualifying / Sprint Qualifying Sub-header (Q1/Q2/Q3 or SQ1/SQ2/SQ3 column labels) */}
+                     {(activeTab === 'qualifying' || activeTab === 'sprint_qualifying') && (
                         <div className="hidden sm:flex items-center justify-end gap-2 sm:gap-6 px-2 sm:px-3 pb-2 text-[9px] sm:text-[10px] font-mono font-semibold text-f1-silver/50 uppercase tracking-[0.2em]">
-                           <span className="w-20 sm:w-24 text-center">Q1</span>
-                           <span className="w-20 sm:w-24 text-center">Q2</span>
-                           <span className="w-20 sm:w-24 text-center">Q3</span>
+                           <span className="w-20 sm:w-24 text-center">{activeTab === 'sprint_qualifying' ? 'SQ1' : 'Q1'}</span>
+                           <span className="w-20 sm:w-24 text-center">{activeTab === 'sprint_qualifying' ? 'SQ2' : 'Q2'}</span>
+                           <span className="w-20 sm:w-24 text-center">{activeTab === 'sprint_qualifying' ? 'SQ3' : 'Q3'}</span>
                         </div>
                      )}
 
                      {/* Results List */}
                      <div className="space-y-1">
-                        {getActiveResults().map((result) => (
-                           <div key={result.id} className="flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-white/[0.03] transition-colors group gap-2">
-                              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                                 <span className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-[11px] sm:text-xs font-mono font-bold shrink-0 ${result.position === 1 ? 'bg-amber-500/20 text-amber-400' :
-                                    result.position === 2 ? 'bg-gray-400/20 text-gray-300' :
-                                       result.position === 3 ? 'bg-orange-700/20 text-orange-400' :
-                                          'bg-white/[0.04] text-f1-silver'
-                                    }`}>
-                                    {result.position}
-                                 </span>
-                                 <div className="w-1 h-4 sm:h-5 rounded-full shrink-0" style={{ backgroundColor: result.constructorColor }} />
-                                 <div className="min-w-0">
-                                    <span className="font-semibold text-xs sm:text-sm truncate block sm:inline">{result.driverFirstName} {result.driverLastName}</span>
-                                    <span className="text-f1-silver/70 text-xs font-mono ml-2 hidden sm:inline">{result.constructorName}</span>
+                        {getActiveResults().length === 0 ? (
+                           <div className="py-10 text-center text-f1-silver/50 font-mono text-xs uppercase tracking-wider bg-white/[0.01] rounded-xl border border-white/[0.03]">
+                              No {getTabLabel(activeTab).toLowerCase()} times available for this round
+                           </div>
+                        ) : (
+                           getActiveResults().map((result) => {
+                              const isQualiType = activeTab === 'qualifying' || activeTab === 'sprint_qualifying';
+                              const hasGridPos = typeof result.gridPosition === 'number' && result.gridPosition > 0;
+                              const delta = hasGridPos ? result.gridPosition - result.position : null;
 
-                                    {/* Mobile-only: Q1/Q2/Q3 times shown below the driver name */}
-                                    {activeTab === 'qualifying' && (
-                                       <div className="flex sm:hidden items-center gap-3 mt-1 font-mono text-[10px] text-f1-silver/60">
-                                          <span><span className="text-f1-silver/40">Q1</span> {result.q1 || '—'}</span>
-                                          <span><span className="text-f1-silver/40">Q2</span> {result.q2 || '—'}</span>
-                                          <span className="font-bold text-f1-white"><span className="text-f1-silver/40 font-normal">Q3</span> {result.q3 || '—'}</span>
+                              return (
+                                 <div key={result.id} className="flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-white/[0.03] transition-colors group gap-2">
+                                    {/* Left: Position badge, team color bar, driver name, fastest lap badge */}
+                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                       <span className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-[11px] sm:text-xs font-mono font-bold shrink-0 ${result.position === 1 ? 'bg-amber-500/20 text-amber-400' :
+                                          result.position === 2 ? 'bg-gray-400/20 text-gray-300' :
+                                             result.position === 3 ? 'bg-orange-700/20 text-orange-400' :
+                                                'bg-white/[0.04] text-f1-silver'
+                                          }`}>
+                                          {result.position}
+                                       </span>
+
+                                       <div className="w-1 h-4 sm:h-5 rounded-full shrink-0" style={{ backgroundColor: result.constructorColor }} />
+                                       <div className="min-w-0">
+                                          <span className="font-semibold text-xs sm:text-sm truncate block sm:inline">{result.driverFirstName} {result.driverLastName}</span>
+                                          <span className="text-f1-silver/70 text-xs font-mono ml-2 hidden sm:inline">{result.constructorName}</span>
+
+                                          {/* Mobile-only: Q1/Q2/Q3 or SQ1/SQ2/SQ3 times shown below the driver name */}
+                                          {isQualiType && (
+                                             <div className="flex sm:hidden items-center gap-3 mt-1 font-mono text-[10px] text-f1-silver/60">
+                                                <span><span className="text-f1-silver/40">{activeTab === 'sprint_qualifying' ? 'SQ1' : 'Q1'}</span> {result.q1 || '—'}</span>
+                                                <span><span className="text-f1-silver/40">{activeTab === 'sprint_qualifying' ? 'SQ2' : 'Q2'}</span> {result.q2 || '—'}</span>
+                                                <span className="font-bold text-f1-white"><span className="text-f1-silver/40 font-normal">{activeTab === 'sprint_qualifying' ? 'SQ3' : 'Q3'}</span> {result.q3 || '—'}</span>
+                                             </div>
+                                          )}
+                                       </div>
+                                       {result.fastestLap && (
+                                          <span className="text-[9px] sm:text-[10px] font-mono font-bold text-purple-400 bg-purple-400/10 border border-purple-400/20 rounded px-1.5 py-0.5 shrink-0 hidden xs:inline-block">
+                                             FL
+                                          </span>
+                                       )}
+                                    </div>
+
+                                    {/* Right: Qualifying times OR (Position Delta + Points) */}
+                                    {isQualiType ? (
+                                       <div className="hidden sm:flex items-center gap-2 sm:gap-6 font-mono text-xs sm:text-sm shrink-0">
+                                          <span className="w-20 sm:w-24 text-center text-f1-silver/70">{result.q1 || '—'}</span>
+                                          <span className="w-20 sm:w-24 text-center text-f1-silver/70">{result.q2 || '—'}</span>
+                                          <span className="w-20 sm:w-24 text-center font-bold text-f1-white">{result.q3 || '—'}</span>
+                                       </div>
+                                    ) : (
+                                       <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                                          {/* Position Delta — left of the points tab */}
+                                          <div className="w-7 sm:w-8 flex items-center justify-center font-mono text-[11px] sm:text-xs font-bold shrink-0">
+                                             {delta !== null ? (
+                                              delta > 0 ? (
+                                                 <span className="inline-flex items-center text-emerald-400 gap-0.5" title={`${delta} positions gained`}>
+                                                    <ChevronUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                                                    <span>{delta}</span>
+                                                 </span>
+                                              ) : delta < 0 ? (
+                                                 <span className="inline-flex items-center text-rose-500 gap-0.5" title={`${Math.abs(delta)} positions lost`}>
+                                                    <ChevronDown className="w-3.5 h-3.5 stroke-[2.5]" />
+                                                    <span>{Math.abs(delta)}</span>
+                                                 </span>
+                                              ) : (
+                                                 <span className="text-f1-white font-bold" title="Position unchanged">—</span>
+                                              )
+                                           ) : (
+                                              <span className="text-f1-white font-bold">—</span>
+                                           )}
+                                        </div>
+
+                                          {/* Points tab */}
+                                          <div className="text-right min-w-[3rem]">
+                                             <span className="font-display font-black text-sm sm:text-base text-amber-400">{result.points}</span>
+                                             <span className="text-f1-silver/50 text-[10px] font-mono ml-1 uppercase tracking-widest">Pts</span>
+                                          </div>
                                        </div>
                                     )}
                                  </div>
-                                 {result.fastestLap && (
-                                    <span className="text-[9px] sm:text-[10px] font-mono font-bold text-purple-400 bg-purple-400/10 border border-purple-400/20 rounded px-1.5 py-0.5 shrink-0 hidden xs:inline-block">
-                                       FL
-                                    </span>
-                                 )}
-                              </div>
-
-                              {activeTab === 'qualifying' ? (
-                                 <div className="hidden sm:flex items-center gap-2 sm:gap-6 font-mono text-xs sm:text-sm shrink-0">
-                                    <span className="w-20 sm:w-24 text-center text-f1-silver/70">{result.q1 || '—'}</span>
-                                    <span className="w-20 sm:w-24 text-center text-f1-silver/70">{result.q2 || '—'}</span>
-                                    <span className="w-20 sm:w-24 text-center font-bold text-f1-white">{result.q3 || '—'}</span>
-                                 </div>
-                              ) : (
-                                 <div className="text-right shrink-0">
-                                    <span className="font-display font-black text-sm sm:text-base text-amber-400">{result.points}</span>
-                                    <span className="text-f1-silver/50 text-[10px] font-mono ml-1 uppercase tracking-widest">Pts</span>
-                                 </div>
-                              )}
-                           </div>
-                        ))}
+                              );
+                           })
+                        )}
                      </div>
                   </div>
                )}

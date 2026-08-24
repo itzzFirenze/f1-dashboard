@@ -32,4 +32,6 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
    Driver findByChampionshipPosition(Integer position);
 
    java.util.Optional<Driver> findByDriverRef(String driverRef);
+
+   java.util.Optional<Driver> findByCode(String code);
 }

@@ -34,6 +34,9 @@ public class DataSyncService {
    @Value("${app.api.jolpica-base-url:https://api.jolpi.ca/ergast/f1}")
    private String jolpicaBaseUrl;
 
+   @Value("${app.api.jolpica-alpha-url:https://api.jolpi.ca/f1/alpha}")
+   private String jolpicaAlphaBaseUrl;
+
    private final RestTemplate restTemplate;
    private final DriverRepository driverRepository;
    private final ConstructorRepository constructorRepository;
@@ -57,6 +60,7 @@ public class DataSyncService {
          syncRaceResults(); // Finally populate results
          syncSprintResults();
          syncQualifyingResults();
+         syncSprintQualifyingResults();
          updateRaceStatusesByDate(); // Reconcile statuses based on today's date
          clearReadCaches();
          cacheWarmupService.warmCommonCaches();
@@ -87,6 +91,57 @@ public class DataSyncService {
 
    public void syncRaceCalendar() {
       syncRaceCalendar(null);
+   }
+
+   /**
+    * Syncs Alpha API round IDs for a given season year using the schedules endpoint,
+    * storing them on Race entities. These IDs are needed to query sprint qualifying results.
+    */
+   public void syncAlphaRoundIds(Integer seasonYear) {
+      log.info("Syncing Alpha round IDs for season {} from schedules endpoint...", seasonYear);
+      try {
+         String schedulesUrl = jolpicaAlphaBaseUrl + "/schedules/" + seasonYear + "/";
+         String jsonResponse = restTemplate.getForObject(schedulesUrl, String.class);
+         if (jsonResponse == null) return;
+
+         JsonNode root = objectMapper.readTree(jsonResponse);
+         JsonNode events = root.path("data").path("events");
+         if (events.isArray()) {
+            for (JsonNode event : events) {
+               JsonNode roundNode = event.path("round");
+               if (roundNode.isMissingNode()) continue;
+
+               int roundNumber = roundNode.path("number").asInt();
+               String alphaRoundId = roundNode.path("id").asText();
+               if (alphaRoundId.isEmpty() || roundNumber <= 0) continue;
+
+               boolean hasSprint = false;
+               JsonNode scheduleList = event.path("schedule");
+               if (scheduleList.isArray()) {
+                  for (JsonNode sess : scheduleList) {
+                     String code = sess.path("code").asText();
+                     if ("SQ".equalsIgnoreCase(code) || "SR".equalsIgnoreCase(code)) {
+                        hasSprint = true;
+                        break;
+                     }
+                  }
+               }
+
+               boolean isSprint = hasSprint;
+               raceRepository.findBySeasonAndRound(seasonYear, roundNumber).ifPresent(race -> {
+                  race.setAlphaRoundId(alphaRoundId);
+                  if (isSprint) {
+                     race.setSprintWeekend(true);
+                  }
+                  raceRepository.save(race);
+                  log.info("Updated race round {}/{} -> alphaRoundId={}, sprintWeekend={}", seasonYear, roundNumber, alphaRoundId, race.getSprintWeekend());
+               });
+            }
+         }
+         log.info("Alpha round IDs successfully synced for season {}", seasonYear);
+      } catch (Exception e) {
+         log.warn("Failed to sync Alpha round IDs for season {}: {}", seasonYear, e.getMessage());
+      }
    }
 
    public void syncRaceCalendar(Integer season) {
@@ -513,6 +568,7 @@ public class DataSyncService {
       syncRaceResults(season);
       syncSprintResults(season);
       syncQualifyingResults(season);
+      syncSprintQualifyingResults(season);
       clearReadCaches();
       cacheWarmupService.warmCommonCaches();
       log.info("Backfill for season {} completed.", season);
@@ -718,6 +774,127 @@ public class DataSyncService {
          } catch (Exception e) {
             log.error("Failed to sync qualifying results page: {}", e.getMessage(), e);
             hasMoreData = false;
+         }
+      }
+   }
+
+   public void syncSprintQualifyingResults() {
+      syncSprintQualifyingResults(null);
+   }
+
+   public void syncSprintQualifyingResults(Integer targetSeason) {
+      int seasonYear = (targetSeason != null) ? targetSeason : LocalDate.now().getYear();
+      log.info("Syncing sprint qualifying results from Jolpica Alpha API for season {}...", seasonYear);
+
+      // Ensure we have Alpha round IDs stored
+      syncAlphaRoundIds(seasonYear);
+
+      // Find all sprint weekend races for this season that have an alphaRoundId
+      List<Race> sprintRaces = raceRepository.findBySeasonOrderByRoundAsc(seasonYear)
+            .stream()
+            .filter(r -> Boolean.TRUE.equals(r.getSprintWeekend()) && r.getAlphaRoundId() != null)
+            .toList();
+
+      if (sprintRaces.isEmpty()) {
+         log.info("No sprint weekend races with Alpha round IDs found for season {}", seasonYear);
+         return;
+      }
+
+      for (Race race : sprintRaces) {
+         String alphaRoundId = race.getAlphaRoundId();
+         String url = jolpicaAlphaBaseUrl + "/results/" + alphaRoundId + "/SQ/";
+         try {
+            String jsonResponse = restTemplate.getForObject(url, String.class);
+            if (jsonResponse == null) continue;
+
+            JsonNode root = objectMapper.readTree(jsonResponse);
+            JsonNode data = root.path("data");
+            if (data.isMissingNode()) continue;
+
+            JsonNode resultsNode = data.path("results");
+            if (!resultsNode.isArray() || resultsNode.isEmpty()) continue;
+
+            // Clear existing SPRINT_QUALIFYING results for this race
+            raceResultRepository.deleteByRaceIdAndSessionType(race.getId(),
+                  com.f1dashboard.enums.SessionType.SPRINT_QUALIFYING);
+
+            for (JsonNode resNode : resultsNode) {
+               try {
+                  int position = resNode.path("position").asInt();
+                  String abbreviation = resNode.path("driver").path("abbreviation").asText();
+                  String familyName = resNode.path("driver").path("family_name").asText();
+                  String givenName = resNode.path("driver").path("given_name").asText();
+                  String teamName = resNode.path("team").path("name").asText();
+
+                  // Extract SQ1/SQ2/SQ3 segment times from components
+                  JsonNode components = resNode.path("components");
+                  String sq1 = null, sq2 = null, sq3 = null;
+                  if (!components.isMissingNode()) {
+                     sq1 = components.has("SQ1") && !components.path("SQ1").path("time").isNull()
+                           ? components.path("SQ1").path("time").asText(null) : null;
+                     sq2 = components.has("SQ2") && !components.path("SQ2").path("time").isNull()
+                           ? components.path("SQ2").path("time").asText(null) : null;
+                     sq3 = components.has("SQ3") && !components.path("SQ3").path("time").isNull()
+                           ? components.path("SQ3").path("time").asText(null) : null;
+                  }
+
+                  // Match driver by code/abbreviation or family name
+                  Optional<Driver> driverOpt = driverRepository.findByCode(abbreviation);
+                  if (driverOpt.isEmpty() && !familyName.isEmpty()) {
+                     driverOpt = driverRepository.findAll().stream()
+                           .filter(d -> d.getLastName().equalsIgnoreCase(familyName) || d.getFirstName().equalsIgnoreCase(givenName))
+                           .findFirst();
+                  }
+
+                  if (driverOpt.isEmpty()) {
+                     log.warn("SQ sync: no driver found for abbreviation '{}' / familyName '{}' at round {}", abbreviation, familyName, alphaRoundId);
+                     continue;
+                  }
+
+                  // Match constructor by team name (fuzzy & alias match)
+                  final String cleanTeamName = teamName.toLowerCase().replace(" f1 team", "").replace(" racing", "").trim();
+                  Optional<Constructor> constructorOpt = constructorRepository.findAll().stream()
+                        .filter(c -> {
+                           String cName = c.getName().toLowerCase();
+                           String cRef = c.getConstructorRef().toLowerCase();
+                           return cName.contains(cleanTeamName) || cleanTeamName.contains(cName)
+                                 || cRef.contains(cleanTeamName) || cleanTeamName.contains(cRef);
+                        })
+                        .findFirst();
+
+                  if (constructorOpt.isEmpty()) {
+                     // Fallback to driver's constructor if known
+                     constructorOpt = Optional.ofNullable(driverOpt.get().getConstructor());
+                  }
+
+                  if (constructorOpt.isEmpty()) {
+                     log.warn("SQ sync: no constructor found for team '{}' at round {}", teamName, alphaRoundId);
+                     continue;
+                  }
+
+                  RaceResult result = RaceResult.builder()
+                        .race(race)
+                        .driver(driverOpt.get())
+                        .constructor(constructorOpt.get())
+                        .sessionType(com.f1dashboard.enums.SessionType.SPRINT_QUALIFYING)
+                        .position(position)
+                        .points(0.0)
+                        .status("Qualified")
+                        .gridPosition(position)
+                        .fastestLap(false)
+                        .q1Time(sq1)
+                        .q2Time(sq2)
+                        .q3Time(sq3)
+                        .build();
+
+                  raceResultRepository.save(result);
+               } catch (Exception e) {
+                  log.warn("SQ sync: failed to parse result entry for round {}: {}", alphaRoundId, e.getMessage());
+               }
+            }
+            log.info("Saved {} SQ results for round {} ({})", resultsNode.size(), race.getRound(), race.getName());
+         } catch (Exception e) {
+            log.warn("SQ sync: failed to fetch/parse for round {}: {}", alphaRoundId, e.getMessage());
          }
       }
    }

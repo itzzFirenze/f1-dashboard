@@ -18,5 +18,6 @@ public record RaceDetailDto(
       List<RaceResultDto> results,
       List<RaceResultDto> sprintResults,
       List<RaceResultDto> qualifyingResults,
+      List<RaceResultDto> sprintQualifyingResults,
       WeatherDto weather) {
 }

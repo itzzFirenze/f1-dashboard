@@ -88,6 +88,12 @@ public class RaceService {
             .map(this::toResultDto)
             .toList();
 
+      List<RaceResultDto> sprintQualifyingResults = resultRepository
+            .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.SPRINT_QUALIFYING)
+            .stream()
+            .map(this::toResultDto)
+            .toList();
+
       WeatherDto weather = weatherRepository.findByRaceId(id)
             .map(this::toWeatherDto)
             .orElse(null);
@@ -97,7 +103,7 @@ public class RaceService {
             toCircuitDto(race),
             race.getRaceDate(), race.getRaceTime(),
             race.getStatus().name(), race.getSprintWeekend(),
-            sessions, results, sprintResults, qualifyingResults, weather);
+            sessions, results, sprintResults, qualifyingResults, sprintQualifyingResults, weather);
    }
 
    /** Get the next upcoming race */
