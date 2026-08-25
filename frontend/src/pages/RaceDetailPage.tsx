@@ -283,7 +283,7 @@ const RaceDetailPage: React.FC = () => {
                                              >
                                                 {getDnfBadge(result.status)}
                                                 {result.status && !['dnf', 'dsq', 'dns', 'retired'].includes(result.status.trim().toLowerCase()) && (
-                                                   <span className="ml-1 font-normal opacity-80 hidden md:inline text-[9px] font-sans lowercase capitalize">· {result.status}</span>
+                                                   <span className="ml-1 font-normal opacity-80 hidden md:inline text-[9px] font-sans capitalize">· {result.status}</span>
                                                 )}
                                              </span>
                                           )}
@@ -316,23 +316,23 @@ const RaceDetailPage: React.FC = () => {
                                           {/* Position Delta — left of the points tab */}
                                           <div className="w-7 sm:w-8 flex items-center justify-center font-mono text-[11px] sm:text-xs font-bold shrink-0">
                                              {delta !== null ? (
-                                              delta > 0 ? (
-                                                 <span className="inline-flex items-center text-emerald-400 gap-0.5" title={`${delta} positions gained`}>
-                                                    <ChevronUp className="w-3.5 h-3.5 stroke-[2.5]" />
-                                                    <span>{delta}</span>
-                                                 </span>
-                                              ) : delta < 0 ? (
-                                                 <span className="inline-flex items-center text-rose-500 gap-0.5" title={`${Math.abs(delta)} positions lost`}>
-                                                    <ChevronDown className="w-3.5 h-3.5 stroke-[2.5]" />
-                                                    <span>{Math.abs(delta)}</span>
-                                                 </span>
-                                              ) : (
-                                                 <span className="text-f1-white font-bold" title="Position unchanged">—</span>
-                                              )
-                                           ) : (
-                                              <span className="text-f1-white font-bold">—</span>
-                                           )}
-                                        </div>
+                                                delta > 0 ? (
+                                                   <span className="inline-flex items-center text-emerald-400 gap-0.5" title={`${delta} positions gained`}>
+                                                      <ChevronUp className="w-3.5 h-3.5 stroke-[2.5]" />
+                                                      <span>{delta}</span>
+                                                   </span>
+                                                ) : delta < 0 ? (
+                                                   <span className="inline-flex items-center text-rose-500 gap-0.5" title={`${Math.abs(delta)} positions lost`}>
+                                                      <ChevronDown className="w-3.5 h-3.5 stroke-[2.5]" />
+                                                      <span>{Math.abs(delta)}</span>
+                                                   </span>
+                                                ) : (
+                                                   <span className="text-f1-white font-bold" title="Position unchanged">—</span>
+                                                )
+                                             ) : (
+                                                <span className="text-f1-white font-bold">—</span>
+                                             )}
+                                          </div>
 
                                           {/* Points tab */}
                                           <div className="text-right min-w-[3rem]">
