@@ -20,11 +20,6 @@ const CATEGORIES: { key: RecordCategory; label: string; icon: React.ElementType;
    { key: 'constructor-points', label: 'Most Points', icon: TrendingUp, group: 'constructor', accent: '#10b981' },
 ];
 
-/**
- * Resolves the correct image to show for a record row:
- * - Driver records -> driver headshot via getDriverImage(theme, firstName, lastName)
- * - Constructor records -> team logo via theme.teamLogoUrl
- */
 const getRecordImage = (record: DriverRecord | ConstructorRecord): string | undefined => {
    const isDriver = 'driverCode' in record;
    const constructorName = isDriver
@@ -76,12 +71,6 @@ const RecordAvatar: React.FC<{
    );
 };
 
-/**
- * Custom bar label layer. Renders each value just outside the end of its bar
- * (rather than nivo's default centered-inside placement) so zero-value bars
- * — which have zero width — don't collapse their label onto the axis/driver
- * name column.
- */
 const BarValueLabelsLayer = (activeRecords: (DriverRecord | ConstructorRecord)[]) =>
    ({ bars }: any) => (
       <g>

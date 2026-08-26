@@ -31,6 +31,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       driverImages: {
          max_verstappen: `${BASE}/drivers/max_verstappen.avif`,
          isack_hadjar: `${BASE}/drivers/isack_hadjar.avif`,
+         liam_lawson: `${BASE}/drivers/liam_lawson.avif`,
       },
    },
    ferrari: {
@@ -145,7 +146,7 @@ export function getTeamKey(teamName: string): string {
    if (n.includes('alpine')) return 'alpine';
    if (n.includes('williams')) return 'williams';
    if (n.includes('haas')) return 'haas';
-   if (n.includes('rb') || n.includes('racing bulls')) return 'rb';
+   if (n.includes('rb') || n.includes('racing bulls') || n.includes('alphatauri') || n.includes('toro rosso')) return 'rb';
    if (n.includes('audi') || n.includes('sauber')) return 'audi';
    if (n.includes('cadillac')) return 'cadillac';
    return 'mercedes';

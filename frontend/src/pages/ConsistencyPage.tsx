@@ -177,7 +177,7 @@ const ConsistencyPage: React.FC = () => {
                <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-4">
                   Season Results Heatmap
                </h3>
-               <div className="overflow-x-auto">
+               <div className="overflow-x-relative">
                   <div style={{ height: `${heatmapData.length * 36 + 80}px`, minWidth: '700px' }}>
                      <ResponsiveHeatMap
                         data={heatmapData}
