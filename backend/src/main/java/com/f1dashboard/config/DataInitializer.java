@@ -23,6 +23,7 @@ public class DataInitializer implements CommandLineRunner {
          dataSyncService.syncRaceResults();
          dataSyncService.syncSprintResults();
          dataSyncService.syncQualifyingResults();
+         dataSyncService.syncSprintQualifyingResults();
          dataSyncService.updateRaceStatusesByDate();
          log.info("Initial sync completed successfully. All data is dynamically loaded.");
       } catch (Exception e) {

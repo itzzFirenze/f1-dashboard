@@ -149,7 +149,7 @@ const ConstructorComparisonPage: React.FC = () => {
 
          {/* ─── Team Selectors ─── */}
          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-end">
-            <TeamSelector teams={constructors} selected={teamA} onSelect={setTeamA} label="Team A" />
+            <TeamSelector teams={constructors.filter(c => c.id !== teamB?.id)} selected={teamA} onSelect={setTeamA} label="Team A" />
             <button
                onClick={swapTeams}
                className="hidden md:flex w-12 h-12 rounded-xl bg-white/[0.03] border border-white/[0.06] items-center justify-center hover:bg-f1-red/10 hover:border-f1-red/30 transition-colors self-end mb-1 group"
@@ -157,7 +157,7 @@ const ConstructorComparisonPage: React.FC = () => {
             >
                <ArrowLeftRight className="w-5 h-5 text-f1-silver/60 group-hover:text-f1-red-light transition-colors" />
             </button>
-            <TeamSelector teams={constructors} selected={teamB} onSelect={setTeamB} label="Team B" />
+            <TeamSelector teams={constructors.filter(c => c.id !== teamA?.id)} selected={teamB} onSelect={setTeamB} label="Team B" />
          </div>
 
          {/* Loading state */}

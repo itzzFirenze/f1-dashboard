@@ -617,14 +617,17 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                         setSelectedLap(e.target.value);
                         jumpToLap(Number(e.target.value));
                      }}
-                     className="sm:hidden bg-white/[0.03] border border-white/[0.08] rounded-lg px-2 py-1 text-[10px] font-mono text-f1-white focus:outline-none focus:border-f1-red/50 w-24 shrink-0"
+                     style={{ backgroundColor: '#0f172a', color: '#f8fafc' }}
+                     className="sm:hidden border border-white/[0.08] rounded-lg px-2 py-1 text-[10px] font-mono focus:outline-none focus:border-f1-red/50 w-24 shrink-0"
                   >
-                     <option value="">Lap...</option>
+                     <option style={{ backgroundColor: '#0f172a', color: '#f8fafc' }} value="">Lap...</option>
                      {laps
                         .filter((l, idx, self) => self.findIndex((t) => t.lap_number === l.lap_number) === idx)
                         .sort((a, b) => a.lap_number - b.lap_number)
                         .map((l) => (
-                           <option key={l.lap_number} value={l.lap_number}>Lap {l.lap_number}</option>
+                           <option style={{ backgroundColor: '#0f172a', color: '#f8fafc' }} key={l.lap_number} value={l.lap_number}>
+                              Lap {l.lap_number}
+                           </option>
                         ))}
                   </select>
                </div>
@@ -673,14 +676,17 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
                      setSelectedLap(e.target.value);
                      jumpToLap(Number(e.target.value));
                   }}
-                  className="hidden sm:block bg-white/[0.03] border border-white/[0.08] rounded-lg px-2 py-1.5 text-[10px] font-mono text-f1-white focus:outline-none focus:border-f1-red/50 w-20 shrink-0"
+                  style={{ backgroundColor: '#0f172a', color: '#f8fafc' }}
+                  className="hidden sm:block border border-white/[0.08] rounded-lg px-2 py-1.5 text-[10px] font-mono focus:outline-none focus:border-f1-red/50 w-20 shrink-0"
                >
-                  <option value="">Lap...</option>
+                  <option style={{ backgroundColor: '#0f172a', color: '#f8fafc' }} value="">Lap...</option>
                   {laps
                      .filter((l, idx, self) => self.findIndex((t) => t.lap_number === l.lap_number) === idx)
                      .sort((a, b) => a.lap_number - b.lap_number)
                      .map((l) => (
-                        <option key={l.lap_number} value={l.lap_number}>Lap {l.lap_number}</option>
+                        <option style={{ backgroundColor: '#0f172a', color: '#f8fafc' }} key={l.lap_number} value={l.lap_number}>
+                           Lap {l.lap_number}
+                        </option>
                      ))}
                </select>
             </div>

@@ -6,9 +6,9 @@ import lombok.*;
 
 @Entity
 @Table(name = "race_results", indexes = {
-      @Index(name = "idx_race_result_race_session_position", columnList = "race_id, sessionType, position"),
-      @Index(name = "idx_race_result_driver_session", columnList = "driver_id, sessionType"),
-      @Index(name = "idx_race_result_constructor_session", columnList = "constructor_id, sessionType")
+      @Index(name = "idx_race_result_race_session_position", columnList = "race_id, session_type, position"),
+      @Index(name = "idx_race_result_driver_session", columnList = "driver_id, session_type"),
+      @Index(name = "idx_race_result_constructor_session", columnList = "constructor_id, session_type")
 })
 @Getter
 @Setter

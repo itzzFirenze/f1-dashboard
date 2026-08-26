@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Calendar, Trophy, AlertTriangle, TrendingUp, ArrowUp, Clock, Filter, Radio, Zap } from 'lucide-react';
 import { ResponsiveLine } from '@nivo/line';
+import { useTooltip } from '@nivo/tooltip';
 import { analyticsService } from '../services/analyticsService';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import type { TimelineData, TimelineEvent } from '../types';
 
-/** Compact telemetry stat block (no gauge dial — used for timeline summary strip) */
+/** Compact telemetry stat block */
 const TelemetryStat: React.FC<{ label: string; value: number | string; colorHex: string; icon: React.ElementType; tag: string }> = ({
    label, value, colorHex, icon: Icon, tag
 }) => (
@@ -118,7 +119,7 @@ const SeasonTimelinePage: React.FC = () => {
 
          {/* ─── Gap Evolution Chart ─── */}
          {gapChartData.length > 0 && gapChartData[0].data.length > 0 && (
-            <div className="telemetry-card p-6 relative overflow-hidden">
+            <div className="telemetry-card p-6 relative overflow-visible">
                <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
                <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xs font-mono font-bold text-f1-silver/70 tracking-[0.2em] uppercase flex items-center gap-2.5">
@@ -147,12 +148,13 @@ const SeasonTimelinePage: React.FC = () => {
                      pointBorderWidth={2}
                      pointBorderColor="#E10600"
                      enableSlices="x"
+                     crosshairType="x"
+                     layers={['grid', 'markers', 'axes', 'areas', 'crosshair', 'lines', 'points', RightAnchoredSlices, 'legends']}
                      theme={{
                         text: { fill: '#9ca3af', fontFamily: 'monospace', fontSize: 11 },
                         axis: { ticks: { text: { fill: '#9ca3af' } }, legend: { text: { fill: '#9ca3af' } } },
                         grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
                         crosshair: { line: { stroke: '#E10600' } },
-                        tooltip: { container: { background: '#111118', color: '#fff', border: '1px solid rgba(255,255,255,0.08)' } },
                      }}
                      axisBottom={{ tickRotation: -45 }}
                      axisLeft={{ legend: 'Points Gap', legendPosition: 'middle', legendOffset: -50 }}
@@ -200,6 +202,62 @@ const SeasonTimelinePage: React.FC = () => {
             </div>
          )}
       </div>
+   );
+};
+
+const GapSliceTooltip: React.FC<{ slice: any }> = ({ slice }) => (
+   <div
+      style={{
+         background: '#111118',
+         color: '#fff',
+         border: '1px solid rgba(255,255,255,0.08)',
+         borderRadius: 8,
+         padding: '10px 14px',
+         fontFamily: 'monospace',
+         fontSize: 11,
+         minWidth: 120,
+      }}
+   >
+      {slice.points.map((p: any) => (
+         <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span
+               style={{ width: 8, height: 8, borderRadius: '50%', background: p.seriesColor, display: 'inline-block' }}
+            />
+            <span style={{ color: '#9ca3af' }}>{p.data.xFormatted}</span>
+            <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
+               <span style={{ color: '#9ca3af' }}>GAP:</span>
+               <strong>{p.data.yFormatted}</strong>
+            </span>
+         </div>
+      ))}
+   </div>
+);
+
+const RightAnchoredSlices: React.FC<any> = ({ slices, innerHeight, margin, setCurrentSlice }) => {
+   const { showTooltipAt, hideTooltip } = useTooltip();
+
+   const positionAndShow = (slice: any, event: React.MouseEvent<SVGRectElement>) => {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const y = event.clientY - rect.top;
+      showTooltipAt(<GapSliceTooltip slice={slice} />, [margin.left + slice.x, margin.top + y], 'right');
+   };
+
+   return (
+      <g>
+         {slices.map((slice: any) => (
+            <rect
+               key={slice.id}
+               x={slice.x0}
+               y={0}
+               width={slice.width}
+               height={innerHeight}
+               fill="transparent"
+               onMouseEnter={(e) => { setCurrentSlice(slice); positionAndShow(slice, e); }}
+               onMouseMove={(e) => positionAndShow(slice, e)}
+               onMouseLeave={() => { setCurrentSlice(null); hideTooltip(); }}
+            />
+         ))}
+      </g>
    );
 };
 

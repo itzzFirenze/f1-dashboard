@@ -781,13 +781,14 @@ const TriviaPage: React.FC = () => {
                            onClick={handleNextQuestion}
                            className="px-4 sm:px-7 py-2.5 sm:py-3.5 bg-gradient-to-r from-f1-red to-red-700 hover:from-red-600 hover:to-f1-red text-white font-mono font-extrabold text-xs sm:text-sm rounded-xl sm:rounded-2xl shadow-xl shadow-f1-red/30 transition-all transform hover:scale-105 flex items-center justify-center gap-1.5 sm:gap-2 uppercase tracking-wider flex-shrink-0"
                         >
-                           {currentIndex + 1 < questions.length ? (
+                           {(gameMode === 'survival' && selectedAnswer !== currentQuestion.correct_answer) ||
+                              currentIndex + 1 >= questions.length ? (
                               <>
-                                 Next Lap <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                 Finish Race <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               </>
                            ) : (
                               <>
-                                 Finish Race <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                 Next Lap <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                               </>
                            )}
                            <span className="hidden sm:inline-block text-[10px] bg-black/25 px-1.5 py-0.5 rounded font-mono ml-1">[Enter]</span>

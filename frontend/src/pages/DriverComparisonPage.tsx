@@ -152,7 +152,7 @@ const DriverComparisonPage: React.FC = () => {
          {/* ─── Driver Selectors ─── */}
          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-end">
             <DriverSelector
-               drivers={drivers}
+               drivers={drivers.filter(d => d.id !== driverB?.id)}
                selected={driverA}
                onSelect={setDriverA}
                label="Driver A"
@@ -166,7 +166,7 @@ const DriverComparisonPage: React.FC = () => {
                <ArrowLeftRight className="w-5 h-5 text-f1-silver/60 group-hover:text-f1-red-light transition-colors" />
             </button>
             <DriverSelector
-               drivers={drivers}
+               drivers={drivers.filter(d => d.id !== driverA?.id)}
                selected={driverB}
                onSelect={setDriverB}
                label="Driver B"
