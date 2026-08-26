@@ -346,8 +346,16 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
    const [selectedLap, setSelectedLap] = useState<string>('');
 
    useEffect(() => {
+      setSelectedCorner(null);
+      setHoveredDriver(null);
       setSelectedLap('');
-   }, [activeSession?.session_key]);
+   }, [circuit.id, activeSession?.session_key]);
+
+   useEffect(() => {
+      return () => {
+         pause();
+      };
+   }, [pause]);
 
    const handleHover = useCallback((driverNo: number | null) => setHoveredDriver(driverNo), []);
 

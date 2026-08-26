@@ -48,6 +48,29 @@ const ConstructorComparisonPage: React.FC = () => {
       setTeamB(temp);
    };
 
+   const useIsMobile = (breakpoint = 768) => {
+      const [isMobile, setIsMobile] = useState(
+         typeof window !== 'undefined' ? window.innerWidth < breakpoint : false
+      );
+      useEffect(() => {
+         const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+         const update = () => setIsMobile(mq.matches);
+         update();
+         mq.addEventListener('change', update);
+         return () => mq.removeEventListener('change', update);
+      }, [breakpoint]);
+      return isMobile;
+   };
+
+   const LegendChip: React.FC<{ color: string; label: string }> = ({ color, label }) => (
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-f1-silver/70">
+         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+         {label}
+      </span>
+   );
+
+   const isMobile = useIsMobile();
+
    const stackedBarData = useMemo(() => {
       if (!data) return [];
       return data.rounds
@@ -217,38 +240,51 @@ const ConstructorComparisonPage: React.FC = () => {
                      </div>
                      <h2 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Points Per Round — Driver Contributions</h2>
                   </div>
-                  <div style={{ height: 350 }}>
+                  <div style={!isMobile ? { height: 350 } : undefined}>
                      {stackedBarData.length > 0 ? (
-                        <ResponsiveBar
-                           data={stackedBarData}
-                           keys={stackedBarKeys}
-                           indexBy="round"
-                           margin={{ top: 10, right: 130, bottom: 40, left: 50 }}
-                           padding={0.3}
-                           groupMode="grouped"
-                           colors={({ id }) => stackedBarColors[id as string] || '#666'}
-                           theme={{
-                              text: { fill: '#9ca3af' },
-                              axis: { ticks: { text: { fill: '#9ca3af' } }, legend: { text: { fill: '#9ca3af' } } },
-                              grid: { line: { stroke: '#333' } },
-                              tooltip: { container: { background: '#1a1a2e', color: '#fff', border: '1px solid #333' } },
-                           }}
-                           axisBottom={{ tickRotation: -45 }}
-                           axisLeft={{ legend: 'Points', legendPosition: 'middle', legendOffset: -40 }}
-                           legends={[
-                              {
-                                 dataFrom: 'keys',
-                                 anchor: 'bottom-right',
-                                 direction: 'column',
-                                 translateX: 120,
-                                 itemWidth: 100,
-                                 itemHeight: 20,
-                                 itemTextColor: '#9ca3af',
-                              },
-                           ]}
-                           animate={true}
-                           motionConfig="gentle"
-                        />
+                        <>
+                           <div className="overflow-x-auto -mx-2 px-2">
+                              <div style={{ minWidth: isMobile ? Math.max(stackedBarData.length * 70, 320) : '100%', height: isMobile ? 260 : 350 }}>
+                                 <ResponsiveBar
+                                    data={stackedBarData}
+                                    keys={stackedBarKeys}
+                                    indexBy="round"
+                                    margin={isMobile ? { top: 10, right: 10, bottom: 50, left: 36 } : { top: 10, right: 130, bottom: 40, left: 50 }}
+                                    padding={0.3}
+                                    groupMode="grouped"
+                                    colors={({ id }) => stackedBarColors[id as string] || '#666'}
+                                    theme={{
+                                       text: { fill: '#9ca3af' },
+                                       axis: { ticks: { text: { fill: '#9ca3af' } }, legend: { text: { fill: '#9ca3af' } } },
+                                       grid: { line: { stroke: '#333' } },
+                                       tooltip: { container: { background: '#1a1a2e', color: '#fff', border: '1px solid #333' } },
+                                    }}
+                                    axisBottom={{ tickRotation: -45 }}
+                                    axisLeft={isMobile ? { tickSize: 4 } : { legend: 'Points', legendPosition: 'middle', legendOffset: -40 }}
+                                    legends={isMobile ? [] : [
+                                       {
+                                          dataFrom: 'keys',
+                                          anchor: 'bottom-right',
+                                          direction: 'column',
+                                          translateX: 120,
+                                          itemWidth: 100,
+                                          itemHeight: 20,
+                                          itemTextColor: '#9ca3af',
+                                       },
+                                    ]}
+                                    animate={true}
+                                    motionConfig="gentle"
+                                 />
+                              </div>
+                           </div>
+                           {isMobile && (
+                              <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 px-1">
+                                 {stackedBarKeys.map(k => (
+                                    <LegendChip key={k} color={stackedBarColors[k] || '#666'} label={k} />
+                                 ))}
+                              </div>
+                           )}
+                        </>
                      ) : (
                         <div className="flex items-center justify-center h-full text-sm font-mono text-f1-silver/50">No race data available yet</div>
                      )}
@@ -264,43 +300,56 @@ const ConstructorComparisonPage: React.FC = () => {
                      </div>
                      <h2 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Championship Gap Evolution</h2>
                   </div>
-                  <div style={{ height: 350 }}>
+                  <div style={!isMobile ? { height: 350 } : undefined}>
                      {gapLineData.length > 0 && gapLineData[0].data.length > 0 ? (
-                        <ResponsiveLine
-                           data={gapLineData}
-                           margin={{ top: 10, right: 120, bottom: 40, left: 60 }}
-                           xScale={{ type: 'point' }}
-                           yScale={{ type: 'linear', min: 0, max: 'auto' }}
-                           curve="monotoneX"
-                           colors={d => d.color || '#666'}
-                           enableArea={true}
-                           areaOpacity={0.1}
-                           pointSize={8}
-                           pointColor={{ from: 'color' }}
-                           pointBorderWidth={2}
-                           pointBorderColor={{ from: 'serieColor' }}
-                           enableSlices="x"
-                           theme={{
-                              text: { fill: '#9ca3af' },
-                              axis: { ticks: { text: { fill: '#9ca3af' } }, legend: { text: { fill: '#9ca3af' } } },
-                              grid: { line: { stroke: '#333' } },
-                              crosshair: { line: { stroke: '#e11d48' } },
-                              tooltip: { container: { background: '#1a1a2e', color: '#fff', border: '1px solid #333' } },
-                           }}
-                           axisBottom={{ tickRotation: -45 }}
-                           axisLeft={{ legend: 'Cumulative Points', legendPosition: 'middle', legendOffset: -50 }}
-                           legends={[
-                              {
-                                 anchor: 'bottom-right',
-                                 direction: 'column',
-                                 translateX: 110,
-                                 itemWidth: 100,
-                                 itemHeight: 20,
-                                 itemTextColor: '#9ca3af',
-                                 symbolShape: 'circle',
-                              },
-                           ]}
-                        />
+                        <>
+                           <div className="overflow-x-auto -mx-2 px-2">
+                              <div style={{ minWidth: isMobile ? Math.max(gapLineData[0].data.length * 50, 320) : '100%', height: isMobile ? 260 : 350 }}>
+                                 <ResponsiveLine
+                                    data={gapLineData}
+                                    margin={isMobile ? { top: 10, right: 16, bottom: 45, left: 40 } : { top: 10, right: 120, bottom: 40, left: 60 }}
+                                    xScale={{ type: 'point' }}
+                                    yScale={{ type: 'linear', min: 0, max: 'auto' }}
+                                    curve="monotoneX"
+                                    colors={d => d.color || '#666'}
+                                    enableArea={true}
+                                    areaOpacity={0.1}
+                                    pointSize={isMobile ? 5 : 8}
+                                    pointColor={{ from: 'color' }}
+                                    pointBorderWidth={2}
+                                    pointBorderColor={{ from: 'serieColor' }}
+                                    enableSlices="x"
+                                    theme={{
+                                       text: { fill: '#9ca3af' },
+                                       axis: { ticks: { text: { fill: '#9ca3af' } }, legend: { text: { fill: '#9ca3af' } } },
+                                       grid: { line: { stroke: '#333' } },
+                                       crosshair: { line: { stroke: '#e11d48' } },
+                                       tooltip: { container: { background: '#1a1a2e', color: '#fff', border: '1px solid #333' } },
+                                    }}
+                                    axisBottom={{ tickRotation: -45 }}
+                                    axisLeft={isMobile ? { tickSize: 4 } : { legend: 'Cumulative Points', legendPosition: 'middle', legendOffset: -50 }}
+                                    legends={isMobile ? [] : [
+                                       {
+                                          anchor: 'bottom-right',
+                                          direction: 'column',
+                                          translateX: 110,
+                                          itemWidth: 100,
+                                          itemHeight: 20,
+                                          itemTextColor: '#9ca3af',
+                                          symbolShape: 'circle',
+                                       },
+                                    ]}
+                                 />
+                              </div>
+                           </div>
+                           {isMobile && (
+                              <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 px-1">
+                                 {gapLineData.map(s => (
+                                    <LegendChip key={s.id} color={s.color} label={s.id} />
+                                 ))}
+                              </div>
+                           )}
+                        </>
                      ) : (
                         <div className="flex items-center justify-center h-full text-sm font-mono text-f1-silver/50">No race data available yet</div>
                      )}
