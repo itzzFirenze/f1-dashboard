@@ -232,7 +232,7 @@ const ConstructorComparisonPage: React.FC = () => {
                </div>
 
                {/* Stacked Bar Chart — Driver Point Contributions */}
-               <div className="telemetry-card p-6 relative overflow-hidden">
+               <div className="telemetry-card p-6 relative overflow-visible">
                   <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-sky-400 to-transparent" />
                   <div className="flex items-center gap-2.5 mb-6">
                      <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-sky-400/10">
@@ -243,7 +243,7 @@ const ConstructorComparisonPage: React.FC = () => {
                   <div style={!isMobile ? { height: 350 } : undefined}>
                      {stackedBarData.length > 0 ? (
                         <>
-                           <div className="overflow-x-auto -mx-2 px-2">
+                           <div className={isMobile ? "overflow-x-auto -mx-2 px-2" : undefined}>
                               <div style={{ minWidth: isMobile ? Math.max(stackedBarData.length * 70, 320) : '100%', height: isMobile ? 260 : 350 }}>
                                  <ResponsiveBar
                                     data={stackedBarData}
@@ -292,7 +292,7 @@ const ConstructorComparisonPage: React.FC = () => {
                </div>
 
                {/* Gap Evolution Area/Line Chart */}
-               <div className="telemetry-card p-6 relative overflow-hidden">
+               <div className="telemetry-card p-6 relative overflow-visible">
                   <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
                   <div className="flex items-center gap-2.5 mb-6">
                      <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-f1-red/10">
@@ -303,7 +303,7 @@ const ConstructorComparisonPage: React.FC = () => {
                   <div style={!isMobile ? { height: 350 } : undefined}>
                      {gapLineData.length > 0 && gapLineData[0].data.length > 0 ? (
                         <>
-                           <div className="overflow-x-auto -mx-2 px-2">
+                           <div className={isMobile ? "overflow-x-auto -mx-2 px-2" : undefined}>
                               <div style={{ minWidth: isMobile ? Math.max(gapLineData[0].data.length * 50, 320) : '100%', height: isMobile ? 260 : 350 }}>
                                  <ResponsiveLine
                                     data={gapLineData}

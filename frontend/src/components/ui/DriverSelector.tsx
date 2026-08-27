@@ -28,15 +28,19 @@ const DriverSelector: React.FC<DriverSelectorProps> = ({
       return () => document.removeEventListener('mousedown', handler);
    }, []);
 
-   const filtered = drivers.filter(d => {
-      const q = search.toLowerCase().trim();
-      if (!q) return true;
-      return (
-         d.firstName.toLowerCase().startsWith(q) ||
-         d.lastName.toLowerCase().startsWith(q) ||
-         d.code.toLowerCase().startsWith(q)
+   const filtered = drivers
+      .filter(d => {
+         const q = search.toLowerCase().trim();
+         if (!q) return true;
+         return (
+            d.firstName.toLowerCase().startsWith(q) ||
+            d.lastName.toLowerCase().startsWith(q) ||
+            d.code.toLowerCase().startsWith(q)
+         );
+      })
+      .sort((a, b) =>
+         `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
       );
-   });
 
    return (
       <div ref={ref} className="relative w-full">

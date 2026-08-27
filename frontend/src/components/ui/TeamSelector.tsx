@@ -23,7 +23,13 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({ teams, selected, onSelect, 
       return () => document.removeEventListener('mousedown', handler);
    }, []);
 
-   const filtered = teams.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
+   const filtered = teams
+      .filter(t => {
+         const q = search.toLowerCase().trim();
+         if (!q) return true;
+         return t.name.toLowerCase().startsWith(q);
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
 
    return (
       <div ref={ref} className="relative w-full">

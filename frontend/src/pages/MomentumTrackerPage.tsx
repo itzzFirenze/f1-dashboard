@@ -23,9 +23,12 @@ const MomentumTrackerPage: React.FC = () => {
       setDriversLoading(true);
       driverService.getAll(undefined, season)
          .then((data) => {
-            setDrivers(data);
+            const sorted = [...data].sort((a, b) =>
+               `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
+            );
+            setDrivers(sorted);
             setSelected((prev) => {
-               const match = prev ? data.find((d) => d.id === prev.id) : null;
+               const match = prev ? sorted.find((d) => d.id === prev.id) : null;
                return match ?? null;
             });
          })
@@ -75,12 +78,18 @@ const MomentumTrackerPage: React.FC = () => {
       {
          id: 'Avg Finish',
          color: '#3b82f6',
-         data: data.recentRaces.map(r => ({ x: `R${r.round}`, y: r.rollingAvgFinish })),
+         data: data.recentRaces.map(r => ({
+            x: `R${r.round}`,
+            y: Math.round(r.rollingAvgFinish * 100) / 100,
+         })),
       },
       {
          id: 'Avg Points',
          color: '#10b981',
-         data: data.recentRaces.map(r => ({ x: `R${r.round}`, y: r.rollingAvgPoints })),
+         data: data.recentRaces.map(r => ({
+            x: `R${r.round}`,
+            y: Math.round(r.rollingAvgPoints * 100) / 100,
+         })),
       },
    ] : [];
 
@@ -230,6 +239,7 @@ const MomentumTrackerPage: React.FC = () => {
                            indexBy="race"
                            margin={{ top: 10, right: 20, bottom: 40, left: 40 }}
                            padding={0.3}
+                           valueScale={{ type: 'linear', min: 'auto', max: 'auto' }}
                            colors={({ data }) => (data as any).deltaColor}
                            borderRadius={4}
                            axisBottom={{ tickRotation: 0 }}
@@ -237,6 +247,13 @@ const MomentumTrackerPage: React.FC = () => {
                            enableLabel={true}
                            label={d => d.value !== null && d.value !== undefined ? (d.value > 0 ? `+${d.value}` : `${d.value}`) : ''}
                            labelTextColor="#fff"
+                           markers={[
+                              {
+                                 axis: 'y',
+                                 value: 0,
+                                 lineStyle: { stroke: 'rgba(255,255,255,0.15)', strokeWidth: 1 },
+                              },
+                           ]}
                            animate={true}
                            theme={{
                               text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace', fontSize: 11 },
@@ -251,8 +268,8 @@ const MomentumTrackerPage: React.FC = () => {
 
                {/* ─── Rolling Average Line Chart ─── */}
                {rollingLineData.length > 0 && rollingLineData[0].data.length > 0 && (
-                  <div className="telemetry-card p-6 relative overflow-hidden">
-                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-sky-400 to-transparent" />
+                  <div className="telemetry-card p-6 relative overflow-visible">
+                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-sky-400 to-transparent rounded-t-2xl" />
                      <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-4">
                         Rolling Averages
                      </h3>

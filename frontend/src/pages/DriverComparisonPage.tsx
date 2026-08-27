@@ -198,6 +198,7 @@ const DriverComparisonPage: React.FC = () => {
                            keys={[data.driverA.code, data.driverB.code]}
                            indexBy="stat"
                            maxValue={100}
+                           valueFormat=">-.0f"
                            margin={{ top: 40, right: 60, bottom: 40, left: 60 }}
                            curve="linearClosed"
                            borderWidth={2}
@@ -269,7 +270,7 @@ const DriverComparisonPage: React.FC = () => {
 
                {/* Cumulative Points Line Chart */}
                {cumulativeLineData.length > 0 && cumulativeLineData[0].data.length > 0 && (
-                  <div className="telemetry-card p-6 relative overflow-hidden">
+                  <div className="telemetry-card p-6 relative overflow-visible">
                      <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
                      <div className="flex items-center gap-2.5 mb-4">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-emerald-400/10">
