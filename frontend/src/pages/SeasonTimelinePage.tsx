@@ -233,13 +233,15 @@ const GapSliceTooltip: React.FC<{ slice: any }> = ({ slice }) => (
    </div>
 );
 
-const RightAnchoredSlices: React.FC<any> = ({ slices, innerHeight, margin, setCurrentSlice }) => {
+const RightAnchoredSlices: React.FC<any> = ({ slices, innerHeight, innerWidth, margin, setCurrentSlice }) => {
    const { showTooltipAt, hideTooltip } = useTooltip();
 
    const positionAndShow = (slice: any, event: React.MouseEvent<SVGRectElement>) => {
       const rect = event.currentTarget.getBoundingClientRect();
       const y = event.clientY - rect.top;
-      showTooltipAt(<GapSliceTooltip slice={slice} />, [margin.left + slice.x, margin.top + y], 'right');
+      // Flip anchor to the left when the point is near the right edge, so the tooltip doesn't get clipped
+      const anchor = slice.x > innerWidth * 0.8 ? 'left' : 'right';
+      showTooltipAt(<GapSliceTooltip slice={slice} />, [margin.left + slice.x, margin.top + y], anchor);
    };
 
    return (
