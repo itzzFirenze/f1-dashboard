@@ -32,6 +32,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
          max_verstappen: `${BASE}/drivers/max_verstappen.avif`,
          isack_hadjar: `${BASE}/drivers/isack_hadjar.avif`,
          liam_lawson: `${BASE}/drivers/liam_lawson.avif`,
+         yuki_tsunoda: `${BASE}/drivers/yuki_tsunoda.avif`,
       },
    },
    ferrari: {
@@ -107,6 +108,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       carImageUrl: `${BASE}/cars/racing_bulls-2026.avif`,
       teamLogoUrl: `${BASE}/teams/racing_bulls.avif`,
       driverImages: {
+         yuki_tsunoda: `${BASE}/drivers/yuki_tsunoda.avif`,
          liam_lawson: `${BASE}/drivers/liam_lawson.avif`,
          arvid_lindblad: `${BASE}/drivers/arvid_lindblad.avif`,
       },

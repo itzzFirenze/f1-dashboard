@@ -122,7 +122,6 @@ const TriviaPage: React.FC = () => {
    const [selectedCategory, setSelectedCategory] = useState<TriviaCategory>('all');
    const [gameMode, setGameMode] = useState<TriviaGameMode>('sprint');
    const [enableTimer, setEnableTimer] = useState<boolean>(true);
-   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');
 
    // Active game state
    const [gameState, setGameState] = useState<'lobby' | 'starting' | 'playing' | 'finished'>('lobby');
@@ -238,7 +237,6 @@ const TriviaPage: React.FC = () => {
 
          const fetched = await triviaService.getQuestions({
             category: selectedCategory === 'all' ? undefined : selectedCategory,
-            difficulty: difficultyFilter === 'all' ? undefined : difficultyFilter,
             limit,
          });
 
@@ -506,26 +504,7 @@ const TriviaPage: React.FC = () => {
                            <Wrench className="w-4 h-4 text-cyan-400" /> Regulations
                         </h2>
 
-                        {/* Difficulty */}
-                        <div>
-                           <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-f1-silver/50 mb-1.5 block">
-                              Difficulty Level
-                           </label>
-                           <div className="grid grid-cols-4 gap-1.5 p-1 bg-white/[0.03] rounded-xl border border-white/[0.05]">
-                              {(['all', 'easy', 'medium', 'hard'] as const).map((diff) => (
-                                 <button
-                                    key={diff}
-                                    onClick={() => setDifficultyFilter(diff)}
-                                    className={`py-1.5 text-[11px] font-mono font-bold rounded-lg uppercase tracking-wide transition-all ${difficultyFilter === diff
-                                       ? 'bg-f1-red text-white shadow-md'
-                                       : 'text-f1-silver/60 hover:text-f1-white'
-                                       }`}
-                                 >
-                                    {diff}
-                                 </button>
-                              ))}
-                           </div>
-                        </div>
+
 
                         {/* Timer Toggle */}
                         <div className="flex items-center justify-between p-3 bg-white/[0.03] rounded-xl border border-white/[0.05]">
@@ -697,10 +676,6 @@ const TriviaPage: React.FC = () => {
                            </span>
                         )}
                      </div>
-
-                     <span className="text-[9px] sm:text-[11px] text-f1-silver/40 font-mono">
-                        Difficulty: <span className="text-f1-white capitalize font-bold">{currentQuestion.difficulty}</span>
-                     </span>
                   </div>
 
                   {/* Question Title */}
@@ -870,7 +845,7 @@ const TriviaPage: React.FC = () => {
                            onClick={() => setGameState('lobby')}
                            className="w-full sm:w-auto px-8 py-3.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.06] text-f1-white font-mono font-extrabold text-sm rounded-xl transition-all flex items-center justify-center gap-2 uppercase tracking-wider"
                         >
-                           Change Settings
+                           Exit
                         </button>
                      </div>
                   </div>
