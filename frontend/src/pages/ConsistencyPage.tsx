@@ -1,13 +1,28 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Grid3x3, Target, Radio, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
-import { ResponsiveHeatMap } from '@nivo/heatmap';
+import { ResponsiveHeatMapCanvas } from '@nivo/heatmap';
 import { ResponsiveScatterPlot } from '@nivo/scatterplot';
 import { analyticsService } from '../services/analyticsService';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import type { ConsistencyData } from '../types';
+
+const heatmapTheme = {
+   text: { fill: '#9ca3af', fontSize: 11, fontFamily: 'ui-monospace, monospace' },
+   axis: { ticks: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } } },
+   tooltip: {
+      container: {
+         background: '#0d0d14',
+         color: '#fff',
+         borderRadius: '10px',
+         border: '1px solid rgba(255,255,255,0.08)',
+         fontFamily: 'ui-monospace, monospace',
+         fontSize: 12,
+      },
+   },
+};
 
 const getFinishColor = (value: number | null) => {
    if (value === null || value === undefined || value >= 21) return '#dc2626';
@@ -40,6 +55,26 @@ const ConsistencyPage: React.FC = () => {
          if (rafRef.current) cancelAnimationFrame(rafRef.current);
       };
    }, []);
+
+   useEffect(() => {
+      if (!scatterTooltipVisible) return;
+
+      const handleDismiss = () => {
+         if (rafRef.current) cancelAnimationFrame(rafRef.current);
+         setScatterTooltipVisible(false);
+      };
+
+      // Auto-dismiss tooltip when scrolling or touching outside
+      window.addEventListener('scroll', handleDismiss, { passive: true, capture: true });
+      window.addEventListener('resize', handleDismiss, { passive: true });
+      window.addEventListener('touchstart', handleDismiss, { passive: true });
+
+      return () => {
+         window.removeEventListener('scroll', handleDismiss, { capture: true });
+         window.removeEventListener('resize', handleDismiss);
+         window.removeEventListener('touchstart', handleDismiss);
+      };
+   }, [scatterTooltipVisible]);
 
    const heatmapData = useMemo(() => {
       if (!data) return [];
@@ -172,14 +207,14 @@ const ConsistencyPage: React.FC = () => {
 
          {/* ─── Season Results Heatmap ─── */}
          {heatmapData.length > 0 && (
-            <div className="telemetry-card p-6 relative overflow-hidden">
+            <div className="telemetry-card p-4 sm:p-6 relative overflow-hidden">
                <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
                <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-4">
                   Season Results Heatmap
                </h3>
-               <div className="overflow-x-relative">
+               <div className="overflow-x-auto relative w-full">
                   <div style={{ height: `${heatmapData.length * 36 + 80}px`, minWidth: '700px' }}>
-                     <ResponsiveHeatMap
+                     <ResponsiveHeatMapCanvas
                         data={heatmapData}
                         margin={{ top: 40, right: 30, bottom: 20, left: 60 }}
                         axisTop={{
@@ -202,12 +237,7 @@ const ConsistencyPage: React.FC = () => {
                            return v >= 21 ? 'DNF' : `${v}`;
                         }}
                         hoverTarget="cell"
-                        animate={true}
-                        theme={{
-                           text: { fill: '#9ca3af', fontSize: 11, fontFamily: 'ui-monospace, monospace' },
-                           axis: { ticks: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } } },
-                           tooltip: { container: { background: '#0d0d14', color: '#fff', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'ui-monospace, monospace', fontSize: 12 } },
-                        }}
+                        theme={heatmapTheme}
                      />
                   </div>
                </div>
@@ -264,7 +294,7 @@ const ConsistencyPage: React.FC = () => {
                <p className="text-xs font-mono text-f1-silver/50 mb-4">
                   Bottom-left = consistent &amp; fast. Top-right = inconsistent &amp; slow.
                </p>
-               <div className="overflow-x-auto">
+               <div className="overflow-x-auto" onScroll={() => setScatterTooltipVisible(false)}>
                   <div className="h-96 min-w-[500px] sm:min-w-0" ref={scatterContainerRef}>
                      <ResponsiveScatterPlot
                         data={scatterData}
@@ -291,6 +321,7 @@ const ConsistencyPage: React.FC = () => {
                         tooltip={() => null}
                         onMouseEnter={(node, event) => handleScatterHover(node, event as unknown as React.MouseEvent)}
                         onMouseMove={(node, event) => handleScatterHover(node, event as unknown as React.MouseEvent)}
+                        onClick={(node, event) => handleScatterHover(node, event as unknown as React.MouseEvent)}
                         onMouseLeave={handleScatterLeave}
                         theme={{
                            text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' },
