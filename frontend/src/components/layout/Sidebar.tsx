@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
    LayoutDashboard, Trophy, Calendar, Map,
    Menu, X, Flag, ChevronDown, ChevronRight, Activity, GitCompare, Tv, Sparkles,
-   ChevronsLeft, ChevronsRight
+   ChevronsLeft, ChevronsRight, Gauge
 } from 'lucide-react';
 import logoPng from '../../assets/pitwall-logo.png'
 
@@ -17,6 +17,7 @@ interface NavItem {
 const navItems: NavItem[] = [
    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
    { path: '/replay', label: 'Replay Center', icon: Tv },
+   { path: '/telemetry/ghost', label: 'Telemetry Ghost', icon: Gauge },
    {
       label: 'Standings', icon: Trophy,
       subItems: [
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
    {
       label: 'Analytics', icon: Activity,
       subItems: [
+         { path: '/analytics/power-rankings', label: 'Power Rankings' },
          { path: '/momentum', label: 'Momentum Tracker' },
          { path: '/analytics/consistency', label: 'Consistency' },
          { path: '/records', label: 'Historical Records' },
@@ -47,6 +49,7 @@ const navItems: NavItem[] = [
       label: 'Compare', icon: GitCompare,
       subItems: [
          { path: '/compare/drivers', label: 'Drivers' },
+         { path: '/compare/teammates', label: 'Teammates' },
          { path: '/compare/constructors', label: 'Constructors' },
       ]
    },

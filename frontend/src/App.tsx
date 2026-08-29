@@ -24,6 +24,9 @@ import RecordsPage from './pages/RecordsPage';
 import WeatherForecastPage from './pages/WeatherForecastPage';
 import RaceReplayCenterPage from './pages/RaceReplayCenterPage';
 import TriviaPage from './pages/TriviaPage';
+import TelemetryGhostPage from './pages/TelemetryGhostPage';
+import TeammateBattlesPage from './pages/TeammateBattlesPage';
+import PowerRankingsPage from './pages/PowerRankingsPage';
 import CornerPositionPicker from './pages/admin/CornerPositionPicker';
 
 const App: React.FC = () => {
@@ -45,9 +48,12 @@ const App: React.FC = () => {
                         <Route path="/trivia" element={<TriviaPage />} />
                         <Route path="/statistics" element={<StatisticsPage />} />
                         <Route path="/compare/drivers" element={<DriverComparisonPage />} />
+                        <Route path="/compare/teammates" element={<TeammateBattlesPage />} />
+                        <Route path="/compare/constructors" element={<ConstructorComparisonPage />} />
+                        <Route path="/telemetry/ghost" element={<TelemetryGhostPage />} />
                         <Route path="/momentum" element={<MomentumTrackerPage />} />
                         <Route path="/analytics/consistency" element={<ConsistencyPage />} />
-                        <Route path="/compare/constructors" element={<ConstructorComparisonPage />} />
+                        <Route path="/analytics/power-rankings" element={<PowerRankingsPage />} />
                         <Route path="/predictor" element={<ChampionshipPredictorPage />} />
                         <Route path="/timeline" element={<SeasonTimelinePage />} />
                         <Route path="/records" element={<RecordsPage />} />
