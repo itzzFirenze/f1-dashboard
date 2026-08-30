@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
    Swords, Users, Trophy, Flag, Timer, ChevronRight, X,
    Zap, ShieldAlert, Award, TrendingUp
@@ -28,6 +29,17 @@ const TeammateBattlesPage: React.FC = () => {
          .catch(console.error)
          .finally(() => setLoading(false));
    }, [season]);
+
+   useEffect(() => {
+      if (selectedTeamBattle) {
+         document.body.style.overflow = 'hidden';
+      } else {
+         document.body.style.overflow = '';
+      }
+      return () => {
+         document.body.style.overflow = '';
+      };
+   }, [selectedTeamBattle]);
 
    const DuelBar = ({
       val1,
@@ -243,8 +255,8 @@ const TeammateBattlesPage: React.FC = () => {
          )}
 
          {/* ─── Detailed Round-by-Round Duel Modal ─── */}
-         {selectedTeamBattle && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          {selectedTeamBattle && createPortal(
+             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-lg animate-fade-in">
                <div className="bg-f1-carbon border border-white/10 rounded-3xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
                   <div
                      className="absolute top-0 inset-x-0 h-1"
@@ -322,7 +334,8 @@ const TeammateBattlesPage: React.FC = () => {
                      })}
                   </div>
                </div>
-            </div>
+            </div>,
+            document.body
          )}
       </div>
    );

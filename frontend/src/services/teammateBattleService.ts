@@ -1,6 +1,7 @@
 import { constructorService } from './constructorService';
 import { driverService } from './driverService';
 import { raceService } from './raceService';
+import { analyticsService } from './analyticsService';
 import type { Driver, Constructor } from '../types';
 
 export interface RoundDuel {
@@ -57,11 +58,12 @@ export interface SeasonBattlesResult {
 export const teammateBattleService = {
    getSeasonBattles: async (season: number = 2026): Promise<SeasonBattlesResult> => {
       try {
-         // Fetch drivers & constructors
-         const [allDrivers, allConstructors, allRaces] = await Promise.all([
+         // Fetch drivers, constructors, races & consistency data
+         const [allDrivers, allConstructors, allRaces, consistencyData] = await Promise.all([
             driverService.getAll(undefined, season),
             constructorService.getAll(season),
             raceService.getAll(season),
+            analyticsService.getConsistency(season),
          ]);
 
          const battles: TeammateBattle[] = [];
@@ -131,6 +133,8 @@ export const teammateBattleService = {
             let r2Wins = 0;
             let totalGapMs = 0;
             let gapCount = 0;
+            let dnfCount1 = 0;
+            let dnfCount2 = 0;
 
             const baseP1 = d1.points || 0;
             const baseP2 = d2.points || 0;
@@ -138,6 +142,9 @@ export const teammateBattleService = {
 
             const p1Share = Math.round((baseP1 / totalPts) * 100);
             const p2Share = 100 - p1Share;
+
+            const consistency1 = consistencyData?.drivers?.find(d => d.driver.id === d1.id);
+            const consistency2 = consistencyData?.drivers?.find(d => d.driver.id === d2.id);
 
             for (let i = 0; i < roundsCount; i++) {
                const race = allRaces[i] || { round: i + 1, name: `Round ${i + 1}` };
@@ -154,11 +161,16 @@ export const teammateBattleService = {
                totalGapMs += gap;
                gapCount++;
 
-               const isDnf1 = seed === 13 || seed === 89;
-               const isDnf2 = seed === 27 || seed === 63;
+               const resVal1 = consistency1?.resultsByRace[race.name];
+               const resVal2 = consistency2?.resultsByRace[race.name];
 
-               const rPos1 = isDnf1 ? null : Math.max(1, Math.min(20, qPos1 + (p1Stronger ? -1 : 1)));
-               const rPos2 = isDnf2 ? null : Math.max(1, Math.min(20, qPos2 + (p1Stronger ? 2 : -1)));
+               const isDnf1 = resVal1 === 'DNF';
+               const isDnf2 = resVal2 === 'DNF';
+               if (isDnf1) dnfCount1++;
+               if (isDnf2) dnfCount2++;
+
+               const rPos1 = isDnf1 ? null : (resVal1 ? parseInt(resVal1) : null);
+               const rPos2 = isDnf2 ? null : (resVal2 ? parseInt(resVal2) : null);
 
                const pts1 = rPos1 === 1 ? 25 : rPos1 === 2 ? 18 : rPos1 === 3 ? 15 : rPos1 && rPos1 <= 10 ? Math.max(1, 12 - rPos1) : 0;
                const pts2 = rPos2 === 1 ? 25 : rPos2 === 2 ? 18 : rPos2 === 3 ? 15 : rPos2 && rPos2 <= 10 ? Math.max(1, 12 - rPos2) : 0;
@@ -212,16 +224,16 @@ export const teammateBattleService = {
                points2: baseP2,
                pointsShare1: p1Share,
                pointsShare2: p2Share,
-               avgFinish1: d1.championshipPosition || 8,
-               avgFinish2: d2.championshipPosition || 10,
+               avgFinish1: consistency1 ? parseFloat(consistency1.avgFinishPosition.toFixed(1)) : (d1.championshipPosition || 8),
+               avgFinish2: consistency2 ? parseFloat(consistency2.avgFinishPosition.toFixed(1)) : (d2.championshipPosition || 10),
                avgGrid1: (d1.championshipPosition || 8) - 0.5,
                avgGrid2: (d2.championshipPosition || 10) - 0.2,
                podiums1: d1.podiums || 0,
                podiums2: d2.podiums || 0,
                wins1: d1.wins || 0,
                wins2: d2.wins || 0,
-               dnfs1: Math.floor(roundsCount * 0.08),
-               dnfs2: Math.floor(roundsCount * 0.12),
+               dnfs1: dnfCount1,
+               dnfs2: dnfCount2,
                duels,
             });
          }
