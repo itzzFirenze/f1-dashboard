@@ -108,8 +108,8 @@ const TeammateBattlesPage: React.FC = () => {
 
                   <PageHeroTitle icon={Users} titlePrefix="Teammate" titleAccent="Head-to-Head Battles" />
 
-                  <p className="text-f1-silver text-sm sm:text-base max-w-2xl font-medium leading-relaxed">
-                     Comprehensive intra-team garage war: Qualifying time deltas, race duel records, points share %, and round-by-round statistics across all 10 constructors.
+                  <p className="text-f1-silver text-sm sm:text-base max-w-2xl font-medium leading-relaxed hidden sm:block">
+                     Comprehensive intra-team garage war: Qualifying time deltas, race duel records, points share %, and round-by-round statistics across all {battles.length || 10} constructors.
                   </p>
                </div>
 
@@ -230,7 +230,7 @@ const TeammateBattlesPage: React.FC = () => {
                         </div>
 
                         {/* Summary Footer Matrix */}
-                        <div className="grid grid-cols-4 gap-2 pt-4 mt-5 border-t border-white/[0.06] text-center text-xs font-mono">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-4 mt-5 border-t border-white/[0.06] text-center text-xs font-mono">
                            <div className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
                               <span className="text-[9px] font-mono text-f1-silver/50 uppercase block">Wins</span>
                               <span className="font-bold text-f1-white">{battle.wins1} vs {battle.wins2}</span>
@@ -255,41 +255,46 @@ const TeammateBattlesPage: React.FC = () => {
          )}
 
          {/* ─── Detailed Round-by-Round Duel Modal ─── */}
-          {selectedTeamBattle && createPortal(
-             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-lg animate-fade-in">
-               <div className="bg-f1-carbon border border-white/10 rounded-3xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
+         {selectedTeamBattle && createPortal(
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/40 backdrop-blur-lg animate-fade-in">
+               <div className="bg-f1-carbon border border-white/10 rounded-2xl sm:rounded-3xl w-full max-w-4xl max-h-[88vh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
                   <div
                      className="absolute top-0 inset-x-0 h-1"
                      style={{ backgroundColor: selectedTeamBattle.constructor.color || '#E10600' }}
                   />
 
                   {/* Modal Header */}
-                  <div className="p-6 border-b border-white/[0.08] flex items-center justify-between">
-                     <div className="flex items-center gap-3">
+                  <div className="p-4 sm:p-6 border-b border-white/[0.08] flex items-start sm:items-center justify-between gap-3">
+                     <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0">
                         <div
-                           className="w-4 h-4 rounded-full"
+                           className="w-3 h-3 sm:w-4 sm:h-4 rounded-full shrink-0 mt-1 sm:mt-0"
                            style={{ backgroundColor: selectedTeamBattle.constructor.color || '#E10600' }}
                         />
-                        <div>
-                           <h3 className="text-xl font-display font-black text-f1-white uppercase">
-                              {selectedTeamBattle.constructor.name} - Round-by-Round Duel Matrix
+                        <div className="min-w-0">
+                           <h3 className="text-base sm:text-xl font-display font-black text-f1-white uppercase leading-tight">
+                              {selectedTeamBattle.constructor.name}
+                              <span className="hidden sm:inline"> - Round-by-Round Duel Matrix</span>
+                              <span className="sm:hidden block text-xs font-mono font-bold text-f1-silver/60 uppercase tracking-widest mt-0.5">
+                                 Round Duel Matrix
+                              </span>
                            </h3>
-                           <p className="text-xs font-mono text-f1-silver/60">
+                           <p className="text-[11px] sm:text-xs font-mono text-f1-silver/60 mt-0.5">
                               {selectedTeamBattle.driver1.firstName} {selectedTeamBattle.driver1.lastName} ({selectedTeamBattle.driver1.code}) vs {selectedTeamBattle.driver2.firstName} {selectedTeamBattle.driver2.lastName} ({selectedTeamBattle.driver2.code})
                            </p>
                         </div>
                      </div>
                      <button
                         onClick={() => setSelectedTeamBattle(null)}
-                        className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-f1-silver hover:text-white transition-colors"
+                        className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-f1-silver hover:text-white transition-colors shrink-0"
                      >
-                        <X className="w-5 h-5" />
+                        <X className="w-4 h-4 sm:w-5 sm:h-5" />
                      </button>
                   </div>
 
                   {/* Duel Table */}
-                  <div className="flex-1 overflow-y-auto p-6 space-y-2">
-                     <div className="grid grid-cols-12 text-[10px] font-mono font-bold uppercase tracking-widest text-f1-silver/50 pb-2 px-3 border-b border-white/[0.06]">
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2">
+                     {/* Column headers - desktop only, mobile cards carry their own labels */}
+                     <div className="hidden sm:grid grid-cols-12 text-[10px] font-mono font-bold uppercase tracking-widest text-f1-silver/50 pb-2 px-3 border-b border-white/[0.06]">
                         <span className="col-span-1">Rnd</span>
                         <span className="col-span-4">Grand Prix</span>
                         <span className="col-span-3 text-center">Qualifying ({selectedTeamBattle.driver1.code} vs {selectedTeamBattle.driver2.code})</span>
@@ -304,31 +309,43 @@ const TeammateBattlesPage: React.FC = () => {
                         return (
                            <div
                               key={duel.round}
-                              className="grid grid-cols-12 items-center p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] text-xs font-mono transition-colors"
+                              className="flex flex-col gap-2.5 sm:grid sm:grid-cols-12 sm:items-center sm:gap-0 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] text-xs font-mono transition-colors"
                            >
-                              <span className="col-span-1 text-f1-silver/50 font-bold">R{duel.round}</span>
-                              <span className="col-span-4 text-f1-white font-semibold truncate">{duel.raceName}</span>
-
-                              {/* Quali comparison */}
-                              <div className="col-span-3 flex items-center justify-center gap-2">
-                                 <span className={`px-2 py-0.5 rounded font-bold ${isQ1Winner ? 'bg-emerald-500/20 text-emerald-400' : 'text-f1-silver/70'}`}>
-                                    P{duel.qualiPos1 || '—'}
-                                 </span>
-                                 <span className="text-f1-silver/40">vs</span>
-                                 <span className={`px-2 py-0.5 rounded font-bold ${isQ2Winner ? 'bg-emerald-500/20 text-emerald-400' : 'text-f1-silver/70'}`}>
-                                    P{duel.qualiPos2 || '—'}
-                                 </span>
+                              {/* Round + race name */}
+                              <div className="flex items-baseline gap-2 sm:contents">
+                                 <span className="text-f1-silver/50 font-bold sm:col-span-1">R{duel.round}</span>
+                                 <span className="text-f1-white font-semibold truncate sm:col-span-4">{duel.raceName}</span>
                               </div>
 
-                              {/* Race result comparison */}
-                              <div className="col-span-4 flex items-center justify-center gap-2">
-                                 <span className={`px-2 py-0.5 rounded font-bold ${isR1Winner ? 'bg-amber-500/20 text-amber-400' : 'text-f1-silver/70'}`}>
-                                    {duel.racePos1 ? `P${duel.racePos1}` : 'DNF'}
-                                 </span>
-                                 <span className="text-f1-silver/40">vs</span>
-                                 <span className={`px-2 py-0.5 rounded font-bold ${duel.raceWinner === 2 ? 'bg-amber-500/20 text-amber-400' : 'text-f1-silver/70'}`}>
-                                    {duel.racePos2 ? `P${duel.racePos2}` : 'DNF'}
-                                 </span>
+                              {/* Quali + Race comparisons */}
+                              <div className="flex items-center justify-between gap-2 sm:contents">
+                                 {/* Quali comparison */}
+                                 <div className="flex flex-col items-center gap-1 sm:col-span-3 sm:flex-row sm:justify-center sm:gap-2">
+                                    <span className="sm:hidden text-[9px] text-f1-silver/40 uppercase tracking-widest">Quali</span>
+                                    <div className="flex items-center gap-2">
+                                       <span className={`px-2 py-0.5 rounded font-bold ${isQ1Winner ? 'bg-emerald-500/20 text-emerald-400' : 'text-f1-silver/70'}`}>
+                                          P{duel.qualiPos1 || '—'}
+                                       </span>
+                                       <span className="text-f1-silver/40">vs</span>
+                                       <span className={`px-2 py-0.5 rounded font-bold ${isQ2Winner ? 'bg-emerald-500/20 text-emerald-400' : 'text-f1-silver/70'}`}>
+                                          P{duel.qualiPos2 || '—'}
+                                       </span>
+                                    </div>
+                                 </div>
+
+                                 {/* Race result comparison */}
+                                 <div className="flex flex-col items-center gap-1 sm:col-span-4 sm:flex-row sm:justify-center sm:gap-2">
+                                    <span className="sm:hidden text-[9px] text-f1-silver/40 uppercase tracking-widest">Race</span>
+                                    <div className="flex items-center gap-2">
+                                       <span className={`px-2 py-0.5 rounded font-bold ${isR1Winner ? 'bg-amber-500/20 text-amber-400' : 'text-f1-silver/70'}`}>
+                                          {duel.racePos1 ? `P${duel.racePos1}` : 'DNF'}
+                                       </span>
+                                       <span className="text-f1-silver/40">vs</span>
+                                       <span className={`px-2 py-0.5 rounded font-bold ${duel.raceWinner === 2 ? 'bg-amber-500/20 text-amber-400' : 'text-f1-silver/70'}`}>
+                                          {duel.racePos2 ? `P${duel.racePos2}` : 'DNF'}
+                                       </span>
+                                    </div>
+                                 </div>
                               </div>
                            </div>
                         );

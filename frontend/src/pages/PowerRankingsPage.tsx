@@ -261,7 +261,7 @@ const PowerRankingsPage: React.FC = () => {
                               dotBorderColor={{ from: 'color' }}
                               colors={selectedRankings.map((r) => r.driver.constructorColor || '#E10600')}
                               fillOpacity={0.18}
-                              animate={true}
+                              animate={false}
                               theme={{
                                  text: { fill: '#9ca3af', fontFamily: 'monospace', fontSize: 11 },
                                  grid: { line: { stroke: 'rgba(255,255,255,0.08)' } },
@@ -412,98 +412,111 @@ const PowerRankingsPage: React.FC = () => {
                         const isRising = r.trend === 'RISING';
                         const isFalling = r.trend === 'FALLING';
 
+                        const RankChangeIndicator = () => (
+                           <>
+                              {r.rankChange > 0 && (
+                                 <span className="text-emerald-400 font-mono text-xs font-bold flex items-center">
+                                    <TrendingUp className="w-3.5 h-3.5 mr-0.5" />+{r.rankChange}
+                                 </span>
+                              )}
+                              {r.rankChange < 0 && (
+                                 <span className="text-rose-400 font-mono text-xs font-bold flex items-center">
+                                    <TrendingDown className="w-3.5 h-3.5 mr-0.5" />{r.rankChange}
+                                 </span>
+                              )}
+                              {r.rankChange === 0 && (
+                                 <span className="text-f1-silver/40 font-mono text-xs font-bold flex items-center">
+                                    <Minus className="w-3.5 h-3.5" />
+                                 </span>
+                              )}
+                           </>
+                        );
+
                         return (
                            <div
                               key={r.driver.id}
-                              className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${isSelected
+                              className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-0 p-3 sm:p-3.5 rounded-xl border transition-all ${isSelected
                                  ? 'bg-white/[0.05] border-white/20'
                                  : 'bg-white/[0.02] border-white/[0.04]'
                                  }`}
                            >
-                              {/* Left: Rank, Rank change, Driver name & team */}
-                              <div className="flex items-center gap-3.5 min-w-0">
-                                 <span className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center font-display font-black text-sm text-f1-white shrink-0">
+                              {/* Top row (mobile) / Left side (desktop): Rank, Rank change, Driver name & team */}
+                              <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                                 <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center font-display font-black text-xs sm:text-sm text-f1-white shrink-0">
                                     #{r.rank}
                                  </span>
 
-                                 <div className="flex items-center gap-1 shrink-0 w-8">
-                                    {r.rankChange > 0 && (
-                                       <span className="text-emerald-400 font-mono text-xs font-bold flex items-center">
-                                          <TrendingUp className="w-3.5 h-3.5 mr-0.5" />+{r.rankChange}
-                                       </span>
-                                    )}
-                                    {r.rankChange < 0 && (
-                                       <span className="text-rose-400 font-mono text-xs font-bold flex items-center">
-                                          <TrendingDown className="w-3.5 h-3.5 mr-0.5" />{r.rankChange}
-                                       </span>
-                                    )}
-                                    {r.rankChange === 0 && (
-                                       <span className="text-f1-silver/40 font-mono text-xs font-bold flex items-center">
-                                          <Minus className="w-3.5 h-3.5" />
-                                       </span>
-                                    )}
+                                 {/* Desktop-only rank change, original position */}
+                                 <div className="hidden sm:flex items-center gap-1 shrink-0 w-8">
+                                    <RankChangeIndicator />
                                  </div>
 
                                  <div
-                                    className="w-1.5 h-8 rounded-full shrink-0"
+                                    className="w-1 sm:w-1.5 h-7 sm:h-8 rounded-full shrink-0"
                                     style={{ backgroundColor: r.driver.constructorColor || '#E10600' }}
                                  />
 
-                                 <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                       <h4 className="font-display font-bold text-sm text-f1-white truncate">
+                                 <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5 sm:gap-2">
+                                       <h4 className="font-display font-bold text-xs sm:text-sm text-f1-white truncate">
                                           {r.driver.firstName} {r.driver.lastName}
                                        </h4>
-                                       <span className="text-xs font-mono text-f1-silver/50 shrink-0">
+                                       <span className="text-[10px] sm:text-xs font-mono text-f1-silver/50 shrink-0">
                                           ({r.driver.code})
                                        </span>
                                     </div>
-                                    <p className="text-[11px] font-mono text-f1-silver/60 truncate">
+                                    <p className="text-[10px] sm:text-[11px] font-mono text-f1-silver/60 truncate">
                                        {r.driver.constructorName} · P{r.driver.championshipPosition} in Championship
                                     </p>
                                  </div>
+
+                                 {/* Mobile-only rank change, pinned top-right on the name row */}
+                                 <div className="flex sm:hidden items-center gap-1 shrink-0 ml-auto pl-2">
+                                    <RankChangeIndicator />
+                                 </div>
                               </div>
 
-                              {/* Right: Tier Badge, Rating, Trend */}
-                              <div className="flex items-center gap-4 shrink-0">
-                                 {/* Tier Badge */}
-                                 <span
-                                    className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-black ${r.tier === 'S' ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' :
-                                       r.tier === 'A' ? 'bg-emerald-400/15 text-emerald-300 border border-emerald-400/30' :
-                                          r.tier === 'B' ? 'bg-sky-400/15 text-sky-300 border border-sky-400/30' :
-                                             'bg-white/[0.05] text-f1-silver/70 border border-white/[0.08]'
-                                       }`}
-                                 >
-                                    Tier {r.tier}
-                                 </span>
+                              {/* Bottom row (mobile) / Right side (desktop): Tier Badge, Trend, Rating */}
+                              <div className="flex items-center justify-between pl-9 sm:pl-0 shrink-0">
+                                 {/* Tier + Trend grouped tightly together */}
+                                 <div className="flex items-center gap-2 sm:gap-2.5">
+                                    <span
+                                       className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-black shrink-0 ${r.tier === 'S' ? 'bg-amber-400/15 text-amber-300 border border-amber-400/30' :
+                                          r.tier === 'A' ? 'bg-emerald-400/15 text-emerald-300 border border-emerald-400/30' :
+                                             r.tier === 'B' ? 'bg-sky-400/15 text-sky-300 border border-sky-400/30' :
+                                                'bg-white/[0.05] text-f1-silver/70 border border-white/[0.08]'
+                                          }`}
+                                    >
+                                       Tier {r.tier}
+                                    </span>
 
-                                 {/* Trend Indicator */}
-                                 <div className="hidden sm:flex items-center gap-1">
-                                    {isHot && (
-                                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/25">
-                                          <Flame className="w-3 h-3" /> HOT
-                                       </span>
-                                    )}
-                                    {isRising && (
-                                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
-                                          <TrendingUp className="w-3 h-3" /> RISING
-                                       </span>
-                                    )}
-                                    {isCold && (
-                                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/15 text-blue-400 border border-blue-500/25">
-                                          COLD
-                                       </span>
-                                    )}
-                                    {isFalling && (
-                                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/15 text-rose-400 border border-rose-500/25">
-                                          <TrendingDown className="w-3 h-3" /> FALLING
-                                       </span>
-                                    )}
+                                    <div className="flex items-center gap-1 shrink-0">
+                                       {isHot && (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                                             <Flame className="w-3 h-3" /> HOT
+                                          </span>
+                                       )}
+                                       {isRising && (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                                             <TrendingUp className="w-3 h-3" /> RISING
+                                          </span>
+                                       )}
+                                       {isCold && (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/15 text-blue-400 border border-blue-500/25">
+                                             COLD
+                                          </span>
+                                       )}
+                                       {isFalling && (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/15 text-rose-400 border border-rose-500/25">
+                                             <TrendingDown className="w-3 h-3" /> FALLING
+                                          </span>
+                                       )}
+                                    </div>
                                  </div>
 
-                                 {/* Overall Rating Score */}
-                                 <div className="text-right w-14">
-                                    <span className="text-lg font-display font-black text-f1-white block">
+                                 {/* Overall Rating Score, pushed to the far right */}
+                                 <div className="text-right w-12 sm:w-14 shrink-0 ml-3 sm:ml-4">
+                                    <span className="text-base sm:text-lg font-display font-black text-f1-white block">
                                        {r.overallRating}
                                     </span>
                                     <span className="text-[9px] font-mono text-f1-silver/40 uppercase">Rating</span>
