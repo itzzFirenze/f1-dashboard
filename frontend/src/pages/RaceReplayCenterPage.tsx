@@ -42,7 +42,7 @@ const RaceReplayCenterPage: React.FC = () => {
    const [activeTab, setActiveTab] = useState<'standings' | 'feeds' | 'radio'>('standings');
    const [expandedPanel, setExpandedPanel] = useState<'standings' | 'telemetry'>('standings');
    const RACE_YEARS = [2023, 2024, 2025] as const;
-   const [selectedYear, setSelectedYear] = useState<number>(2023);
+   const [selectedYear, setSelectedYear] = useState<number>(2025);
 
    useEffect(() => {
       loadSessions(selectedYear);

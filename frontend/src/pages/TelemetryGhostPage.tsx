@@ -970,15 +970,16 @@ const TelemetryGhostPage: React.FC = () => {
                               {/* Track Mini-Map with Driver Focus / Full Circuit Camera */}
                               <div className="lg:col-span-6 telemetry-card p-5 flex flex-col justify-between">
                                  <div>
-                                    <div className="flex items-center justify-between mb-3 gap-2 flex-wrap pb-2 border-b border-white/[0.06]">
-                                       <div className="flex items-center gap-2">
+                                    <div className="mb-3 pb-2 border-b border-white/[0.06]">
+                                       {/* Row 1: Title */}
+                                       <div className="flex items-center gap-2 mb-2.5">
                                           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                                           <h3 className="text-xs font-mono font-bold text-f1-silver/80 uppercase tracking-widest">
                                              Ghost Track — {currentCircuit.name}
                                           </h3>
                                        </div>
 
-                                       {/* Camera Mode & Zoom Controls */}
+                                       {/* Row 2: Camera Mode & Zoom Controls — always on their own line */}
                                        <div className="flex items-center gap-2 flex-wrap">
                                           <div className="flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-0.5">
                                              <button
@@ -1001,25 +1002,26 @@ const TelemetryGhostPage: React.FC = () => {
                                              </button>
                                           </div>
 
-                                          {/* Zoom Level Pills (when Driver Focus is active) */}
-                                          {cameraMode === 'focus' && (
-                                             <div className="flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-0.5">
-                                                {([
-                                                   { val: 2.2, label: '2x' },
-                                                   { val: 3.5, label: '3.5x' },
-                                                   { val: 5.0, label: '5x' },
-                                                ] as const).map(({ val, label }) => (
-                                                   <button
-                                                      key={val}
-                                                      onClick={() => setZoomLevelAndApply(val)}
-                                                      className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold transition-all ${zoomLevel === val ? 'bg-white/[0.15] text-white' : 'text-f1-silver/50 hover:text-white'
-                                                         }`}
-                                                   >
-                                                      {label}
-                                                   </button>
-                                                ))}
-                                             </div>
-                                          )}
+                                          {/* Zoom pills — always mounted, just faded out when not in focus mode */}
+                                          <div
+                                             className={`flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-0.5 transition-opacity ${cameraMode === 'focus' ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                                                }`}
+                                          >
+                                             {([
+                                                { val: 2.2, label: '2x' },
+                                                { val: 3.5, label: '3.5x' },
+                                                { val: 5.0, label: '5x' },
+                                             ] as const).map(({ val, label }) => (
+                                                <button
+                                                   key={val}
+                                                   onClick={() => setZoomLevelAndApply(val)}
+                                                   className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold transition-all ${zoomLevel === val ? 'bg-white/[0.15] text-white' : 'text-f1-silver/50 hover:text-white'
+                                                      }`}
+                                                >
+                                                   {label}
+                                                </button>
+                                             ))}
+                                          </div>
                                        </div>
                                     </div>
 
