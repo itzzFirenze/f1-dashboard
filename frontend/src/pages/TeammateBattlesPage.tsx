@@ -298,6 +298,7 @@ const TeammateBattlesPage: React.FC = () => {
 
                      {selectedTeamBattle.duels.map((duel) => {
                         const isQ1Winner = duel.qualiWinner === 1;
+                        const isQ2Winner = duel.qualiWinner === 2;
                         const isR1Winner = duel.raceWinner === 1;
 
                         return (
@@ -314,7 +315,7 @@ const TeammateBattlesPage: React.FC = () => {
                                     P{duel.qualiPos1 || '—'}
                                  </span>
                                  <span className="text-f1-silver/40">vs</span>
-                                 <span className={`px-2 py-0.5 rounded font-bold ${!isQ1Winner && duel.qualiPos2 ? 'bg-emerald-500/20 text-emerald-400' : 'text-f1-silver/70'}`}>
+                                 <span className={`px-2 py-0.5 rounded font-bold ${isQ2Winner ? 'bg-emerald-500/20 text-emerald-400' : 'text-f1-silver/70'}`}>
                                     P{duel.qualiPos2 || '—'}
                                  </span>
                               </div>

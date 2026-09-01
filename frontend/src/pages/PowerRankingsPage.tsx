@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
    Flame, TrendingUp, TrendingDown, Minus, Shield, Zap,
    Trophy, Activity, Star, CheckCircle, Award, Users
@@ -15,6 +15,37 @@ import {
 } from '../services/powerRankingsService';
 import type { Driver } from '../types';
 
+// Distinct dash pattern used for the 2nd+ driver sharing a constructor
+const TEAMMATE_DASH = '6,4';
+const RADAR_BORDER_WIDTH = 2.5;
+
+const RadarGridLabel: React.FC<{
+   id: string;
+   anchor: 'start' | 'middle' | 'end';
+   x: number;
+   y: number;
+}> = ({ id, anchor, x, y }) => {
+   const words = id.split(' ');
+   const lineHeight = 11;
+   const startDy = -((words.length - 1) * lineHeight) / 2;
+
+   return (
+      <text
+         x={x}
+         y={y}
+         textAnchor={anchor}
+         dominantBaseline="central"
+         style={{ fill: '#9ca3af', fontFamily: 'monospace', fontSize: 10 }}
+      >
+         {words.map((word, i) => (
+            <tspan key={word} x={x} dy={i === 0 ? startDy : lineHeight}>
+               {word}
+            </tspan>
+         ))}
+      </text>
+   );
+};
+
 const PowerRankingsPage: React.FC = () => {
    const [season, setSeason] = useState<number>(2026);
    const [rankings, setRankings] = useState<DriverPowerRanking[]>([]);
@@ -25,6 +56,8 @@ const PowerRankingsPage: React.FC = () => {
    const [driver1, setDriver1] = useState<Driver | null>(null);
    const [driver2, setDriver2] = useState<Driver | null>(null);
    const [driver3, setDriver3] = useState<Driver | null>(null);
+
+   const radarWrapperRef = useRef<HTMLDivElement>(null);
 
    useEffect(() => {
       setLoading(true);
@@ -58,6 +91,19 @@ const PowerRankingsPage: React.FC = () => {
       return rankings.filter((r) => ids.includes(r.driver.id));
    }, [rankings, driver1, driver2, driver3]);
 
+   // For each selected driver (in the same order used for `keys`), figure out
+   // whether an earlier-selected driver already has the same constructor.
+   // First driver on a team = solid line. Any later teammate = dashed line.
+   const teammateDashFlags = useMemo(() => {
+      const seenConstructors = new Set<string>();
+      return selectedRankings.map((r) => {
+         const key = r.driver.constructorName;
+         const isDuplicate = seenConstructors.has(key);
+         seenConstructors.add(key);
+         return isDuplicate;
+      });
+   }, [selectedRankings]);
+
    // Radar Data format for Nivo
    const radarData = useMemo(() => {
       if (selectedRankings.length === 0) return [];
@@ -78,6 +124,38 @@ const PowerRankingsPage: React.FC = () => {
          return row;
       });
    }, [selectedRankings]);
+
+   // Nivo has no per-series dash prop, so after it paints the SVG we
+   // reach in and add stroke-dasharray to the shape border(s) for any
+   // driver who shares a constructor with an earlier-selected driver.
+   // Shape borders are the only paths drawn with our custom borderWidth,
+   // and they're painted in the same order as `keys` (= selectedRankings order).
+   useEffect(() => {
+      if (!radarWrapperRef.current) return;
+      if (teammateDashFlags.every((isDup) => !isDup)) return;
+
+      const applyDashes = () => {
+         const svg = radarWrapperRef.current?.querySelector('svg');
+         if (!svg) return;
+
+         const shapePaths = Array.from(svg.querySelectorAll('path')).filter(
+            (p) => p.getAttribute('stroke-width') === String(RADAR_BORDER_WIDTH)
+         );
+
+         shapePaths.forEach((path, i) => {
+            if (teammateDashFlags[i]) {
+               path.setAttribute('stroke-dasharray', TEAMMATE_DASH);
+            } else {
+               path.removeAttribute('stroke-dasharray');
+            }
+         });
+      };
+
+      // Nivo animates the shapes in, so re-apply a few times to survive
+      // the transition instead of racing it.
+      const timeouts = [0, 120, 300, 600].map((delay) => setTimeout(applyDashes, delay));
+      return () => timeouts.forEach(clearTimeout);
+   }, [teammateDashFlags, radarData]);
 
    const filteredRankings = useMemo(() => {
       if (tierFilter === 'ALL') return rankings;
@@ -162,20 +240,21 @@ const PowerRankingsPage: React.FC = () => {
                      </div>
 
                      {selectedRankings.length > 0 ? (
-                        <div className="h-80 w-full">
+                        <div className="h-80 w-full" ref={radarWrapperRef}>
                            <ResponsiveRadar
                               data={radarData}
                               keys={selectedRankings.map((r) => r.driver.code)}
                               indexBy="metric"
                               maxValue={100}
                               valueFormat=">-.0f"
-                              margin={{ top: 30, right: 60, bottom: 30, left: 60 }}
+                              margin={{ top: 36, right: 50, bottom: 36, left: 50 }}
                               curve="linearClosed"
-                              borderWidth={2.5}
+                              borderWidth={RADAR_BORDER_WIDTH}
                               borderColor={{ from: 'color' }}
                               gridLevels={4}
                               gridShape="circular"
-                              gridLabelOffset={16}
+                              gridLabelOffset={20}
+                              gridLabel={RadarGridLabel}
                               dotSize={8}
                               dotColor={{ theme: 'background' }}
                               dotBorderWidth={2}
@@ -202,15 +281,28 @@ const PowerRankingsPage: React.FC = () => {
                      {/* Legend badges */}
                      {selectedRankings.length > 0 && (
                         <div className="flex items-center justify-center gap-3 pt-3 border-t border-white/[0.06] flex-wrap">
-                           {selectedRankings.map((r) => (
-                              <span
-                                 key={r.driver.id}
-                                 className="px-3 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-2 bg-white/[0.04] border border-white/[0.06]"
-                              >
-                                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: r.driver.constructorColor || '#E10600' }} />
-                                 <span className="text-f1-white">{r.driver.firstName} {r.driver.lastName} ({r.overallRating})</span>
-                              </span>
-                           ))}
+                           {selectedRankings.map((r, i) => {
+                              const isDashed = teammateDashFlags[i];
+                              return (
+                                 <span
+                                    key={r.driver.id}
+                                    className="px-3 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-2 bg-white/[0.04] border border-white/[0.06]"
+                                 >
+                                    <svg width="14" height="10" className="shrink-0">
+                                       <line
+                                          x1="0" y1="5" x2="14" y2="5"
+                                          stroke={r.driver.constructorColor || '#E10600'}
+                                          strokeWidth="2.5"
+                                          strokeDasharray={isDashed ? TEAMMATE_DASH : undefined}
+                                       />
+                                    </svg>
+                                    <span className="text-f1-white">{r.driver.firstName} {r.driver.lastName} ({r.overallRating})</span>
+                                    {isDashed && (
+                                       <span className="text-f1-silver/40 text-[9px] uppercase">teammate</span>
+                                    )}
+                                 </span>
+                              );
+                           })}
                         </div>
                      )}
                   </div>

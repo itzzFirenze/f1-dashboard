@@ -2,7 +2,7 @@ import { constructorService } from './constructorService';
 import { driverService } from './driverService';
 import { raceService } from './raceService';
 import { analyticsService } from './analyticsService';
-import type { Driver, Constructor } from '../types';
+import type { Driver, RaceDetail } from '../types';
 
 export interface RoundDuel {
    round: number;
@@ -58,13 +58,25 @@ export interface SeasonBattlesResult {
 export const teammateBattleService = {
    getSeasonBattles: async (season: number = 2026): Promise<SeasonBattlesResult> => {
       try {
-         // Fetch drivers, constructors, races & consistency data
+         // Fetch drivers, constructors, races & consistency data in parallel
          const [allDrivers, allConstructors, allRaces, consistencyData] = await Promise.all([
             driverService.getAll(undefined, season),
             constructorService.getAll(season),
             raceService.getAll(season),
             analyticsService.getConsistency(season),
          ]);
+
+         // Fetch real race details for all completed races in parallel
+         const completedRaces = allRaces.filter(r => r.status === 'COMPLETED');
+         const raceDetails: Map<number, RaceDetail> = new Map();
+         if (completedRaces.length > 0) {
+            const details = await Promise.all(
+               completedRaces.map(r => raceService.getById(r.id).catch(() => null))
+            );
+            details.forEach((detail, idx) => {
+               if (detail) raceDetails.set(completedRaces[idx].id, detail);
+            });
+         }
 
          const battles: TeammateBattle[] = [];
 
@@ -122,10 +134,9 @@ export const teammateBattleService = {
             const d1 = teamDrivers[0];
             const d2 = teamDrivers[1];
 
-            // Build realistic round-by-round battles
-            const completedRaces = allRaces.filter(r => r.status === 'COMPLETED');
-            const roundsCount = completedRaces.length > 0 ? completedRaces.length : Math.min(24, allRaces.length);
-            
+            const d1Code = (d1.code || '').toUpperCase();
+            const d2Code = (d2.code || '').toUpperCase();
+
             const duels: RoundDuel[] = [];
             let q1Wins = 0;
             let q2Wins = 0;
@@ -135,6 +146,10 @@ export const teammateBattleService = {
             let gapCount = 0;
             let dnfCount1 = 0;
             let dnfCount2 = 0;
+            let totalGrid1 = 0;
+            let totalGrid2 = 0;
+            let gridCount1 = 0;
+            let gridCount2 = 0;
 
             const baseP1 = d1.points || 0;
             const baseP2 = d2.points || 0;
@@ -146,21 +161,53 @@ export const teammateBattleService = {
             const consistency1 = consistencyData?.drivers?.find(d => d.driver.id === d1.id);
             const consistency2 = consistencyData?.drivers?.find(d => d.driver.id === d2.id);
 
+            const roundsCount = completedRaces.length > 0 ? completedRaces.length : 0;
+
             for (let i = 0; i < roundsCount; i++) {
-               const race = allRaces[i] || { round: i + 1, name: `Round ${i + 1}` };
-               
-               // Compute deterministic pseudo-realistic round results based on driver ranks
-               const seed = (d1.id * 17 + d2.id * 31 + (i + 1) * 13) % 100;
-               const d1Advantage = (d1.championshipPosition || 10) < (d2.championshipPosition || 10);
-               const p1Stronger = d1Advantage ? seed > 32 : seed > 68;
+               const race = completedRaces[i];
+               const detail = raceDetails.get(race.id);
 
-               const qPos1 = Math.max(1, Math.min(20, (d1.championshipPosition || 8) + ((seed % 5) - 2)));
-               const qPos2 = Math.max(1, Math.min(20, (d2.championshipPosition || 10) + (((seed + 3) % 5) - 2)));
-               
-               const gap = p1Stronger ? -((seed % 350) + 25) : ((seed % 350) + 25);
-               totalGapMs += gap;
-               gapCount++;
+               // ── Real qualifying positions ──────────────────────────────────────
+               // Priority 1: qualifyingResults[].position looked up by driverCode
+               // Priority 2: gridPosition from race results (= actual qualifying grid)
+               // Priority 3: null (driver did not participate / data unavailable)
+               let qPos1: number | null = null;
+               let qPos2: number | null = null;
 
+               if (detail?.qualifyingResults && detail.qualifyingResults.length > 0) {
+                  const qr1 = detail.qualifyingResults.find(r => (r.driverCode || '').toUpperCase() === d1Code);
+                  const qr2 = detail.qualifyingResults.find(r => (r.driverCode || '').toUpperCase() === d2Code);
+                  qPos1 = qr1?.position ?? null;
+                  qPos2 = qr2?.position ?? null;
+               }
+
+               // Fallback: use gridPosition from race results
+               if ((qPos1 === null || qPos2 === null) && detail?.results && detail.results.length > 0) {
+                  if (qPos1 === null) {
+                     const rr1 = detail.results.find(r => (r.driverCode || '').toUpperCase() === d1Code);
+                     if (rr1?.gridPosition) qPos1 = rr1.gridPosition;
+                  }
+                  if (qPos2 === null) {
+                     const rr2 = detail.results.find(r => (r.driverCode || '').toUpperCase() === d2Code);
+                     if (rr2?.gridPosition) qPos2 = rr2.gridPosition;
+                  }
+               }
+
+               // Track average grid
+               if (qPos1 !== null) { totalGrid1 += qPos1; gridCount1++; }
+               if (qPos2 !== null) { totalGrid2 += qPos2; gridCount2++; }
+
+               // Qualifying gap from Q3 times if available (best effort)
+               // We track duel wins only when both positions are available
+               let qWinner: 1 | 2 | null = null;
+               if (qPos1 !== null && qPos2 !== null) {
+                  qWinner = qPos1 < qPos2 ? 1 : qPos2 < qPos1 ? 2 : null;
+                  if (qWinner === 1) q1Wins++;
+                  else if (qWinner === 2) q2Wins++;
+               }
+
+               // ── Real race positions ────────────────────────────────────────────
+               // Primary source: consistencyData.resultsByRace (keyed by race name)
                const resVal1 = consistency1?.resultsByRace[race.name];
                const resVal2 = consistency2?.resultsByRace[race.name];
 
@@ -169,14 +216,39 @@ export const teammateBattleService = {
                if (isDnf1) dnfCount1++;
                if (isDnf2) dnfCount2++;
 
-               const rPos1 = isDnf1 ? null : (resVal1 ? parseInt(resVal1) : null);
-               const rPos2 = isDnf2 ? null : (resVal2 ? parseInt(resVal2) : null);
+               let rPos1: number | null = isDnf1 ? null : (resVal1 ? parseInt(resVal1) : null);
+               let rPos2: number | null = isDnf2 ? null : (resVal2 ? parseInt(resVal2) : null);
+
+               // Fallback: use race results from detail API if consistency data missing
+               if (rPos1 === null && !isDnf1 && detail?.results) {
+                  const rr1 = detail.results.find(r => (r.driverCode || '').toUpperCase() === d1Code);
+                  if (rr1) {
+                     if (rr1.status === 'Finished' || (rr1.status?.startsWith('+') ?? false)) {
+                        rPos1 = rr1.position ?? null;
+                     }
+                     // else remains null (DNF / classified)
+                  }
+               }
+               if (rPos2 === null && !isDnf2 && detail?.results) {
+                  const rr2 = detail.results.find(r => (r.driverCode || '').toUpperCase() === d2Code);
+                  if (rr2) {
+                     if (rr2.status === 'Finished' || (rr2.status?.startsWith('+') ?? false)) {
+                        rPos2 = rr2.position ?? null;
+                     }
+                  }
+               }
+
+               // Qualifying gap estimate from grid delta (ms approximation)
+               const gap = (qPos1 !== null && qPos2 !== null)
+                  ? (qPos1 < qPos2 ? -((Math.abs(qPos1 - qPos2)) * 80 + 25) : ((Math.abs(qPos1 - qPos2)) * 80 + 25))
+                  : 0;
+               if (qPos1 !== null && qPos2 !== null) {
+                  totalGapMs += gap;
+                  gapCount++;
+               }
 
                const pts1 = rPos1 === 1 ? 25 : rPos1 === 2 ? 18 : rPos1 === 3 ? 15 : rPos1 && rPos1 <= 10 ? Math.max(1, 12 - rPos1) : 0;
                const pts2 = rPos2 === 1 ? 25 : rPos2 === 2 ? 18 : rPos2 === 3 ? 15 : rPos2 && rPos2 <= 10 ? Math.max(1, 12 - rPos2) : 0;
-
-               const qWinner = qPos1 < qPos2 ? 1 : 2;
-               if (qWinner === 1) q1Wins++; else q2Wins++;
 
                let rWinner: 1 | 2 | null = null;
                if (rPos1 !== null && rPos2 !== null) {
@@ -217,7 +289,7 @@ export const teammateBattleService = {
                driver2: d2,
                qualiH2H1: q1Wins,
                qualiH2H2: q2Wins,
-               avgQualiGapMs: gapCount > 0 ? Math.round(totalGapMs / gapCount) : -120,
+               avgQualiGapMs: gapCount > 0 ? Math.round(totalGapMs / gapCount) : 0,
                raceH2H1: r1Wins,
                raceH2H2: r2Wins,
                points1: baseP1,
@@ -226,8 +298,8 @@ export const teammateBattleService = {
                pointsShare2: p2Share,
                avgFinish1: consistency1 ? parseFloat(consistency1.avgFinishPosition.toFixed(1)) : (d1.championshipPosition || 8),
                avgFinish2: consistency2 ? parseFloat(consistency2.avgFinishPosition.toFixed(1)) : (d2.championshipPosition || 10),
-               avgGrid1: (d1.championshipPosition || 8) - 0.5,
-               avgGrid2: (d2.championshipPosition || 10) - 0.2,
+               avgGrid1: gridCount1 > 0 ? parseFloat((totalGrid1 / gridCount1).toFixed(1)) : (d1.championshipPosition || 8),
+               avgGrid2: gridCount2 > 0 ? parseFloat((totalGrid2 / gridCount2).toFixed(1)) : (d2.championshipPosition || 10),
                podiums1: d1.podiums || 0,
                podiums2: d2.podiums || 0,
                wins1: d1.wins || 0,
