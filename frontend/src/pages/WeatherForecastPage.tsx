@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
    Cloud, CloudRain, Sun, Wind, Droplets, ThermometerSun, AlertTriangle,
-   CloudLightning, CalendarDays, Compass, ArrowUpRight, Radio
+   CloudLightning, Compass, ArrowUpRight, Radio, MapPin, Gauge, Activity,
+   Sparkles, ShieldCheck
 } from 'lucide-react';
 import { ResponsiveLine } from '@nivo/line';
 import { weatherService, WeekendWeatherDto } from '../services/weatherService';
@@ -61,8 +62,9 @@ const WeatherForecastPage: React.FC = () => {
       if (!search.trim()) return forecasts;
       const q = search.toLowerCase();
       return forecasts.filter(f =>
-         f.raceName.toLowerCase().startsWith(q) ||
-         f.country.toLowerCase().startsWith(q)
+         f.raceName.toLowerCase().includes(q) ||
+         f.country.toLowerCase().includes(q) ||
+         (f.circuitName && f.circuitName.toLowerCase().includes(q))
       );
    }, [forecasts, search]);
 
@@ -83,22 +85,23 @@ const WeatherForecastPage: React.FC = () => {
 
             <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-sky-400/10 border border-sky-400/25 backdrop-blur-md">
-                     <Radio className="w-3.5 h-3.5 text-sky-300" />
-                     <span className="text-sky-300 text-xs font-mono font-bold tracking-[0.2em] uppercase">
-                        TRACKSIDE METEOROLOGY UNIT
+                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 backdrop-blur-md">
+                     <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+                     <Radio className="w-3.5 h-3.5 text-emerald-400" />
+                     <span className="text-emerald-300 text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                        REAL-TIME TRACKSIDE METEOROLOGY RADAR
                      </span>
                   </div>
 
                   <PageHeroTitle titlePrefix="WEATHER" titleAccent="TELEMETRY" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
-                     Session-by-session atmospheric projections for every upcoming Grand Prix weekend.
+                     High-resolution meteorological radar observations and Grand Prix weekend session atmospheric forecasts calibrated to exact circuit GPS coordinates.
                   </p>
                </div>
 
                <div className="w-full sm:w-64">
-                  <SearchInput value={search} onChange={setSearch} placeholder="Search races or countries..." />
+                  <SearchInput value={search} onChange={setSearch} placeholder="Search races, circuits, countries..." />
                </div>
             </div>
          </div>
@@ -170,74 +173,161 @@ const WeekendForecast: React.FC<{ forecast: WeekendWeatherDto }> = ({ forecast }
          />
 
          {/* Header */}
-         <div className="p-6 sm:p-7 border-b border-white/[0.04] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+         <div className="p-6 sm:p-7 border-b border-white/[0.04] flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
-               <Link to={`/races/${forecast.raceId}`} className="group inline-flex items-center gap-2 outline-none">
-                  <h2 className="text-2xl sm:text-3xl font-display font-black text-f1-white uppercase tracking-tight group-hover:text-f1-red-light transition-colors">
-                     {forecast.raceName}
-                  </h2>
-                  <ArrowUpRight className="w-4 h-4 text-f1-silver/40 group-hover:text-f1-red-light group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-               </Link>
-               <p className="text-f1-silver/90 text-sm font-mono mt-2 flex items-center gap-2">
-                  <Compass className="w-4 h-4 text-f1-red" />
-                  <span>
+               <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <Link to={`/races/${forecast.raceId}`} className="group inline-flex items-center gap-2 outline-none">
+                     <h2 className="text-2xl sm:text-3xl font-display font-black text-f1-white uppercase tracking-tight group-hover:text-f1-red-light transition-colors">
+                        {forecast.raceName}
+                     </h2>
+                     <ArrowUpRight className="w-4 h-4 text-f1-silver/40 group-hover:text-f1-red-light group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                  </Link>
+                  {forecast.isRealData && (
+                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                        <ShieldCheck className="w-3 h-3" /> REAL GPS TELEMETRY
+                     </span>
+                  )}
+               </div>
+
+               <div className="text-f1-silver/90 text-sm font-mono flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                  <span className="flex items-center gap-1.5 text-f1-white font-medium">
+                     <Compass className="w-4 h-4 text-f1-red" />
                      {new Date(forecast.raceDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
                   </span>
-                  <span className="text-f1-silver/40">|</span>
-                  <span className="text-f1-white font-semibold">{forecast.country}</span>
-               </p>
+                  <span className="text-f1-silver/30">|</span>
+                  <span className="text-f1-white font-semibold">{forecast.circuitName || forecast.country}</span>
+                  {forecast.latitude && forecast.longitude && (
+                     <>
+                        <span className="text-f1-silver/30">|</span>
+                        <span className="text-cyan-400 font-mono text-xs flex items-center gap-1">
+                           <MapPin className="w-3.5 h-3.5" />
+                           {forecast.latitude > 0 ? `${forecast.latitude.toFixed(4)}° N` : `${Math.abs(forecast.latitude).toFixed(4)}° S`}, {forecast.longitude > 0 ? `${forecast.longitude.toFixed(4)}° E` : `${Math.abs(forecast.longitude).toFixed(4)}° W`}
+                        </span>
+                     </>
+                  )}
+               </div>
             </div>
 
-            {highRainRisk && (
-               <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 backdrop-blur-md">
-                  <div className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
-                  <AlertTriangle className="w-3.5 h-3.5 text-blue-300" />
-                  <span className="text-blue-300 text-xs font-mono font-bold tracking-[0.15em] uppercase">
-                     High Rain Risk
-                  </span>
-               </div>
-            )}
+            <div className="flex flex-wrap items-center gap-3">
+               {highRainRisk && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/25 backdrop-blur-md">
+                     <div className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
+                     <AlertTriangle className="w-3.5 h-3.5 text-blue-300" />
+                     <span className="text-blue-300 text-xs font-mono font-bold tracking-[0.15em] uppercase">
+                        High Rain Risk
+                     </span>
+                  </div>
+               )}
+
+               {forecast.source && (
+                  <div className="text-[11px] font-mono px-3 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] text-f1-silver/70">
+                     Source: <span className="text-f1-white font-semibold">{forecast.source}</span>
+                  </div>
+               )}
+            </div>
          </div>
+
+         {/* ─── Real Live Trackside Reading Banner ─── */}
+         {forecast.currentWeather && (
+            <div className="mx-6 sm:mx-7 mt-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-sky-950/40 via-f1-carbon/80 to-emerald-950/30 border border-sky-500/20 backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+               <div className="flex items-center gap-4">
+                  <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400">
+                     <WeatherIcon condition={forecast.currentWeather.condition} size="w-8 h-8" />
+                  </div>
+                  <div>
+                     <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono font-bold text-sky-400 uppercase tracking-widest flex items-center gap-1">
+                           <Activity className="w-3 h-3 animate-pulse" /> LIVE TRACKSIDE SENSOR OBSERVED
+                        </span>
+                        {forecast.currentWeather.lastUpdated && (
+                           <span className="text-[10px] font-mono text-f1-silver/50">
+                              Updated {forecast.currentWeather.lastUpdated}
+                           </span>
+                        )}
+                     </div>
+                     <div className="flex items-baseline gap-2 mt-0.5">
+                        <span className="text-3xl font-display font-black text-f1-white">
+                           {forecast.currentWeather.temperature}°C
+                        </span>
+                        <span className="text-sm font-mono text-f1-silver/80 uppercase">
+                           {forecast.currentWeather.condition}
+                        </span>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Live Sensor Metrics Grid */}
+               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-auto">
+                  <div className="bg-black/30 border border-white/[0.05] rounded-xl px-3 py-2 text-center">
+                     <div className="text-[9px] font-mono text-f1-silver/50 uppercase">Track Surface</div>
+                     <div className="text-sm font-mono font-bold text-amber-400">{forecast.currentWeather.trackTemperature}°C</div>
+                  </div>
+                  <div className="bg-black/30 border border-white/[0.05] rounded-xl px-3 py-2 text-center">
+                     <div className="text-[9px] font-mono text-f1-silver/50 uppercase">Wind Velocity</div>
+                     <div className="text-sm font-mono font-bold text-emerald-400">{forecast.currentWeather.windSpeed} km/h</div>
+                  </div>
+                  <div className="bg-black/30 border border-white/[0.05] rounded-xl px-3 py-2 text-center">
+                     <div className="text-[9px] font-mono text-f1-silver/50 uppercase">Humidity</div>
+                     <div className="text-sm font-mono font-bold text-sky-300">{forecast.currentWeather.humidity}%</div>
+                  </div>
+                  <div className="bg-black/30 border border-white/[0.05] rounded-xl px-3 py-2 text-center">
+                     <div className="text-[9px] font-mono text-f1-silver/50 uppercase">Pressure</div>
+                     <div className="text-sm font-mono font-bold text-purple-300">{forecast.currentWeather.surfacePressure || 1013} hPa</div>
+                  </div>
+               </div>
+            </div>
+         )}
 
          <div className="p-6 sm:p-7 space-y-8">
             {/* Session Telemetry Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-               {forecast.sessions.map(session => (
-                  <div key={session.sessionName} className="telemetry-card p-4 flex flex-col items-center text-center relative overflow-hidden">
-                     <div
-                        className="absolute top-0 inset-x-0 h-[2px] opacity-60"
-                        style={{ background: 'linear-gradient(90deg, transparent, #38bdf8, transparent)' }}
-                     />
-                     <div className="text-[10px] font-mono font-semibold text-f1-silver/60 uppercase tracking-widest mb-3">
-                        {session.sessionName}
-                     </div>
-
-                     <WeatherIcon condition={session.condition} />
-
-                     <div className="font-display font-black text-xl text-f1-white mt-2">{session.temperature}°C</div>
-                     <div className="text-[11px] font-mono text-f1-silver/50 uppercase tracking-wider mb-3">{session.condition}</div>
-
-                     {/* Rain Probability HUD Dial */}
-                     <div className="flex items-center justify-center mb-3">
-                        <HudDial percent={session.rainProbability} colorHex="#3b82f6" />
-                     </div>
-
-                     <div className="w-full space-y-1.5 pt-3 border-t border-white/[0.06] text-[11px] font-mono">
-                        <div className="flex justify-between items-center text-sky-300">
-                           <span className="flex items-center gap-1"><Droplets className="w-3 h-3" /> RAIN</span>
-                           <span>{session.rainProbability}%</span>
+            <div>
+               <h3 className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-f1-silver/70 mb-4 flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-f1-red" />
+                  SESSION ATMOSPHERIC PROJECTIONS
+               </h3>
+               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {forecast.sessions.map(session => (
+                     <div key={session.sessionName} className="telemetry-card p-4 flex flex-col items-center text-center relative overflow-hidden">
+                        <div
+                           className="absolute top-0 inset-x-0 h-[2px] opacity-60"
+                           style={{ background: 'linear-gradient(90deg, transparent, #38bdf8, transparent)' }}
+                        />
+                        <div className="text-[10px] font-mono font-semibold text-f1-silver/60 uppercase tracking-widest mb-1">
+                           {session.sessionName}
                         </div>
-                        <div className="flex justify-between items-center text-emerald-400">
-                           <span className="flex items-center gap-1"><Wind className="w-3 h-3" /> WIND</span>
-                           <span>{session.windSpeed} km/h</span>
+                        {session.sessionDate && (
+                           <div className="text-[9px] font-mono text-f1-silver/40 mb-2">
+                              {session.sessionDate}
+                           </div>
+                        )}
+
+                        <WeatherIcon condition={session.condition} />
+
+                        <div className="font-display font-black text-xl text-f1-white mt-2">{session.temperature}°C</div>
+                        <div className="text-[11px] font-mono text-f1-silver/50 uppercase tracking-wider mb-3">{session.condition}</div>
+
+                        {/* Rain Probability HUD Dial */}
+                        <div className="flex items-center justify-center mb-3">
+                           <HudDial percent={session.rainProbability} colorHex="#3b82f6" />
                         </div>
-                        <div className="flex justify-between items-center text-f1-silver/70">
-                           <span className="flex items-center gap-1"><ThermometerSun className="w-3 h-3" /> TRACK</span>
-                           <span>{session.trackTemperature}°C</span>
+
+                        <div className="w-full space-y-1.5 pt-3 border-t border-white/[0.06] text-[11px] font-mono">
+                           <div className="flex justify-between items-center text-sky-300">
+                              <span className="flex items-center gap-1"><Droplets className="w-3 h-3" /> RAIN</span>
+                              <span>{session.rainProbability}%</span>
+                           </div>
+                           <div className="flex justify-between items-center text-emerald-400">
+                              <span className="flex items-center gap-1"><Wind className="w-3 h-3" /> WIND</span>
+                              <span>{session.windSpeed} km/h</span>
+                           </div>
+                           <div className="flex justify-between items-center text-amber-300">
+                              <span className="flex items-center gap-1"><ThermometerSun className="w-3 h-3" /> TRACK</span>
+                              <span>{session.trackTemperature}°C</span>
+                           </div>
                         </div>
                      </div>
-                  </div>
-               ))}
+                  ))}
+               </div>
             </div>
 
             {/* Telemetry Charts */}
@@ -245,7 +335,7 @@ const WeekendForecast: React.FC<{ forecast: WeekendWeatherDto }> = ({ forecast }
                {/* Temperature Chart */}
                <div className="telemetry-card p-5 overflow-visible">
                   <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-4 text-center">
-                     Temperature Evolution
+                     Weekend Thermal Evolution (Track vs Air)
                   </h3>
                   <div style={{ height: 200, overflow: 'visible' }}>
                      <ResponsiveLine
@@ -288,7 +378,7 @@ const WeekendForecast: React.FC<{ forecast: WeekendWeatherDto }> = ({ forecast }
                {/* Rain Probability Chart */}
                <div className="telemetry-card p-5">
                   <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-4 text-center">
-                     Rain Probability
+                     Precipitation Risk Across Sessions
                   </h3>
                   <div style={{ height: 200 }}>
                      <ResponsiveLine
@@ -318,28 +408,28 @@ const WeekendForecast: React.FC<{ forecast: WeekendWeatherDto }> = ({ forecast }
    );
 };
 
-const WeatherIcon: React.FC<{ condition: string }> = ({ condition }) => {
+const WeatherIcon: React.FC<{ condition: string; size?: string }> = ({ condition, size = 'w-9 h-9' }) => {
    const cond = condition.toLowerCase();
 
    if (cond.includes('thunder') || cond.includes('storm')) {
-      return <CloudLightning className="w-9 h-9 text-amber-400 animate-pulse" />;
+      return <CloudLightning className={`${size} text-amber-400 animate-pulse`} />;
    }
    if (cond.includes('rain') || cond.includes('shower') || cond.includes('drizzle')) {
-      return <CloudRain className="w-9 h-9 text-sky-400" />;
+      return <CloudRain className={`${size} text-sky-400`} />;
    }
-   if (cond.includes('cloud') || cond.includes('overcast')) {
-      if (cond.includes('partly')) {
+   if (cond.includes('cloud') || cond.includes('overcast') || cond.includes('fog')) {
+      if (cond.includes('partly') || cond.includes('mainly')) {
          return (
-            <div className="relative w-9 h-9">
-               <Sun className="w-7 h-7 text-amber-400 absolute top-0 right-0" />
-               <Cloud className="w-7 h-7 text-f1-silver/60 absolute bottom-0 left-0" fill="currentColor" />
+            <div className={`relative ${size}`}>
+               <Sun className="w-6 h-6 text-amber-400 absolute top-0 right-0" />
+               <Cloud className="w-6 h-6 text-f1-silver/60 absolute bottom-0 left-0" fill="currentColor" />
             </div>
          );
       }
-      return <Cloud className="w-9 h-9 text-f1-silver/50" fill="currentColor" />;
+      return <Cloud className={`${size} text-f1-silver/50`} fill="currentColor" />;
    }
 
-   return <Sun className="w-9 h-9 text-amber-400" />;
+   return <Sun className={`${size} text-amber-400`} />;
 };
 
 export default WeatherForecastPage;
