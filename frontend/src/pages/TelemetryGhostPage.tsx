@@ -86,6 +86,14 @@ const TelemetryGhostPage: React.FC = () => {
    // ── Data loading ──────────────────────────────────────────────────────────
 
    useEffect(() => {
+      // Reset everything that depends on the previous season immediately,
+      // so stale driver/race objects aren't shown while the new data loads.
+      setDriverA(null);
+      setDriverB(null);
+      setSelectedRaceId(null);
+      setCurrentRaceDetail(null);
+      setRaces([]);
+
       Promise.all([
          driverService.getAll(undefined, season),
          raceService.getAll(season),

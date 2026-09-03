@@ -182,11 +182,11 @@ const WeekendForecast: React.FC<{ forecast: WeekendWeatherDto }> = ({ forecast }
                      </h2>
                      <ArrowUpRight className="w-4 h-4 text-f1-silver/40 group-hover:text-f1-red-light group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                   </Link>
-                  {forecast.isRealData && (
+                  {/* {forecast.isRealData && (
                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
                         <ShieldCheck className="w-3 h-3" /> REAL GPS TELEMETRY
                      </span>
-                  )}
+                  )} */}
                </div>
 
                <div className="text-f1-silver/90 text-sm font-mono flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
@@ -219,11 +219,11 @@ const WeekendForecast: React.FC<{ forecast: WeekendWeatherDto }> = ({ forecast }
                   </div>
                )}
 
-               {forecast.source && (
+               {/* {forecast.source && (
                   <div className="text-[11px] font-mono px-3 py-1 rounded-lg bg-white/[0.03] border border-white/[0.08] text-f1-silver/70">
                      Source: <span className="text-f1-white font-semibold">{forecast.source}</span>
                   </div>
-               )}
+               )} */}
             </div>
          </div>
 

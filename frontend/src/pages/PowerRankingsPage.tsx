@@ -173,8 +173,8 @@ const PowerRankingsPage: React.FC = () => {
             <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-5">
                <div className="space-y-2">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 backdrop-blur-md">
-                     <Flame className="w-3.5 h-3.5 text-amber-400" />
-                     <span className="text-amber-400 text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                     <Flame className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                     <span className="text-amber-400 text-[10px] sm:text-xs font-mono font-bold tracking-[0.2em] uppercase whitespace-nowrap">
                         Form Index & Intelligence
                      </span>
                   </div>
