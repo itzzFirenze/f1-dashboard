@@ -59,6 +59,11 @@ spring:
           timeout: 5000
           writetimeout: 5000
 
+# Resend HTTP Email API (bypasses Render SMTP port blocking)
+resend:
+  api-key: ${RESEND_API_KEY:}
+  from-email: ${RESEND_FROM_EMAIL:onboarding@resend.dev}
+
 # Server configuration (Render dynamic PORT support)
 server:
   port: ${PORT:8080}

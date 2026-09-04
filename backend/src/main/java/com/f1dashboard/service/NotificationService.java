@@ -18,12 +18,14 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClient;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -47,15 +49,23 @@ public class NotificationService {
    @Value("${spring.mail.username:}")
    private String fromEmail;
 
+   @Value("${resend.api-key:${RESEND_API_KEY:}}")
+   private String resendApiKey;
+
+   @Value("${resend.from-email:${RESEND_FROM_EMAIL:onboarding@resend.dev}}")
+   private String resendFromEmail;
+
    @Value("${app.frontend-url:http://localhost:5173}")
    private String frontendUrl;
 
    @jakarta.annotation.PostConstruct
    public void init() {
-      if (fromEmail != null && !fromEmail.isBlank()) {
-         log.info("[Notifications] Email alerts ENABLED with sender: {}", fromEmail);
+      if (resendApiKey != null && !resendApiKey.isBlank()) {
+         log.info("[Notifications] Email alerts ENABLED via Resend HTTP API (from: {})", resendFromEmail);
+      } else if (fromEmail != null && !fromEmail.isBlank()) {
+         log.info("[Notifications] Email alerts ENABLED via SMTP sender: {}", fromEmail);
       } else {
-         log.warn("[Notifications] Email alerts DISABLED: MAIL_USERNAME is not set. Check backend/.env");
+         log.warn("[Notifications] Email alerts DISABLED: Neither RESEND_API_KEY nor MAIL_USERNAME is set.");
       }
    }
 
@@ -102,7 +112,7 @@ public class NotificationService {
 
       String confirmationMessage = emailSent
             ? "Subscribed successfully! Check your inbox for confirmation."
-            : (fromEmail == null || fromEmail.isBlank()
+            : (!hasEmailConfigured()
                   ? "Subscribed! (Note: Server email not configured; no email sent.)"
                   : "Subscribed! (Note: Confirmation email failed to send. Check server logs.)");
 
@@ -158,7 +168,7 @@ public class NotificationService {
 
       String confirmationMessage = emailSent
             ? "Subscribed to all " + upcomingRaces.size() + " upcoming races! Check your inbox for confirmation."
-            : (fromEmail == null || fromEmail.isBlank()
+            : (!hasEmailConfigured()
                   ? "Subscribed to all " + upcomingRaces.size() + " upcoming races! (Note: Server email not configured; no email sent.)"
                   : "Subscribed to all " + upcomingRaces.size() + " upcoming races! (Note: Confirmation email failed to send. Check server logs.)");
 
@@ -427,9 +437,53 @@ public class NotificationService {
       sendHtml(sub.getEmail(), subject, html);
    }
 
+   private boolean hasEmailConfigured() {
+      return (resendApiKey != null && !resendApiKey.isBlank())
+            || (fromEmail != null && !fromEmail.isBlank());
+   }
+
+   private boolean sendViaResend(String to, String subject, String html) {
+      try {
+         String sender = resendFromEmail != null && resendFromEmail.contains("<")
+               ? resendFromEmail
+               : "F1 Dashboard <" + (resendFromEmail != null && !resendFromEmail.isBlank() ? resendFromEmail : "onboarding@resend.dev") + ">";
+
+         Map<String, Object> payload = Map.of(
+               "from", sender,
+               "to", List.of(to),
+               "subject", subject,
+               "html", html
+         );
+
+         RestClient restClient = RestClient.builder()
+               .baseUrl("https://api.resend.com")
+               .defaultHeader("Authorization", "Bearer " + resendApiKey.trim())
+               .defaultHeader("Content-Type", "application/json")
+               .build();
+
+         String response = restClient.post()
+               .uri("/emails")
+               .body(payload)
+               .retrieve()
+               .body(String.class);
+
+         log.info("[Notifications] Successfully sent email via Resend API to {}: {}", to, response);
+         return true;
+      } catch (Exception e) {
+         log.error("[Notifications] Failed to send email via Resend to {}: {}", to, e.getMessage(), e);
+         return false;
+      }
+   }
+
    private boolean sendHtml(String to, String subject, String html) {
+      // 1. If Resend API key is present, use HTTP REST API (port 443 - works on Render Free)
+      if (resendApiKey != null && !resendApiKey.isBlank()) {
+         return sendViaResend(to, subject, html);
+      }
+
+      // 2. Otherwise fall back to SMTP (Gmail)
       if (fromEmail == null || fromEmail.isBlank()) {
-         log.warn("[Notifications] MAIL_USERNAME not set — skipping email to {}", to);
+         log.warn("[Notifications] Neither RESEND_API_KEY nor MAIL_USERNAME is configured — skipping email to {}", to);
          return false;
       }
       try {
