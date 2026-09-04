@@ -3,6 +3,7 @@ package com.f1dashboard.controller;
 import com.f1dashboard.dto.ApiResponse;
 import com.f1dashboard.dto.DriverDetailDto;
 import com.f1dashboard.dto.DriverDto;
+import com.f1dashboard.dto.DriverRaceHistoryDto;
 import com.f1dashboard.service.DriverService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -46,5 +47,13 @@ public class DriverController {
    @Operation(summary = "Get driver details", description = "Returns detailed driver profile by ID")
    public ResponseEntity<ApiResponse<DriverDetailDto>> getDriverById(@PathVariable Long id) {
       return ResponseEntity.ok(ApiResponse.success(driverService.getDriverById(id)));
+   }
+
+   @GetMapping("/{id}/history")
+   @Operation(summary = "Get driver race history and penalties", description = "Returns complete race finishes, positions, and steward/penalty records")
+   public ResponseEntity<ApiResponse<DriverRaceHistoryDto.HistoryResponse>> getDriverHistory(
+         @PathVariable Long id,
+         @RequestParam(defaultValue = "2026") Integer season) {
+      return ResponseEntity.ok(ApiResponse.success(driverService.getDriverRaceHistory(id, season)));
    }
 }

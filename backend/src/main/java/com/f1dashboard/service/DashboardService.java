@@ -52,7 +52,9 @@ public class DashboardService {
                .orElse(null);
 
          // Find next immediate session
-         java.time.LocalDateTime now = java.time.LocalDateTime.now();
+         // Session times are stored as UTC (the 'Z' suffix is stripped at sync time),
+         // so compare against UTC now — not the server's local clock.
+         java.time.LocalDateTime now = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC);
          java.util.List<com.f1dashboard.entity.RaceSession> sessions = raceSessionRepository
                .findByRaceIdOrderBySessionDateAscSessionTimeAsc(nextRace.getId());
 

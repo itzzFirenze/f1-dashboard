@@ -29,6 +29,63 @@ export interface DriverDetail extends Driver {
    constructorId: number;
 }
 
+/** Driver individual race performance entry */
+export interface DriverRaceResult {
+   raceId: number;
+   round: number;
+   raceName: string;
+   circuitName: string | null;
+   country: string | null;
+   raceDate: string | null;
+   gridPosition: number;
+   finishPosition: number;
+   points: number;
+   status: string;
+   fastestLap: boolean;
+   positionsGained: number;
+   sessionType: string;
+}
+
+/** Driver penalty & steward incident notice */
+export interface DriverPenaltyEvent {
+   raceName: string;
+   sessionName?: string | null;
+   round: number | null;
+   lapNumber: number;
+   category: string;
+   penaltyType?: string | null;    // "GRID_PENALTY" | "TIME_PENALTY" | "PITLANE_START" | "DRIVE_THROUGH"
+   penaltyDetail?: string | null;  // Human-readable outcome: "5 second time penalty", "Grid drop", etc.
+   message: string;
+   flag: string | null;
+   severity: 'PENALTY' | 'INVESTIGATION' | 'NO_FURTHER_ACTION' | 'WARNING';
+   timestamp: string | null;
+}
+
+/** Computed performance metrics for driver */
+export interface DriverPerformanceStats {
+   avgGrid: number;
+   avgFinish: number;
+   totalPositionsGained: number;
+   totalRaces: number;
+   pointsScoringRaces: number;
+   pointsFinishRate: number;
+   dnfCount: number;
+   fastestLapsCount: number;
+   bestFinish: number;
+   bestGrid: number;
+}
+
+/** Complete history response payload */
+export interface DriverHistoryData {
+   driverId: number;
+   driverCode: string;
+   driverName: string;
+   season: number;
+   stats: DriverPerformanceStats;
+   races: DriverRaceResult[];
+   penalties: DriverPenaltyEvent[];
+}
+
 /** Constructor summary for standings */
 export interface Constructor {
    id: number;
