@@ -64,6 +64,12 @@ resend:
   api-key: ${RESEND_API_KEY:}
   from-email: ${RESEND_FROM_EMAIL:onboarding@resend.dev}
 
+# Brevo HTTP Email API (free 300 emails/day to ANY recipient, no custom domain required)
+brevo:
+  api-key: ${BREVO_API_KEY:}
+  sender-email: ${BREVO_SENDER_EMAIL:${MAIL_USERNAME:}}
+  sender-name: ${BREVO_SENDER_NAME:F1 Dashboard}
+
 # Server configuration (Render dynamic PORT support)
 server:
   port: ${PORT:8080}

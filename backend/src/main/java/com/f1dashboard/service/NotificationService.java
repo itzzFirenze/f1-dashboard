@@ -49,6 +49,15 @@ public class NotificationService {
    @Value("${spring.mail.username:}")
    private String fromEmail;
 
+   @Value("${brevo.api-key:${BREVO_API_KEY:}}")
+   private String brevoApiKey;
+
+   @Value("${brevo.sender-email:${BREVO_SENDER_EMAIL:}}")
+   private String brevoSenderEmail;
+
+   @Value("${brevo.sender-name:${BREVO_SENDER_NAME:F1 Dashboard}}")
+   private String brevoSenderName;
+
    @Value("${resend.api-key:${RESEND_API_KEY:}}")
    private String resendApiKey;
 
@@ -60,12 +69,28 @@ public class NotificationService {
 
    @jakarta.annotation.PostConstruct
    public void init() {
-      if (resendApiKey != null && !resendApiKey.isBlank()) {
+      if (brevoApiKey != null) {
+         brevoApiKey = brevoApiKey.trim().replaceAll("^[\"']|[\"']$", "");
+      }
+      if (brevoSenderEmail != null) {
+         brevoSenderEmail = brevoSenderEmail.trim().replaceAll("^[\"']|[\"']$", "");
+      }
+      if (resendApiKey != null) {
+         resendApiKey = resendApiKey.trim().replaceAll("^[\"']|[\"']$", "");
+      }
+      if (resendFromEmail != null) {
+         resendFromEmail = resendFromEmail.trim().replaceAll("^[\"']|[\"']$", "");
+      }
+
+      if (brevoApiKey != null && !brevoApiKey.isBlank()) {
+         String sender = (brevoSenderEmail != null && !brevoSenderEmail.isBlank()) ? brevoSenderEmail : fromEmail;
+         log.info("[Notifications] Email alerts ENABLED via Brevo HTTP API (sender: {})", sender);
+      } else if (resendApiKey != null && !resendApiKey.isBlank()) {
          log.info("[Notifications] Email alerts ENABLED via Resend HTTP API (from: {})", resendFromEmail);
       } else if (fromEmail != null && !fromEmail.isBlank()) {
          log.info("[Notifications] Email alerts ENABLED via SMTP sender: {}", fromEmail);
       } else {
-         log.warn("[Notifications] Email alerts DISABLED: Neither RESEND_API_KEY nor MAIL_USERNAME is set.");
+         log.warn("[Notifications] Email alerts DISABLED: Neither BREVO_API_KEY, RESEND_API_KEY, nor MAIL_USERNAME is set.");
       }
    }
 
@@ -438,15 +463,62 @@ public class NotificationService {
    }
 
    private boolean hasEmailConfigured() {
-      return (resendApiKey != null && !resendApiKey.isBlank())
+      return (brevoApiKey != null && !brevoApiKey.isBlank())
+            || (resendApiKey != null && !resendApiKey.isBlank())
             || (fromEmail != null && !fromEmail.isBlank());
+   }
+
+   private boolean sendViaBrevo(String to, String subject, String html) {
+      try {
+         String cleanKey = brevoApiKey != null ? brevoApiKey.trim().replaceAll("^[\"']|[\"']$", "") : "";
+         String cleanSender = (brevoSenderEmail != null && !brevoSenderEmail.isBlank())
+               ? brevoSenderEmail.trim().replaceAll("^[\"']|[\"']$", "")
+               : fromEmail;
+
+         if (cleanSender == null || cleanSender.isBlank()) {
+            log.error("[Notifications] Brevo sender email is missing. Set BREVO_SENDER_EMAIL or MAIL_USERNAME in .env");
+            return false;
+         }
+
+         Map<String, Object> payload = Map.of(
+               "sender", Map.of("name", brevoSenderName != null ? brevoSenderName : "F1 Dashboard", "email", cleanSender),
+               "to", List.of(Map.of("email", to)),
+               "subject", subject,
+               "htmlContent", html
+         );
+
+         RestClient restClient = RestClient.builder()
+               .baseUrl("https://api.brevo.com")
+               .defaultHeader("api-key", cleanKey)
+               .defaultHeader("Content-Type", "application/json")
+               .defaultHeader("Accept", "application/json")
+               .build();
+
+         String response = restClient.post()
+               .uri("/v3/smtp/email")
+               .body(payload)
+               .retrieve()
+               .body(String.class);
+
+         log.info("[Notifications] Successfully sent email via Brevo API to {}: {}", to, response);
+         return true;
+      } catch (org.springframework.web.client.RestClientResponseException rre) {
+         log.error("[Notifications] Brevo API error sending to {}: Status {} - Response: {}", to, rre.getStatusCode(), rre.getResponseBodyAsString());
+         return false;
+      } catch (Exception e) {
+         log.error("[Notifications] Failed to send email via Brevo to {}: {}", to, e.getMessage(), e);
+         return false;
+      }
    }
 
    private boolean sendViaResend(String to, String subject, String html) {
       try {
-         String sender = resendFromEmail != null && resendFromEmail.contains("<")
-               ? resendFromEmail
-               : "F1 Dashboard <" + (resendFromEmail != null && !resendFromEmail.isBlank() ? resendFromEmail : "onboarding@resend.dev") + ">";
+         String cleanKey = resendApiKey != null ? resendApiKey.trim().replaceAll("^[\"']|[\"']$", "") : "";
+         String cleanFrom = resendFromEmail != null ? resendFromEmail.trim().replaceAll("^[\"']|[\"']$", "") : "onboarding@resend.dev";
+
+         String sender = cleanFrom.contains("<")
+               ? cleanFrom
+               : "F1 Dashboard <" + (!cleanFrom.isBlank() ? cleanFrom : "onboarding@resend.dev") + ">";
 
          Map<String, Object> payload = Map.of(
                "from", sender,
@@ -457,7 +529,7 @@ public class NotificationService {
 
          RestClient restClient = RestClient.builder()
                .baseUrl("https://api.resend.com")
-               .defaultHeader("Authorization", "Bearer " + resendApiKey.trim())
+               .defaultHeader("Authorization", "Bearer " + cleanKey)
                .defaultHeader("Content-Type", "application/json")
                .build();
 
@@ -469,6 +541,9 @@ public class NotificationService {
 
          log.info("[Notifications] Successfully sent email via Resend API to {}: {}", to, response);
          return true;
+      } catch (org.springframework.web.client.RestClientResponseException rre) {
+         log.error("[Notifications] Resend API error sending to {}: Status {} - Response: {}", to, rre.getStatusCode(), rre.getResponseBodyAsString());
+         return false;
       } catch (Exception e) {
          log.error("[Notifications] Failed to send email via Resend to {}: {}", to, e.getMessage(), e);
          return false;
@@ -476,14 +551,19 @@ public class NotificationService {
    }
 
    private boolean sendHtml(String to, String subject, String html) {
-      // 1. If Resend API key is present, use HTTP REST API (port 443 - works on Render Free)
+      // 1. If Brevo API key is present, use Brevo HTTP REST API (port 443 - works on Render Free & sends to anyone)
+      if (brevoApiKey != null && !brevoApiKey.isBlank()) {
+         return sendViaBrevo(to, subject, html);
+      }
+
+      // 2. If Resend API key is present, use Resend HTTP REST API
       if (resendApiKey != null && !resendApiKey.isBlank()) {
          return sendViaResend(to, subject, html);
       }
 
-      // 2. Otherwise fall back to SMTP (Gmail)
+      // 3. Otherwise fall back to SMTP (Gmail)
       if (fromEmail == null || fromEmail.isBlank()) {
-         log.warn("[Notifications] Neither RESEND_API_KEY nor MAIL_USERNAME is configured — skipping email to {}", to);
+         log.warn("[Notifications] Neither BREVO_API_KEY, RESEND_API_KEY nor MAIL_USERNAME is configured — skipping email to {}", to);
          return false;
       }
       try {
