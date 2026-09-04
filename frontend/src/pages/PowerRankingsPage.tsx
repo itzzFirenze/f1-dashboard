@@ -172,14 +172,14 @@ const PowerRankingsPage: React.FC = () => {
 
             <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-5">
                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 backdrop-blur-md">
-                     <Flame className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                     <span className="text-amber-400 text-[10px] sm:text-xs font-mono font-bold tracking-[0.2em] uppercase whitespace-nowrap">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <Flame className="w-3 h-3 text-f1-red-light" />
+                     <span className="text-f1-red-light text-[10px] sm:text-xs font-mono font-bold tracking-[0.2em] uppercase whitespace-nowrap">
                         Form Index & Intelligence
                      </span>
                   </div>
 
-                  <PageHeroTitle icon={Star} titlePrefix="Driver Form &" titleAccent="Power Rankings" />
+                  <PageHeroTitle titlePrefix="Driver Form &" titleAccent="Power Rankings" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-2xl font-medium leading-relaxed">
                      5-factor capability radar ratings: Qualifying pace, race craft, consistency, defense under pressure, and recent form momentum.

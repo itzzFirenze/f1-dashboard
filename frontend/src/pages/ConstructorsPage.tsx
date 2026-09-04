@@ -1,16 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Star, Trophy, ChevronRight, Shield, Gauge } from 'lucide-react';
+import { Trophy, ChevronRight, Shield, Gauge } from 'lucide-react';
 import { constructorService } from '../services/constructorService';
-import { useFavorites } from '../context/FavoritesContext';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import { resolveTheme } from '../config/teamThemes';
 import type { Constructor } from '../types';
 
 const ConstructorsPage: React.FC = () => {
-   const { toggleFavoriteTeam, isTeamFavorite } = useFavorites();
 
    const { data: constructors = [], isLoading } = useQuery<Constructor[]>({
       queryKey: ['constructors', 2026],

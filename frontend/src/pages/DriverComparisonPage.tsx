@@ -129,12 +129,13 @@ const DriverComparisonPage: React.FC = () => {
             <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
                <div className="space-y-2">
                   <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <GitCompare className="w-3.5 h-3.5 text-f1-red-light" />
                      <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
                         Head-to-Head Telemetry
                      </span>
                   </div>
 
-                  <PageHeroTitle icon={GitCompare} titlePrefix="Driver" titleAccent="Comparison" />
+                  <PageHeroTitle titlePrefix="Driver" titleAccent="Comparison" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      Compare any two drivers head-to-head across points, pace and race craft for the {season} season.

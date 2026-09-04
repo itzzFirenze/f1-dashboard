@@ -85,10 +85,9 @@ const WeatherForecastPage: React.FC = () => {
 
             <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 backdrop-blur-md">
-                     <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
-                     <Radio className="w-3.5 h-3.5 text-emerald-400" />
-                     <span className="text-emerald-300 text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <Radio className="w-3.5 h-3.5 text-f1-red-light" />
+                     <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
                         REAL-TIME TRACKSIDE METEOROLOGY RADAR
                      </span>
                   </div>

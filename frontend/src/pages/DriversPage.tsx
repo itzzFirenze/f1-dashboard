@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Star, Trophy, Users, Radio, ChevronRight } from 'lucide-react';
+import { Trophy, Users, User } from 'lucide-react';
 import { driverService } from '../services/driverService';
-import { useFavorites } from '../context/FavoritesContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import SearchInput from '../components/ui/SearchInput';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
@@ -33,7 +32,6 @@ const PositionBadge: React.FC<{ position: number }> = ({ position }) => {
 const DriversPage: React.FC = () => {
    const [search, setSearch] = useState('');
    const debouncedSearch = useDebouncedValue(search, search ? 300 : 0);
-   const { toggleFavoriteDriver, isDriverFavorite } = useFavorites();
 
    const { data: drivers = [], isLoading } = useQuery<Driver[]>({
       queryKey: ['drivers', debouncedSearch, 2026],
@@ -53,6 +51,7 @@ const DriversPage: React.FC = () => {
             <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                <div className="space-y-2">
                   <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <User className="w-3 h-3 text-f1-red-light" />
                      <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
                         Driver Championship
                      </span>

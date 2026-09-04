@@ -100,13 +100,13 @@ const TeammateBattlesPage: React.FC = () => {
             <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-5">
                <div className="space-y-2">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
-                     <Swords className="w-3.5 h-3.5 text-f1-red-light" />
+                     <Users className="w-3.5 h-3.5 text-f1-red-light" />
                      <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
                         Intra-Team Rivalry
                      </span>
                   </div>
 
-                  <PageHeroTitle icon={Users} titlePrefix="Teammate" titleAccent="Head-to-Head Battles" />
+                  <PageHeroTitle titlePrefix="Teammate" titleAccent="Head-to-Head Battles" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-2xl font-medium leading-relaxed hidden sm:block">
                      Comprehensive intra-team garage war: Qualifying time deltas, race duel records, points share %, and round-by-round statistics across all {battles.length || 10} constructors.

@@ -78,7 +78,7 @@ export const TelemetryMatchupHeader: React.FC<TelemetryMatchupHeaderProps> = ({
                      </div>
                   </div>
 
-                  <PageHeroTitle icon={Activity} titlePrefix="Lap Ghost" titleAccent="Head-to-Head Telemetry" />
+                  <PageHeroTitle titlePrefix="Telemetry" titleAccent="Duel" />
                   <p className="text-f1-silver text-sm max-w-2xl leading-relaxed">
                      Select two drivers to compare qualifying or race best laps with animated ghost cars on track, live telemetry traces, and sector-by-sector time deltas.
                   </p>
@@ -124,10 +124,10 @@ export const TelemetryMatchupHeader: React.FC<TelemetryMatchupHeaderProps> = ({
                <div className="max-w-lg mx-auto space-y-5 relative z-10">
                   <div
                      className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-xl ${isCancelled
-                           ? 'bg-red-500/15 border border-red-500/30 text-red-400'
-                           : season >= 2026
-                              ? 'bg-amber-500/15 border border-amber-500/30 text-amber-400'
-                              : 'bg-white/[0.06] border border-white/10 text-f1-silver'
+                        ? 'bg-red-500/15 border border-red-500/30 text-red-400'
+                        : season >= 2026
+                           ? 'bg-amber-500/15 border border-amber-500/30 text-amber-400'
+                           : 'bg-white/[0.06] border border-white/10 text-f1-silver'
                         }`}
                   >
                      {isCancelled ? (
@@ -186,8 +186,8 @@ export const TelemetryMatchupHeader: React.FC<TelemetryMatchupHeaderProps> = ({
                      onClick={swapDrivers}
                      disabled={!driverA || !driverB}
                      className={`hidden md:flex w-12 h-12 rounded-xl border items-center justify-center transition-all self-end mb-1 group ${driverA && driverB
-                           ? 'bg-white/[0.03] border-white/[0.06] hover:bg-f1-red/10 hover:border-f1-red/30 cursor-pointer text-f1-silver/70 hover:text-white'
-                           : 'bg-white/[0.01] border-white/[0.04] text-white/20 cursor-not-allowed'
+                        ? 'bg-white/[0.03] border-white/[0.06] hover:bg-f1-red/10 hover:border-f1-red/30 cursor-pointer text-f1-silver/70 hover:text-white'
+                        : 'bg-white/[0.01] border-white/[0.04] text-white/20 cursor-not-allowed'
                         }`}
                      title="Swap drivers"
                   >

@@ -156,13 +156,14 @@ const RecordsPage: React.FC = () => {
 
             <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/25 backdrop-blur-md">
-                     <span className="text-amber-300 text-xs font-mono font-bold tracking-[0.2em] uppercase">
+                  <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
+                     <Award className="w-3.5 h-3.5 text-f1-red-light" />
+                     <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
                         FIA Archive Database
                      </span>
                   </div>
 
-                  <PageHeroTitle icon={Award} titlePrefix="Historical" titleAccent="Records Vault" iconColorClass="text-amber-400" />
+                  <PageHeroTitle titlePrefix="Historical" titleAccent="Records Vault" iconColorClass="text-amber-400" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      {season ? `${season} season` : 'All-time'} Grand Prix race records, wins, podiums & scoring milestones.

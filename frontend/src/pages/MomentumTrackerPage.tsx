@@ -115,13 +115,13 @@ const MomentumTrackerPage: React.FC = () => {
             <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
                <div className="space-y-2">
                   <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-f1-red/10 border border-f1-red/25 backdrop-blur-md">
-                     <Radio className="w-3.5 h-3.5 text-f1-red-light" />
+                     <Activity className="w-3.5 h-3.5 text-f1-red-light" />
                      <span className="text-f1-red-light text-xs font-mono font-bold tracking-[0.2em] uppercase">
                         Driver Form Telemetry
                      </span>
                   </div>
 
-                  <PageHeroTitle icon={Activity} titlePrefix="Momentum" titleAccent="Tracker" />
+                  <PageHeroTitle titlePrefix="Momentum" titleAccent="Tracker" />
 
                   <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
                      Live trajectory analysis, rolling averages & grid-to-flag delta engineering for the {season} season.
