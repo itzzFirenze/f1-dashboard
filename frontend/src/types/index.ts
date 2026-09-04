@@ -210,6 +210,32 @@ export interface DashboardData {
    nextRaceWeather: Weather | null;
 }
 
+/** Notification subscription request */
+export interface SubscriptionRequest {
+   email: string;
+   raceId?: number | null;
+   notifyRaceWeek: boolean;
+   notifyDayBefore: boolean;
+   notifyBeforeSession: boolean;
+   allUpcoming?: boolean;
+}
+
+/** Notification subscription response */
+export interface SubscriptionResponse {
+   id: number | null;
+   email: string;
+   raceId: number | null;
+   raceName: string | null;
+   subscribed: boolean;
+   notifyRaceWeek: boolean;
+   notifyDayBefore: boolean;
+   notifyBeforeSession: boolean;
+   unsubscribeToken: string | null;
+   message: string;
+   allUpcoming?: boolean;
+   totalSubscribedRaces?: number;
+}
+
 /** Countdown time remaining */
 export interface CountdownTime {
    days: number;

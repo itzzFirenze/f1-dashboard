@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
    Trophy, Flag, Users, Calendar, ChevronRight, TrendingUp,
-   Activity, Compass, Shield, ArrowUpRight, Medal
+   Activity, Compass, Shield, ArrowUpRight, Medal, Bell
 } from 'lucide-react';
 import { dashboardService } from '../services/dashboardService';
 import CountdownTimer from '../components/ui/CountdownTimer';
 import WeatherCard from '../components/ui/WeatherCard';
+import NotifyMeModal from '../components/ui/NotifyMeModal';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import { resolveTheme, getDriverImage } from '../config/teamThemes';
@@ -321,6 +322,7 @@ const DriverGridRow: React.FC<{ result: RaceResult; index: number }> = ({ result
 const DashboardPage: React.FC = () => {
    const [driverImgError, setDriverImgError] = useState(false);
    const [logoError, setLogoError] = useState(false);
+   const [showNotifyModal, setShowNotifyModal] = useState(false);
 
    const { data, isLoading } = useQuery<DashboardData>({
       queryKey: ['dashboard'],
@@ -447,9 +449,23 @@ const DashboardPage: React.FC = () => {
                               Upcoming: {data.nextSessionName || 'Grand Prix Weekend'}
                            </span>
                         </div>
-                        <div className="flex items-center gap-1 text-xs font-mono text-f1-silver/70 group-hover:text-f1-white transition-colors bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06]">
-                           <span>TELEMETRY DECK</span>
-                           <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        <div className="flex items-center gap-2">
+                           <button
+                              type="button"
+                              onClick={(e) => {
+                                 e.preventDefault();
+                                 e.stopPropagation();
+                                 setShowNotifyModal(true);
+                              }}
+                              className="flex items-center gap-1.5 text-xs font-mono font-bold text-f1-white bg-f1-red hover:bg-f1-red-dark transition-all px-3 py-1 rounded-lg border border-f1-red/60 shadow-[0_0_12px_rgba(225,6,0,0.35)] hover:shadow-[0_0_18px_rgba(225,6,0,0.6)] cursor-pointer"
+                           >
+                              <Bell className="w-3.5 h-3.5" />
+                              <span>NOTIFY ME</span>
+                           </button>
+                           <div className="flex items-center gap-1 text-xs font-mono text-f1-silver/70 group-hover:text-f1-white transition-colors bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06]">
+                              <span>TELEMETRY DECK</span>
+                              <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                           </div>
                         </div>
                      </div>
 
@@ -731,6 +747,18 @@ const DashboardPage: React.FC = () => {
                ))}
             </div>
          </div>
+
+         {data.nextRaceId && data.nextRaceName && (
+            <NotifyMeModal
+               isOpen={showNotifyModal}
+               onClose={() => setShowNotifyModal(false)}
+               raceId={data.nextRaceId}
+               raceName={data.nextRaceName}
+               circuitName={data.nextRaceCircuit}
+               country={data.nextRaceCountry}
+               sessionName={data.nextSessionName}
+            />
+         )}
       </div>
    );
 };

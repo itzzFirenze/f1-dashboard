@@ -4,6 +4,10 @@
 spring:
   application:
     name: f1-dashboard
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
   mvc:
     pathmatch:
       matching-strategy: path_pattern_parser
@@ -35,6 +39,25 @@ spring:
   threads:
     virtual:
       enabled: true
+
+  # Email / SMTP configuration
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 # Server configuration (Render dynamic PORT support)
 server:
