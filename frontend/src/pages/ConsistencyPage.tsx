@@ -83,7 +83,7 @@ const ConsistencyPage: React.FC = () => {
          data: data.races.map(race => {
             const val = d.resultsByRace[race];
             const numVal = val === 'DNF' ? 21 : parseInt(val) || 0;
-            return { x: race.replace(' Grand Prix', '').substring(0, 8), y: numVal };
+            return { x: race.replace(' Grand Prix', ''), y: numVal }; // no more .substring(0, 8)
          })
       }));
    }, [data]);
@@ -216,12 +216,13 @@ const ConsistencyPage: React.FC = () => {
                   <div style={{ height: `${heatmapData.length * 36 + 80}px`, minWidth: '700px' }}>
                      <ResponsiveHeatMapCanvas
                         data={heatmapData}
-                        margin={{ top: 40, right: 30, bottom: 20, left: 60 }}
+                        margin={{ top: 90, right: 30, bottom: 20, left: 60 }}  // top increased from 40 → 90
                         axisTop={{
                            tickSize: 0,
-                           tickPadding: 8,
+                           tickPadding: 10,
                            tickRotation: -45,
                         }}
+
                         axisLeft={{
                            tickSize: 0,
                            tickPadding: 8,

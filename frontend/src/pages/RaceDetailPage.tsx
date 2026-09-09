@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-   ArrowLeft, Clock, MapPin, Ruler, CornerDownRight, Timer, Zap, Trophy,
+   ArrowLeft, Clock, ArrowUpRight, Ruler, CornerDownRight, Timer, Zap, Trophy,
    Compass, Radio, Flag, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { raceService } from '../services/raceService';

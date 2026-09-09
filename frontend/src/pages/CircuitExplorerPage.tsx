@@ -14,7 +14,7 @@ const CircuitExplorerPage: React.FC = () => {
       const query = search.trim().toLowerCase();
       if (!query) return circuits;
       return circuits.filter((circuit) =>
-         [circuit.name, circuit.location].some((value) => value.toLowerCase().startsWith(query))
+         [circuit.name, circuit.location, circuit.country].some((value) => value.toLowerCase().includes(query))
       );
    }, [search]);
 
@@ -33,21 +33,21 @@ const CircuitExplorerPage: React.FC = () => {
                   className="w-full flex flex-col min-h-0 lg:h-[calc(100vh-6.5rem)] lg:max-h-[calc(100vh-6.5rem)] lg:overflow-hidden"
                >
                   {/* Slim Top Action Bar */}
-                  <div className="flex items-center justify-between pb-3 mb-2 border-b border-white/[0.06] flex-shrink-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-3 mb-2 border-b border-white/[0.06] flex-shrink-0">
                      <button
                         onClick={() => {
                            setSelectedId(null);
                            setSearch('');
                         }}
-                        className="pill-button gap-2 px-3.5 py-1.5 hover:border-f1-red/40 transition-colors"
+                        className="pill-button gap-2 px-3.5 py-1.5 hover:border-f1-red/40 transition-colors self-start"
                      >
                         <ArrowLeft className="h-4 w-4 text-f1-red" />
                         <span className="text-xs font-mono font-semibold text-f1-white">Back to all circuits</span>
                      </button>
 
-                     <div className="flex items-center gap-2 text-xs font-mono text-f1-silver/50 uppercase tracking-widest bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06]">
-                        <Radio className="w-3.5 h-3.5 text-f1-red-light" />
-                        <span>{selectedCircuit.name} • {selectedCircuit.country}</span>
+                     <div className="flex items-center gap-2 text-[11px] sm:text-xs font-mono text-f1-silver/50 uppercase tracking-widest bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06] self-start sm:self-auto">
+                        <Radio className="w-3.5 h-3.5 text-f1-red-light shrink-0" />
+                        <span className="truncate">{selectedCircuit.name} • {selectedCircuit.country}</span>
                      </div>
                   </div>
 

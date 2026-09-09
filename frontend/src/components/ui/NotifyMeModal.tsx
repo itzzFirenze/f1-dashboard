@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
    Bell, X, Check, Mail, Calendar, Flag, Clock, ShieldCheck,
    AlertCircle, Loader2, Trash2, CheckCircle2, Trophy, Sparkles
@@ -79,7 +80,8 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
             checkExistingStatus(email);
          }
       }
-   }, [isOpen, email, checkExistingStatus]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [isOpen]);
 
    // Handle escape key
    useEffect(() => {
@@ -91,6 +93,35 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
    }, [isOpen, onClose]);
+
+   // Lock body scroll while the modal is open.
+   // Without this, the page behind the modal keeps scrolling on mobile —
+   // which is also why the backdrop blur looked inconsistent at the top:
+   // the browser was re-painting scrolled content behind the fixed overlay
+   // instead of a single settled blurred frame.
+   useEffect(() => {
+      if (!isOpen) return;
+
+      const scrollY = window.scrollY;
+      const { style } = document.body;
+      const prevPosition = style.position;
+      const prevTop = style.top;
+      const prevWidth = style.width;
+      const prevOverflow = style.overflow;
+
+      style.position = 'fixed';
+      style.top = `-${scrollY}px`;
+      style.width = '100%';
+      style.overflow = 'hidden';
+
+      return () => {
+         style.position = prevPosition;
+         style.top = prevTop;
+         style.width = prevWidth;
+         style.overflow = prevOverflow;
+         window.scrollTo(0, scrollY);
+      };
+   }, [isOpen]);
 
    if (!isOpen) return null;
 
@@ -152,29 +183,32 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
       }
    };
 
-   return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+   return createPortal(
+      <div
+         className="fixed inset-0 z-[999] flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overscroll-contain"
+         onClick={onClose}
+      >
          {/* Dialog Card */}
          <div
-            className="relative w-full max-w-lg bg-[#12121c] border border-white/10 rounded-2xl shadow-2xl overflow-hidden text-f1-white max-h-[92vh] flex flex-col"
+            className="relative w-full sm:max-w-lg bg-[#12121c] border border-white/10 sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden text-f1-white h-[92vh] sm:h-auto sm:max-h-[92vh] mt-auto sm:mt-0 flex flex-col"
             onClick={(e) => e.stopPropagation()}
          >
             {/* Top Red Racing Stripe */}
             <div className="h-1 bg-gradient-to-r from-f1-red via-f1-red-light to-amber-500 shrink-0" />
 
             {/* Modal Header */}
-            <div className="p-6 pb-4 flex items-start justify-between border-b border-white/[0.06] shrink-0">
-               <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-f1-red/15 border border-f1-red/30 flex items-center justify-center text-f1-red shadow-[0_0_15px_rgba(225,6,0,0.3)] shrink-0">
-                     <Bell className="w-5 h-5 animate-pulse" />
+            <div className="p-4 sm:p-6 pb-4 flex items-start justify-between gap-3 border-b border-white/[0.06] shrink-0">
+               <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-f1-red/15 border border-f1-red/30 flex items-center justify-center text-f1-red shadow-[0_0_15px_rgba(225,6,0,0.3)] shrink-0">
+                     <Bell className="w-4.5 h-4.5 sm:w-5 sm:h-5 animate-pulse" />
                   </div>
-                  <div>
-                     <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-f1-red-light uppercase">
+                  <div className="min-w-0">
+                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="text-[10px] sm:text-[11px] font-mono font-bold tracking-[0.2em] text-f1-red-light uppercase">
                            Telemetry Alerts
                         </span>
                         {existingSub && (
-                           <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                           <span className="text-[9px] sm:text-[10px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 shrink-0">
                               <ShieldCheck className="w-3 h-3" />
                               {existingSub.allUpcoming
                                  ? `Season Pass (${existingSub.totalSubscribedRaces || 'All'} GPs)`
@@ -182,7 +216,7 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                            </span>
                         )}
                      </div>
-                     <h3 className="text-xl font-black font-display tracking-tight text-f1-white uppercase mt-0.5">
+                     <h3 className="text-lg sm:text-xl font-black font-display tracking-tight text-f1-white uppercase mt-0.5 truncate">
                         Race Weekend Alerts
                      </h3>
                   </div>
@@ -191,7 +225,7 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                <button
                   type="button"
                   onClick={onClose}
-                  className="text-f1-silver/50 hover:text-f1-white p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
+                  className="text-f1-silver/50 hover:text-f1-white p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors shrink-0"
                   aria-label="Close modal"
                >
                   <X className="w-5 h-5" />
@@ -199,8 +233,8 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
             </div>
 
             {/* Race Summary Strip */}
-            <div className="px-6 py-2.5 bg-white/[0.02] border-b border-white/[0.06] flex items-center justify-between text-xs font-mono shrink-0">
-               <div className="min-w-0 pr-3">
+            <div className="px-4 sm:px-6 py-2.5 bg-white/[0.02] border-b border-white/[0.06] flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-xs font-mono shrink-0">
+               <div className="min-w-0 pr-0 sm:pr-3">
                   <div className="font-bold text-f1-white truncate">{raceName}</div>
                   {(circuitName || country) && (
                      <div className="text-f1-silver/60 text-[11px] truncate">
@@ -216,47 +250,47 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
             </div>
 
             {/* Modal Body (Scrollable) */}
-            <div className="overflow-y-auto flex-1">
+            <div className="overflow-y-auto flex-1 overscroll-contain">
                {successData ? (
-                  <div className="p-6 space-y-5">
-                     <div className="flex flex-col items-center text-center p-5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="p-4 sm:p-6 space-y-5">
+                     <div className="flex flex-col items-center text-center p-4 sm:p-5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                         <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-3 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                            <CheckCircle2 className="w-7 h-7" />
                         </div>
-                        <h4 className="text-lg font-bold font-display uppercase tracking-wide text-white">
+                        <h4 className="text-base sm:text-lg font-bold font-display uppercase tracking-wide text-white">
                            {successData.allUpcoming ? 'Season Pass Activated!' : (successData.message || 'Alerts Activated!')}
                         </h4>
                         <p className="text-xs text-f1-silver/80 mt-1 max-w-sm">
                            {successData.allUpcoming
                               ? `You're locked in for all ${successData.totalSubscribedRaces || ''} upcoming Grands Prix on the calendar! Alerts will be delivered directly to `
                               : `You're locked in for ${successData.raceName || raceName}. Alerts will be delivered directly to `}
-                           <span className="text-white font-mono font-semibold">{successData.email}</span>.
+                           <span className="text-white font-mono font-semibold break-all">{successData.email}</span>.
                         </p>
                      </div>
 
                      <div className="space-y-2 text-xs font-mono text-f1-silver/70 bg-white/[0.02] p-4 rounded-xl border border-white/[0.06]">
                         <div className="text-[11px] uppercase tracking-wider text-f1-silver/50 font-bold mb-1">Configured Triggers:</div>
                         {successData.notifyRaceWeek && (
-                           <div className="flex items-center gap-2 text-f1-white">
-                              <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                           <div className="flex items-start gap-2 text-f1-white">
+                              <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
                               <span>Race week kickoff (Monday 08:00 UTC)</span>
                            </div>
                         )}
                         {successData.notifyDayBefore && (
-                           <div className="flex items-center gap-2 text-f1-white">
-                              <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                           <div className="flex items-start gap-2 text-f1-white">
+                              <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
                               <span>24-hour race day countdown alert</span>
                            </div>
                         )}
                         {successData.notifyBeforeSession && (
-                           <div className="flex items-center gap-2 text-f1-white">
-                              <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                           <div className="flex items-start gap-2 text-f1-white">
+                              <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
                               <span>5-minute warning before every practice, qualifying & race</span>
                            </div>
                         )}
                      </div>
 
-                     <div className="flex gap-3">
+                     <div className="flex flex-col sm:flex-row gap-3">
                         <button
                            type="button"
                            onClick={() => setSuccessData(null)}
@@ -274,7 +308,7 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                      </div>
                   </div>
                ) : (
-                  <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                  <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
                      {error && (
                         <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-2.5 text-red-400 text-xs">
                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -284,35 +318,34 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
 
                      {/* Coverage Scope Selection */}
                      <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-2 gap-2">
                            <label className="text-xs font-mono font-semibold text-f1-silver/80 uppercase tracking-wider">
                               Coverage Scope
                            </label>
-                           <span className="text-[10px] font-mono text-f1-red-light uppercase tracking-wider font-semibold">
+                           <span className="text-[9px] sm:text-[10px] font-mono text-f1-red-light uppercase tracking-wider font-semibold text-right shrink-0">
                               {scope === 'all' ? '🏁 Recommended' : '🎯 Single GP'}
                            </span>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
                            {/* Option 1: Season Pass (All Upcoming Races) */}
                            <button
                               type="button"
                               onClick={() => setScope('all')}
-                              className={`p-3 rounded-xl border text-left transition-all relative overflow-hidden ${
-                                 scope === 'all'
-                                    ? 'bg-f1-red/15 border-f1-red text-white shadow-[0_0_15px_rgba(225,6,0,0.25)]'
-                                    : 'bg-white/[0.03] border-white/[0.08] text-f1-silver/70 hover:bg-white/[0.06]'
-                              }`}
+                              className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all relative overflow-hidden ${scope === 'all'
+                                 ? 'bg-f1-red/15 border-f1-red text-white shadow-[0_0_15px_rgba(225,6,0,0.25)]'
+                                 : 'bg-white/[0.03] border-white/[0.08] text-f1-silver/70 hover:bg-white/[0.06]'
+                                 }`}
                            >
-                              <div className="flex items-center justify-between mb-1">
-                                 <div className="flex items-center gap-1.5 font-mono font-bold text-xs text-white">
-                                    <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                                    <span className="uppercase">Season Pass</span>
+                              <div className="flex items-center justify-between mb-1 gap-1">
+                                 <div className="flex items-center gap-1.5 font-mono font-bold text-[11px] sm:text-xs text-white min-w-0">
+                                    <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                    <span className="uppercase truncate">Season Pass</span>
                                  </div>
                                  {scope === 'all' && (
-                                    <span className="w-2 h-2 rounded-full bg-f1-red animate-pulse" />
+                                    <span className="w-2 h-2 rounded-full bg-f1-red animate-pulse shrink-0" />
                                  )}
                               </div>
-                              <p className="text-[11px] text-f1-silver/70 leading-snug">
+                              <p className="text-[10px] sm:text-[11px] text-f1-silver/70 leading-snug">
                                  All upcoming races on the 2026 calendar
                               </p>
                            </button>
@@ -321,22 +354,21 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                            <button
                               type="button"
                               onClick={() => setScope('single')}
-                              className={`p-3 rounded-xl border text-left transition-all ${
-                                 scope === 'single'
-                                    ? 'bg-f1-red/15 border-f1-red text-white shadow-[0_0_15px_rgba(225,6,0,0.25)]'
-                                    : 'bg-white/[0.03] border-white/[0.08] text-f1-silver/70 hover:bg-white/[0.06]'
-                              }`}
+                              className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all ${scope === 'single'
+                                 ? 'bg-f1-red/15 border-f1-red text-white shadow-[0_0_15px_rgba(225,6,0,0.25)]'
+                                 : 'bg-white/[0.03] border-white/[0.08] text-f1-silver/70 hover:bg-white/[0.06]'
+                                 }`}
                            >
-                              <div className="flex items-center justify-between mb-1">
-                                 <div className="flex items-center gap-1.5 font-mono font-bold text-xs text-white">
-                                    <Flag className="w-3.5 h-3.5 text-f1-red-light" />
-                                    <span className="uppercase">This GP Only</span>
+                              <div className="flex items-center justify-between mb-1 gap-1">
+                                 <div className="flex items-center gap-1.5 font-mono font-bold text-[11px] sm:text-xs text-white min-w-0">
+                                    <Flag className="w-3.5 h-3.5 text-f1-red-light shrink-0" />
+                                    <span className="uppercase truncate">This GP Only</span>
                                  </div>
                                  {scope === 'single' && (
-                                    <span className="w-2 h-2 rounded-full bg-f1-red animate-pulse" />
+                                    <span className="w-2 h-2 rounded-full bg-f1-red animate-pulse shrink-0" />
                                  )}
                               </div>
-                              <p className="text-[11px] text-f1-silver/70 leading-snug truncate">
+                              <p className="text-[10px] sm:text-[11px] text-f1-silver/70 leading-snug truncate">
                                  {raceName} only
                               </p>
                            </button>
@@ -379,16 +411,16 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                         </label>
 
                         {/* 1. Race Week */}
-                        <label className="flex items-start gap-3.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.06] cursor-pointer transition-all">
+                        <label className="flex items-start gap-3 sm:gap-3.5 p-2.5 sm:p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.06] cursor-pointer transition-all">
                            <input
                               type="checkbox"
                               checked={notifyRaceWeek}
                               onChange={(e) => setNotifyRaceWeek(e.target.checked)}
-                              className="mt-1 w-4 h-4 rounded border-white/20 bg-black/40 text-f1-red focus:ring-f1-red focus:ring-offset-0 transition-colors accent-f1-red cursor-pointer"
+                              className="mt-1 w-4 h-4 rounded border-white/20 bg-black/40 text-f1-red focus:ring-f1-red focus:ring-offset-0 transition-colors accent-f1-red cursor-pointer shrink-0"
                            />
                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                 <Flag className="w-3.5 h-3.5 text-f1-red-light" />
+                                 <Flag className="w-3.5 h-3.5 text-f1-red-light shrink-0" />
                                  <span className="text-xs font-bold text-f1-white font-mono">Race Week Kickoff</span>
                               </div>
                               <p className="text-[11px] text-f1-silver/60 mt-0.5">
@@ -398,16 +430,16 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                         </label>
 
                         {/* 2. Day Before Race */}
-                        <label className="flex items-start gap-3.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.06] cursor-pointer transition-all">
+                        <label className="flex items-start gap-3 sm:gap-3.5 p-2.5 sm:p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.06] cursor-pointer transition-all">
                            <input
                               type="checkbox"
                               checked={notifyDayBefore}
                               onChange={(e) => setNotifyDayBefore(e.target.checked)}
-                              className="mt-1 w-4 h-4 rounded border-white/20 bg-black/40 text-f1-red focus:ring-f1-red focus:ring-offset-0 transition-colors accent-f1-red cursor-pointer"
+                              className="mt-1 w-4 h-4 rounded border-white/20 bg-black/40 text-f1-red focus:ring-f1-red focus:ring-offset-0 transition-colors accent-f1-red cursor-pointer shrink-0"
                            />
                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                 <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                                 <Calendar className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                                  <span className="text-xs font-bold text-f1-white font-mono">24 Hours Before Lights Out</span>
                               </div>
                               <p className="text-[11px] text-f1-silver/60 mt-0.5">
@@ -417,16 +449,16 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                         </label>
 
                         {/* 3. 5 min before sessions */}
-                        <label className="flex items-start gap-3.5 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.06] cursor-pointer transition-all">
+                        <label className="flex items-start gap-3 sm:gap-3.5 p-2.5 sm:p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.06] cursor-pointer transition-all">
                            <input
                               type="checkbox"
                               checked={notifyBeforeSession}
                               onChange={(e) => setNotifyBeforeSession(e.target.checked)}
-                              className="mt-1 w-4 h-4 rounded border-white/20 bg-black/40 text-f1-red focus:ring-f1-red focus:ring-offset-0 transition-colors accent-f1-red cursor-pointer"
+                              className="mt-1 w-4 h-4 rounded border-white/20 bg-black/40 text-f1-red focus:ring-f1-red focus:ring-offset-0 transition-colors accent-f1-red cursor-pointer shrink-0"
                            />
                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                 <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                                 <Clock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                                  <span className="text-xs font-bold text-f1-white font-mono">5 Minutes Before Each Session</span>
                               </div>
                               <p className="text-[11px] text-f1-silver/60 mt-0.5">
@@ -441,21 +473,21 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                         <button
                            type="submit"
                            disabled={loading}
-                           className="w-full py-3 px-4 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-f1-red hover:bg-f1-red-dark active:scale-[0.99] disabled:opacity-50 text-white transition-all shadow-[0_0_20px_rgba(225,6,0,0.35)] flex items-center justify-center gap-2"
+                           className="w-full py-3 px-4 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-f1-red hover:bg-f1-red-dark active:scale-[0.99] disabled:opacity-50 text-white transition-all shadow-[0_0_20px_rgba(225,6,0,0.35)] flex items-center justify-center gap-2 text-center"
                         >
                            {loading ? (
                               <>
-                                 <Loader2 className="w-4 h-4 animate-spin" />
+                                 <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                                  <span>Activating Telemetry Alerts...</span>
                               </>
                            ) : existingSub ? (
                               <>
-                                 <Check className="w-4 h-4" />
+                                 <Check className="w-4 h-4 shrink-0" />
                                  <span>Update {scope === 'all' ? 'Season Pass' : 'Grand Prix'} Preferences</span>
                               </>
                            ) : (
                               <>
-                                 <Bell className="w-4 h-4" />
+                                 <Bell className="w-4 h-4 shrink-0" />
                                  <span>{scope === 'all' ? 'Notify Me For All Upcoming Races' : 'Notify Me For This Grand Prix'}</span>
                               </>
                            )}
@@ -466,14 +498,14 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                               type="button"
                               onClick={() => handleUnsubscribe(existingSub.allUpcoming)}
                               disabled={isUnsubscribing}
-                              className="w-full py-2 px-3 rounded-lg text-[11px] font-mono text-f1-silver/50 hover:text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-1.5"
+                              className="w-full py-2 px-3 rounded-lg text-[11px] font-mono text-f1-silver/50 hover:text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-1.5 text-center"
                            >
                               {isUnsubscribing ? (
-                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                 <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
                               ) : (
-                                 <Trash2 className="w-3.5 h-3.5" />
+                                 <Trash2 className="w-3.5 h-3.5 shrink-0" />
                               )}
-                              <span>
+                              <span className="truncate">
                                  {existingSub.allUpcoming
                                     ? 'Unsubscribe from all race alerts'
                                     : `Unsubscribe from ${raceName} alerts`}
@@ -485,7 +517,8 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                )}
             </div>
          </div>
-      </div>
+      </div>,
+      document.body
    );
 };
 

@@ -317,7 +317,41 @@ const MomentumTrackerPage: React.FC = () => {
                   <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-4">
                      Recent Form Log
                   </h3>
-                  <div className="overflow-x-auto">
+
+                  {/* Mobile: stacked cards, one per race */}
+                  <div className="sm:hidden space-y-2.5">
+                     {data.recentRaces.map((r) => (
+                        <div key={r.round} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5">
+                           <div className="flex items-center justify-between mb-2.5">
+                              <span className="font-semibold font-mono text-sm text-f1-white truncate pr-2">{r.raceName}</span>
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono font-semibold shrink-0 ${r.positionDelta > 0 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' :
+                                 r.positionDelta < 0 ? 'bg-red-500/15 text-red-400 border border-red-500/20' :
+                                    'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+                                 }`}>
+                                 {r.positionDelta > 0 ? <TrendingUp className="w-3 h-3" /> : r.positionDelta < 0 ? <TrendingDown className="w-3 h-3" /> : null}
+                                 {r.positionDelta > 0 ? `+${r.positionDelta}` : r.positionDelta}
+                              </span>
+                           </div>
+                           <div className="grid grid-cols-3 gap-2 text-center">
+                              <div>
+                                 <div className="text-[9px] font-mono uppercase tracking-wider text-f1-silver/40 mb-0.5">Grid</div>
+                                 <div className="font-mono text-f1-silver/70 text-sm">P{r.gridPosition}</div>
+                              </div>
+                              <div>
+                                 <div className="text-[9px] font-mono uppercase tracking-wider text-f1-silver/40 mb-0.5">Finish</div>
+                                 <div className="font-mono font-bold text-f1-white text-sm">P{r.finishPosition}</div>
+                              </div>
+                              <div>
+                                 <div className="text-[9px] font-mono uppercase tracking-wider text-f1-silver/40 mb-0.5">Points</div>
+                                 <div className="font-mono font-bold text-amber-400 text-sm">{r.points}</div>
+                              </div>
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+
+                  {/* Desktop/tablet: full table */}
+                  <div className="hidden sm:block overflow-x-auto">
                      <table className="w-full text-sm">
                         <thead>
                            <tr className="text-f1-silver/60 border-b border-white/[0.06] text-[10px] font-mono uppercase tracking-wider">

@@ -3,6 +3,7 @@ import { Swords, ArrowLeftRight, Zap, Trophy, Gauge } from 'lucide-react';
 import { ResponsiveBar } from '@nivo/bar';
 import { ResponsiveLine } from '@nivo/line';
 import { ResponsivePie } from '@nivo/pie';
+import { useTooltip } from '@nivo/tooltip';
 import { constructorService } from '../services/constructorService';
 import { analyticsService } from '../services/analyticsService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
@@ -41,6 +42,71 @@ const ConstructorComparisonPage: React.FC = () => {
             .finally(() => setLoading(false));
       }
    }, [teamA, teamB, season]);
+
+   const GapSliceTooltip: React.FC<{ slice: any; teamAName: string; teamBName: string }> = ({
+      slice,
+      teamAName,
+      teamBName,
+   }) => {
+      const round = slice.points[0]?.data?.x;
+
+      return (
+         <div
+            className="p-2.5 rounded-xl border border-white/10 shadow-2xl backdrop-blur-md"
+            style={{ background: 'rgba(17, 19, 23, 0.96)', minWidth: 175 }}
+         >
+            <div className="text-[10px] font-mono text-white/40 mb-1.5 uppercase tracking-wider">
+               {round}
+            </div>
+            {slice.points.map((point: any) => (
+               <div key={point.serieId} className="flex items-center justify-between gap-4 text-[11px] font-mono">
+                  <span className="flex items-center gap-1.5 text-white/60">
+                     <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: point.serieColor }} />
+                     {point.serieId === teamAName ? teamAName : teamBName}
+                  </span>
+                  <span className="font-bold text-white">{point.data.yFormatted}</span>
+               </div>
+            ))}
+         </div>
+      );
+   };
+
+   const createAdaptiveSliceLayer = (renderContent: (slice: any) => React.ReactElement): React.FC<any> => {
+      return function AdaptiveSlices({ slices, innerHeight, innerWidth, margin, setCurrentSlice }) {
+         const { showTooltipAt, hideTooltip } = useTooltip();
+
+         const positionAndShow = (slice: any, event: React.MouseEvent<SVGRectElement>) => {
+            const rect = event.currentTarget.getBoundingClientRect();
+            const y = event.clientY - rect.top;
+            const anchor = slice.x > innerWidth * 0.5 ? 'left' : 'right';
+            showTooltipAt(renderContent(slice), [margin.left + slice.x, margin.top + y], anchor);
+         };
+
+         return (
+            <g>
+               {slices.map((slice: any) => (
+                  <rect
+                     key={slice.id}
+                     x={slice.x0}
+                     y={0}
+                     width={slice.width}
+                     height={innerHeight}
+                     fill="transparent"
+                     onMouseEnter={(e) => {
+                        if (setCurrentSlice) setCurrentSlice(slice);
+                        positionAndShow(slice, e);
+                     }}
+                     onMouseMove={(e) => positionAndShow(slice, e)}
+                     onMouseLeave={() => {
+                        if (setCurrentSlice) setCurrentSlice(null);
+                        hideTooltip();
+                     }}
+                  />
+               ))}
+            </g>
+         );
+      };
+   };
 
    const swapTeams = () => {
       const temp = teamA;
@@ -255,7 +321,7 @@ const ConstructorComparisonPage: React.FC = () => {
                                     groupMode="grouped"
                                     colors={({ id }) => stackedBarColors[id as string] || '#666'}
                                     theme={{
-                                       text: { fill: '#9ca3af' },
+                                       text: { fill: '#000' },
                                        axis: { ticks: { text: { fill: '#9ca3af' } }, legend: { text: { fill: '#9ca3af' } } },
                                        grid: { line: { stroke: '#333' } },
                                        tooltip: { container: { background: '#1a1a2e', color: '#fff', border: '1px solid #333' } },
@@ -320,6 +386,20 @@ const ConstructorComparisonPage: React.FC = () => {
                                     pointBorderWidth={2}
                                     pointBorderColor={{ from: 'serieColor' }}
                                     enableSlices="x"
+                                    crosshairType="x"
+                                    layers={[
+                                       'grid',
+                                       'markers',
+                                       'axes',
+                                       'areas',
+                                       'crosshair',
+                                       'lines',
+                                       'points',
+                                       createAdaptiveSliceLayer((slice) => (
+                                          <GapSliceTooltip slice={slice} teamAName={data.teamA.name} teamBName={data.teamB.name} />
+                                       )),
+                                       'legends',
+                                    ]}
                                     theme={{
                                        text: { fill: '#9ca3af' },
                                        axis: { ticks: { text: { fill: '#9ca3af' } }, legend: { text: { fill: '#9ca3af' } } },

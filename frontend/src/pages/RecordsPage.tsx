@@ -36,6 +36,18 @@ const getRecordImage = (record: DriverRecord | ConstructorRecord): string | unde
    return theme.teamLogoUrl ?? undefined;
 };
 
+const useIsMobile = () => {
+   const [isMobile, setIsMobile] = useState(
+      typeof window !== 'undefined' ? window.innerWidth < 640 : false
+   );
+   useEffect(() => {
+      const onResize = () => setIsMobile(window.innerWidth < 640);
+      window.addEventListener('resize', onResize);
+      return () => window.removeEventListener('resize', onResize);
+   }, []);
+   return isMobile;
+};
+
 /** Small avatar/logo component with graceful fallback to initials/code on error or missing image */
 const RecordAvatar: React.FC<{
    record: DriverRecord | ConstructorRecord;
@@ -48,7 +60,7 @@ const RecordAvatar: React.FC<{
    const imgUrl = getRecordImage(record);
    const showImg = imgUrl && !imgError;
 
-   const dims = size === 'lg' ? 'w-14 h-14 rounded-2xl' : 'w-7 h-7 rounded-lg';
+   const dims = size === 'lg' ? 'w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl' : 'w-7 h-7 rounded-lg';
 
    return (
       <div
@@ -107,6 +119,7 @@ const RecordsPage: React.FC = () => {
    const [data, setData] = useState<RecordsData | null>(null);
    const [loading, setLoading] = useState(true);
    const [activeCategory, setActiveCategory] = useState<RecordCategory>('driver-wins');
+   const isMobile = useIsMobile();
 
    useEffect(() => {
       setLoading(true);
@@ -224,8 +237,8 @@ const RecordsPage: React.FC = () => {
 
          {/* ─── Top 3 Podium: Telemetry Standings ─── */}
          {top3.length >= 3 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-               {[1, 0, 2].map((podiumIdx) => {
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+               {[0, 1, 2].map((podiumIdx) => {
                   const record = top3[podiumIdx];
                   if (!record) return null;
                   const isGold = podiumIdx === 0;
@@ -239,7 +252,11 @@ const RecordsPage: React.FC = () => {
                   return (
                      <div
                         key={podiumIdx}
-                        className={`diagonal-card p-6 relative group transition-all duration-300 ${isGold ? 'md:order-2 md:-mt-4' : isSilver ? 'md:order-1' : 'md:order-3'
+                        className={`diagonal-card p-4 sm:p-6 relative group transition-all duration-300 ${isGold
+                           ? 'col-span-2 md:col-span-1 md:order-2 md:-mt-4'
+                           : isSilver
+                              ? 'col-span-1 md:order-1'
+                              : 'col-span-1 md:order-3'
                            }`}
                      >
                         {/* Accent line */}
@@ -254,27 +271,21 @@ const RecordsPage: React.FC = () => {
                         />
 
                         <div className="relative z-10">
-                           <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/[0.04]">
-                              <div className="flex items-center gap-2.5">
+                           <div className="flex items-center justify-between pb-3 sm:pb-4 mb-3 sm:mb-4 border-b border-white/[0.04] gap-2">
+                              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
                                  <div
-                                    className="p-1.5 rounded-lg border"
+                                    className="p-1.5 rounded-lg border shrink-0"
                                     style={{ backgroundColor: `${medalColor}15`, borderColor: `${medalColor}30`, color: medalColor }}
                                  >
                                     <Trophy className="w-4 h-4" />
                                  </div>
-                                 <span className="text-xs font-mono font-bold text-f1-silver/80 uppercase tracking-widest">
+                                 <span className="text-[10px] sm:text-xs font-mono font-bold text-f1-silver/80 uppercase tracking-widest truncate">
                                     Rank #{podiumIdx + 1}
                                  </span>
                               </div>
-                              <span
-                                 className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06]"
-                                 style={{ color: medalColor }}
-                              >
-                                 {isGold ? 'GOLD' : isSilver ? 'SILVER' : 'BRONZE'}
-                              </span>
                            </div>
 
-                           <div className="flex items-center gap-4">
+                           <div className="flex items-center gap-2.5 sm:gap-4">
                               <RecordAvatar
                                  record={record}
                                  fallbackText={code}
@@ -282,20 +293,20 @@ const RecordsPage: React.FC = () => {
                                  size="lg"
                               />
                               <div className="flex-1 min-w-0">
-                                 <h3 className="text-lg font-display font-black text-f1-white truncate">{name}</h3>
+                                 <h3 className="text-sm sm:text-lg font-display font-black text-f1-white truncate">{name}</h3>
                                  {sub && (
-                                    <p className="text-xs font-mono font-medium truncate mt-0.5" style={{ color }}>
+                                    <p className="text-[10px] sm:text-xs font-mono font-medium truncate mt-0.5" style={{ color }}>
                                        {sub}
                                     </p>
                                  )}
                               </div>
                            </div>
 
-                           <div className="mt-5 pt-4 border-t border-white/[0.06] flex items-baseline justify-between">
-                              <span className="text-[10px] font-mono tracking-widest text-f1-silver/50 uppercase">
+                           <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-white/[0.06] flex items-baseline justify-between gap-2">
+                              <span className="text-[9px] sm:text-[10px] font-mono tracking-widest text-f1-silver/50 uppercase truncate">
                                  Record Value
                               </span>
-                              <span className="text-2xl font-display font-black" style={{ color: medalColor }}>
+                              <span className="text-lg sm:text-2xl font-display font-black shrink-0" style={{ color: medalColor }}>
                                  {record.displayValue}
                               </span>
                            </div>
@@ -341,14 +352,19 @@ const RecordsPage: React.FC = () => {
                      padding={0.3}
                      colors={({ data }) => (data as { color?: string }).color || '#e11d48'}
                      theme={{
-                        text: { fill: '#9ca3af' },
-                        axis: { ticks: { text: { fill: '#9ca3af', fontSize: 11, fontFamily: 'monospace', fontWeight: 600 } } },
+                        text: { fill: '#000' },
+                        axis: { ticks: { text: { fill: '#fff', fontSize: 11, fontFamily: 'monospace', fontWeight: 600 } } },
                         grid: { line: { stroke: '#333' } },
                         tooltip: { container: { background: '#1a1a2e', color: '#fff', border: '1px solid #333' } },
                      }}
-                     axisBottom={{ legend: 'Value', legendPosition: 'middle', legendOffset: 32 }}
-                     enableLabel={false}
-                     layers={['grid', 'axes', 'bars', BarValueLabelsLayer(activeRecords), 'markers', 'legends']}
+                     axisBottom={{
+                        legend: 'Value',
+                        legendPosition: 'middle',
+                        legendOffset: 32,
+                        tickValues: isMobile ? 3 : 6,
+                        format: (v: number) =>
+                           v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : `${v}`,
+                     }}
                      animate={true}
                      motionConfig="gentle"
                   />
@@ -361,7 +377,7 @@ const RecordsPage: React.FC = () => {
          </div>
 
          {/* ─── Full Leaderboard Table ─── */}
-         <div className="telemetry-card p-6 relative overflow-hidden">
+         <div className="telemetry-card p-4 sm:p-6 relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-[2px] opacity-50 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             <div className="flex items-center gap-2.5 mb-5">
                <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-white/[0.04]">
@@ -375,10 +391,10 @@ const RecordsPage: React.FC = () => {
                <table className="w-full text-sm">
                   <thead>
                      <tr className="border-b border-white/[0.06] text-f1-silver/50 text-[10px] font-mono uppercase tracking-widest">
-                        <th className="text-left py-3 px-2">Rank</th>
+                        <th className="text-left py-3 pl-1 pr-2 sm:px-2">Rank</th>
                         <th className="text-left py-3 px-2">{isDriverCategory ? 'Driver' : 'Constructor'}</th>
-                        {isDriverCategory && <th className="text-left py-3 px-2">Team</th>}
-                        <th className="text-right py-3 px-2">Record</th>
+                        {isDriverCategory && <th className="text-left py-3 px-2 hidden sm:table-cell">Team</th>}
+                        <th className="text-right py-3 pr-1 pl-2 sm:px-2">Record</th>
                      </tr>
                   </thead>
                   <tbody>
@@ -392,28 +408,28 @@ const RecordsPage: React.FC = () => {
 
                         return (
                            <tr key={idx} className="border-b border-white/[0.03] hover:bg-white/[0.03] transition-colors">
-                              <td className="py-2.5 px-2">
-                                 <span className={`font-mono font-bold text-xs ${idx === 0 ? 'text-amber-400' : idx === 1 ? 'text-gray-300' : idx === 2 ? 'text-amber-600' : 'text-f1-silver/50'}`}>
+                              <td className="py-2.5 pl-1 pr-2 sm:px-2">
+                                 <span className={`font-mono font-bold text-[11px] sm:text-xs ${idx === 0 ? 'text-amber-400' : idx === 1 ? 'text-gray-300' : idx === 2 ? 'text-amber-600' : 'text-f1-silver/50'}`}>
                                     {String(idx + 1).padStart(2, '0')}
                                  </span>
                               </td>
                               <td className="py-2.5 px-2">
-                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-1 h-6 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                 <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+                                    <div className="w-1 h-6 rounded-full shrink-0 hidden sm:block" style={{ backgroundColor: color }} />
                                     <RecordAvatar
                                        record={record}
                                        fallbackText={fallbackText}
                                        color={color}
                                        size="sm"
                                     />
-                                    <span className="font-semibold text-f1-white">{name}</span>
-                                    {dr && <span className="text-[10px] text-f1-silver/50 font-mono">{dr.driverCode}</span>}
+                                    <span className="font-semibold text-f1-white text-xs sm:text-sm truncate">{name}</span>
+                                    {dr && <span className="text-[10px] text-f1-silver/50 font-mono shrink-0 hidden sm:inline">{dr.driverCode}</span>}
                                  </div>
                               </td>
                               {isDriverCategory && (
-                                 <td className="py-2.5 px-2 text-f1-silver/60 text-xs font-mono">{dr?.constructorName || ''}</td>
+                                 <td className="py-2.5 px-2 text-f1-silver/60 text-xs font-mono hidden sm:table-cell">{dr?.constructorName || ''}</td>
                               )}
-                              <td className="py-2.5 px-2 text-right font-mono font-bold text-f1-white">{record.displayValue}</td>
+                              <td className="py-2.5 pr-1 pl-2 sm:px-2 text-right font-mono font-bold text-xs sm:text-sm text-f1-white shrink-0">{record.displayValue}</td>
                            </tr>
                         );
                      })}
