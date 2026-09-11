@@ -90,7 +90,8 @@ public class NotificationService {
       } else if (fromEmail != null && !fromEmail.isBlank()) {
          log.info("[Notifications] Email alerts ENABLED via SMTP sender: {}", fromEmail);
       } else {
-         log.warn("[Notifications] Email alerts DISABLED: Neither BREVO_API_KEY, RESEND_API_KEY, nor MAIL_USERNAME is set.");
+         log.warn(
+               "[Notifications] Email alerts DISABLED: Neither BREVO_API_KEY, RESEND_API_KEY, nor MAIL_USERNAME is set.");
       }
    }
 
@@ -98,7 +99,9 @@ public class NotificationService {
    // Public API
    // ──────────────────────────────────────────────────────────────────────────
 
-   /** Subscribe or update an existing subscription for the given email + race(s). */
+   /**
+    * Subscribe or update an existing subscription for the given email + race(s).
+    */
    @Transactional
    public SubscriptionResponseDto subscribe(SubscriptionDto dto) {
       if (dto.isAllUpcoming()) {
@@ -151,8 +154,8 @@ public class NotificationService {
       List<Race> upcomingRaces = raceRepository.findBySeasonOrderByRoundAsc(CURRENT_SEASON)
             .stream()
             .filter(r -> r.getStatus() == RaceStatus.UPCOMING
-                      || r.getStatus() == RaceStatus.IN_PROGRESS
-                      || (r.getRaceDate() != null && !r.getRaceDate().isBefore(today)))
+                  || r.getStatus() == RaceStatus.IN_PROGRESS
+                  || (r.getRaceDate() != null && !r.getRaceDate().isBefore(today)))
             .toList();
 
       if (upcomingRaces.isEmpty()) {
@@ -194,8 +197,10 @@ public class NotificationService {
       String confirmationMessage = emailSent
             ? "Subscribed to all " + upcomingRaces.size() + " upcoming races! Check your inbox for confirmation."
             : (!hasEmailConfigured()
-                  ? "Subscribed to all " + upcomingRaces.size() + " upcoming races! (Note: Server email not configured; no email sent.)"
-                  : "Subscribed to all " + upcomingRaces.size() + " upcoming races! (Note: Confirmation email failed to send. Check server logs.)");
+                  ? "Subscribed to all " + upcomingRaces.size()
+                        + " upcoming races! (Note: Server email not configured; no email sent.)"
+                  : "Subscribed to all " + upcomingRaces.size()
+                        + " upcoming races! (Note: Confirmation email failed to send. Check server logs.)");
 
       return new SubscriptionResponseDto(
             firstSub != null ? firstSub.getId() : null,
@@ -209,8 +214,7 @@ public class NotificationService {
             sharedToken,
             confirmationMessage,
             true,
-            upcomingRaces.size()
-      );
+            upcomingRaces.size());
    }
 
    /** Remove a subscription by its unsubscribe token. */
@@ -253,19 +257,20 @@ public class NotificationService {
          Race race = raceId != null ? raceRepository.findById(raceId).orElse(null) : null;
          return new SubscriptionResponseDto(
                null, email, raceId, race != null ? race.getName() : null, false,
-               true, true, true, null, "Not subscribed", false, 0
-         );
+               true, true, true, null, "Not subscribed", false, 0);
       }
 
       int totalSubbed = userSubs.size();
       boolean allUpcoming = totalSubbed > 1;
 
       NotificationSubscription matchingSub = (raceId != null)
-            ? userSubs.stream().filter(s -> s.getRace() != null && s.getRace().getId().equals(raceId)).findFirst().orElse(userSubs.get(0))
+            ? userSubs.stream().filter(s -> s.getRace() != null && s.getRace().getId().equals(raceId)).findFirst()
+                  .orElse(userSubs.get(0))
             : userSubs.get(0);
 
       Race race = (raceId != null) ? raceRepository.findById(raceId).orElse(null) : matchingSub.getRace();
-      String raceName = allUpcoming ? "All Upcoming Races (" + totalSubbed + " GPs)" : (race != null ? race.getName() : "F1 Race");
+      String raceName = allUpcoming ? "All Upcoming Races (" + totalSubbed + " GPs)"
+            : (race != null ? race.getName() : "F1 Race");
 
       return new SubscriptionResponseDto(
             matchingSub.getId(),
@@ -279,8 +284,7 @@ public class NotificationService {
             matchingSub.getUnsubscribeToken(),
             allUpcoming ? "Subscribed to " + totalSubbed + " upcoming races" : "Subscribed to " + raceName,
             allUpcoming,
-            totalSubbed
-      );
+            totalSubbed);
    }
 
    // ──────────────────────────────────────────────────────────────────────────
@@ -311,7 +315,8 @@ public class NotificationService {
 
    /**
     * Runs daily at 08:00 UTC.
-    * Sends "Tomorrow is race day!" alert when raceDate is exactly 1 day from today.
+    * Sends "Tomorrow is race day!" alert when raceDate is exactly 1 day from
+    * today.
     */
    @Scheduled(cron = "0 0 8 * * *", zone = "UTC")
    @Transactional(readOnly = true)
@@ -348,7 +353,8 @@ public class NotificationService {
          List<RaceSession> sessions = raceSessionRepository
                .findByRaceIdOrderBySessionDateAscSessionTimeAsc(race.getId());
          for (RaceSession session : sessions) {
-            if (session.getSessionDate() == null || session.getSessionTime() == null) continue;
+            if (session.getSessionDate() == null || session.getSessionTime() == null)
+               continue;
             LocalDateTime sessionDt = LocalDateTime.of(session.getSessionDate(), session.getSessionTime());
             if (!sessionDt.isBefore(windowStart) && sessionDt.isBefore(windowEnd)) {
                List<NotificationSubscription> subs = subscriptionRepository.findAllByRaceId(race.getId());
@@ -367,13 +373,12 @@ public class NotificationService {
    // ──────────────────────────────────────────────────────────────────────────
 
    private boolean sendConfirmationEmail(NotificationSubscription sub, Race race) {
-      String subject = "🏁 F1 Alerts confirmed — " + race.getName();
+      String subject = "F1 Alerts confirmed — " + race.getName();
       String html = buildEmailHtml(
             "You're on the grid!",
             "You're now subscribed to race alerts for <strong>" + race.getName() + "</strong>.",
             buildAlertList(sub),
-            sub.getUnsubscribeToken()
-      );
+            sub.getUnsubscribeToken());
       return sendHtml(sub.getEmail(), subject, html);
    }
 
@@ -384,31 +389,39 @@ public class NotificationService {
          Race r = races.get(i);
          String dateStr = r.getRaceDate() != null ? r.getRaceDate().format(DATE_FMT) : "TBC";
          raceRows.append("<tr style='border-bottom:1px solid rgba(255,255,255,0.06);'>")
-                 .append("<td style='padding:8px 0;color:#fff;font-weight:600;'>Round ").append(r.getRound()).append(": ").append(r.getName()).append("</td>")
-                 .append("<td style='padding:8px 0;text-align:right;color:#a0aec0;font-family:monospace;font-size:12px;'>").append(dateStr).append("</td>")
-                 .append("</tr>");
+               .append("<td style='padding:8px 0;color:#fff;font-weight:600;'>Round ").append(r.getRound()).append(": ")
+               .append(r.getName()).append("</td>")
+               .append(
+                     "<td style='padding:8px 0;text-align:right;color:#a0aec0;font-family:monospace;font-size:12px;'>")
+               .append(dateStr).append("</td>")
+               .append("</tr>");
       }
       if (races.size() > displayLimit) {
          raceRows.append("<tr><td colspan='2' style='padding:8px 0;color:#e10600;font-size:12px;font-style:italic;'>")
-                 .append("+ ").append(races.size() - displayLimit).append(" more upcoming Grands Prix on the calendar")
-                 .append("</td></tr>");
+               .append("+ ").append(races.size() - displayLimit).append(" more upcoming Grands Prix on the calendar")
+               .append("</td></tr>");
       }
 
       String scheduleBox = """
             <div style='margin:16px 0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:16px;'>
                <div style='color:#e10600;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;'>
-                  🗓️ Scheduled Telemetry Coverage (%d Upcoming Races)
+                  Scheduled Telemetry Coverage (%d Upcoming Races)
                </div>
                <table style='width:100%%;border-collapse:collapse;font-size:13px;'>
                   %s
                </table>
             </div>
-            """.formatted(races.size(), raceRows.toString());
+            """
+            .formatted(races.size(), raceRows.toString());
 
-      StringBuilder alerts = new StringBuilder("<ul style='color:#a0aec0;font-size:14px;padding-left:20px;margin:0 0 16px;'>");
-      if (dto.notifyRaceWeek())      alerts.append("<li>🏁 Race week kickoff alert (7 days before lights out)</li>");
-      if (dto.notifyDayBefore())     alerts.append("<li>📅 24-hour race day countdown briefing</li>");
-      if (dto.notifyBeforeSession()) alerts.append("<li>⏱️ 5-minute green-flag warnings before all sessions</li>");
+      StringBuilder alerts = new StringBuilder(
+            "<ul style='color:#a0aec0;font-size:14px;padding-left:20px;margin:0 0 16px;'>");
+      if (dto.notifyRaceWeek())
+         alerts.append("<li>Race week kickoff alert (7 days before lights out)</li>");
+      if (dto.notifyDayBefore())
+         alerts.append("<li>24-hour race day countdown briefing</li>");
+      if (dto.notifyBeforeSession())
+         alerts.append("<li>5-minute green-flag warnings before all sessions</li>");
       alerts.append("</ul>");
 
       String extra = scheduleBox + alerts.toString();
@@ -417,48 +430,44 @@ public class NotificationService {
             "You have unlocked full-season race alert coverage. You will receive telemetry notifications for all <strong>"
                   + races.size() + " upcoming Grands Prix</strong> in the " + CURRENT_SEASON + " season.",
             extra,
-            token
-      );
-      String subject = "🏎️ Season Pass Confirmed — Alerts for all " + races.size() + " upcoming races";
+            token);
+      String subject = "Season Pass Confirmed — Alerts for all " + races.size() + " upcoming races";
       return sendHtml(email, subject, html);
    }
 
    private void sendRaceWeekEmail(NotificationSubscription sub, Race race) {
-      String subject = "🚦 Race Week! " + race.getName() + " starts in 7 days";
+      String subject = "Race Week! " + race.getName() + " starts in 7 days";
       String html = buildEmailHtml(
             "Race Week is Here",
             "The <strong>" + race.getName() + "</strong> weekend begins in just 7 days at <em>"
                   + (race.getCircuit() != null ? race.getCircuit().getName() : "the circuit") + "</em>.",
             "<p style='color:#a0aec0;font-size:14px;margin:0 0 16px;'>Race day: <strong style='color:#fff'>"
                   + (race.getRaceDate() != null ? race.getRaceDate().format(DATE_FMT) : "TBC") + "</strong></p>",
-            sub.getUnsubscribeToken()
-      );
+            sub.getUnsubscribeToken());
       sendHtml(sub.getEmail(), subject, html);
    }
 
    private void sendDayBeforeEmail(NotificationSubscription sub, Race race) {
-      String subject = "🏎️ Tomorrow is Race Day — " + race.getName();
+      String subject = "Tomorrow is Race Day — " + race.getName();
       String html = buildEmailHtml(
             "Tomorrow is Race Day!",
             "Get ready — <strong>" + race.getName() + "</strong> is tomorrow!",
             "<p style='color:#a0aec0;font-size:14px;margin:0 0 16px;'>Circuit: <strong style='color:#fff'>"
                   + (race.getCircuit() != null ? race.getCircuit().getName() : "TBC") + "</strong></p>",
-            sub.getUnsubscribeToken()
-      );
+            sub.getUnsubscribeToken());
       sendHtml(sub.getEmail(), subject, html);
    }
 
    private void sendSessionEmail(NotificationSubscription sub, Race race, RaceSession session) {
       String sessionName = session.getSessionType().getDisplayName();
-      String subject = "⏱️ " + sessionName + " starts in 5 minutes — " + race.getName();
+      String subject = sessionName + " starts in 5 minutes — " + race.getName();
       String html = buildEmailHtml(
             sessionName + " — 5 Minutes to Go!",
             "<strong>" + sessionName + "</strong> for the <strong>" + race.getName()
                   + "</strong> is about to begin!",
             "<p style='color:#a0aec0;font-size:14px;margin:0 0 16px;'>Start time (UTC): <strong style='color:#fff'>"
                   + session.getSessionDate() + " " + session.getSessionTime() + "</strong></p>",
-            sub.getUnsubscribeToken()
-      );
+            sub.getUnsubscribeToken());
       sendHtml(sub.getEmail(), subject, html);
    }
 
@@ -481,11 +490,11 @@ public class NotificationService {
          }
 
          Map<String, Object> payload = Map.of(
-               "sender", Map.of("name", brevoSenderName != null ? brevoSenderName : "F1 Dashboard", "email", cleanSender),
+               "sender",
+               Map.of("name", brevoSenderName != null ? brevoSenderName : "F1 Dashboard", "email", cleanSender),
                "to", List.of(Map.of("email", to)),
                "subject", subject,
-               "htmlContent", html
-         );
+               "htmlContent", html);
 
          RestClient restClient = RestClient.builder()
                .baseUrl("https://api.brevo.com")
@@ -503,7 +512,8 @@ public class NotificationService {
          log.info("[Notifications] Successfully sent email via Brevo API to {}: {}", to, response);
          return true;
       } catch (org.springframework.web.client.RestClientResponseException rre) {
-         log.error("[Notifications] Brevo API error sending to {}: Status {} - Response: {}", to, rre.getStatusCode(), rre.getResponseBodyAsString());
+         log.error("[Notifications] Brevo API error sending to {}: Status {} - Response: {}", to, rre.getStatusCode(),
+               rre.getResponseBodyAsString());
          return false;
       } catch (Exception e) {
          log.error("[Notifications] Failed to send email via Brevo to {}: {}", to, e.getMessage(), e);
@@ -514,7 +524,8 @@ public class NotificationService {
    private boolean sendViaResend(String to, String subject, String html) {
       try {
          String cleanKey = resendApiKey != null ? resendApiKey.trim().replaceAll("^[\"']|[\"']$", "") : "";
-         String cleanFrom = resendFromEmail != null ? resendFromEmail.trim().replaceAll("^[\"']|[\"']$", "") : "onboarding@resend.dev";
+         String cleanFrom = resendFromEmail != null ? resendFromEmail.trim().replaceAll("^[\"']|[\"']$", "")
+               : "onboarding@resend.dev";
 
          String sender = cleanFrom.contains("<")
                ? cleanFrom
@@ -524,8 +535,7 @@ public class NotificationService {
                "from", sender,
                "to", List.of(to),
                "subject", subject,
-               "html", html
-         );
+               "html", html);
 
          RestClient restClient = RestClient.builder()
                .baseUrl("https://api.resend.com")
@@ -542,7 +552,8 @@ public class NotificationService {
          log.info("[Notifications] Successfully sent email via Resend API to {}: {}", to, response);
          return true;
       } catch (org.springframework.web.client.RestClientResponseException rre) {
-         log.error("[Notifications] Resend API error sending to {}: Status {} - Response: {}", to, rre.getStatusCode(), rre.getResponseBodyAsString());
+         log.error("[Notifications] Resend API error sending to {}: Status {} - Response: {}", to, rre.getStatusCode(),
+               rre.getResponseBodyAsString());
          return false;
       } catch (Exception e) {
          log.error("[Notifications] Failed to send email via Resend to {}: {}", to, e.getMessage(), e);
@@ -551,7 +562,8 @@ public class NotificationService {
    }
 
    private boolean sendHtml(String to, String subject, String html) {
-      // 1. If Brevo API key is present, use Brevo HTTP REST API (port 443 - works on Render Free & sends to anyone)
+      // 1. If Brevo API key is present, use Brevo HTTP REST API (port 443 - works on
+      // Render Free & sends to anyone)
       if (brevoApiKey != null && !brevoApiKey.isBlank()) {
          return sendViaBrevo(to, subject, html);
       }
@@ -563,7 +575,9 @@ public class NotificationService {
 
       // 3. Otherwise fall back to SMTP (Gmail)
       if (fromEmail == null || fromEmail.isBlank()) {
-         log.warn("[Notifications] Neither BREVO_API_KEY, RESEND_API_KEY nor MAIL_USERNAME is configured — skipping email to {}", to);
+         log.warn(
+               "[Notifications] Neither BREVO_API_KEY, RESEND_API_KEY nor MAIL_USERNAME is configured — skipping email to {}",
+               to);
          return false;
       }
       try {
@@ -593,9 +607,12 @@ public class NotificationService {
    private String buildAlertList(NotificationSubscription sub) {
       StringBuilder sb = new StringBuilder(
             "<ul style='color:#a0aec0;font-size:14px;padding-left:20px;margin:0 0 16px;'>");
-      if (sub.isNotifyRaceWeek())      sb.append("<li>🏁 Race week starts (7 days before)</li>");
-      if (sub.isNotifyDayBefore())     sb.append("<li>📅 Day before the race</li>");
-      if (sub.isNotifyBeforeSession()) sb.append("<li>⏱️ 5 minutes before each session</li>");
+      if (sub.isNotifyRaceWeek())
+         sb.append("<li>Race week starts (7 days before)</li>");
+      if (sub.isNotifyDayBefore())
+         sb.append("<li>Day before the race</li>");
+      if (sub.isNotifyBeforeSession())
+         sb.append("<li>5 minutes before each session</li>");
       sb.append("</ul>");
       return sb.toString();
    }
@@ -652,7 +669,8 @@ public class NotificationService {
               </table>
             </body>
             </html>
-            """.formatted(headline, body, extra, frontendUrl, unsubUrl);
+            """
+            .formatted(headline, body, extra, frontendUrl, unsubUrl);
    }
 
    // ──────────────────────────────────────────────────────────────────────────
@@ -670,7 +688,6 @@ public class NotificationService {
             sub.isNotifyDayBefore(),
             sub.isNotifyBeforeSession(),
             sub.getUnsubscribeToken(),
-            message
-      );
+            message);
    }
 }

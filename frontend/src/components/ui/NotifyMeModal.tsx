@@ -64,14 +64,12 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
             setExistingSub(null);
          }
       } catch (err) {
-         // Silently ignore status lookup errors on typing
          setExistingSub(null);
       } finally {
          setStatusLoading(false);
       }
    }, [raceId]);
 
-   // Check status on modal open if email is saved
    useEffect(() => {
       if (isOpen) {
          setError(null);
@@ -80,10 +78,8 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
             checkExistingStatus(email);
          }
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [isOpen]);
 
-   // Handle escape key
    useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
          if (e.key === 'Escape' && isOpen) {
@@ -94,11 +90,6 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
       return () => window.removeEventListener('keydown', handleKeyDown);
    }, [isOpen, onClose]);
 
-   // Lock body scroll while the modal is open.
-   // Without this, the page behind the modal keeps scrolling on mobile —
-   // which is also why the backdrop blur looked inconsistent at the top:
-   // the browser was re-painting scrolled content behind the fixed overlay
-   // instead of a single settled blurred frame.
    useEffect(() => {
       if (!isOpen) return;
 
@@ -249,7 +240,7 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                )}
             </div>
 
-            {/* Modal Body (Scrollable) */}
+            {/* Modal Body */}
             <div className="overflow-y-auto flex-1 overscroll-contain">
                {successData ? (
                   <div className="p-4 sm:p-6 space-y-5">
@@ -323,7 +314,7 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                               Coverage Scope
                            </label>
                            <span className="text-[9px] sm:text-[10px] font-mono text-f1-red-light uppercase tracking-wider font-semibold text-right shrink-0">
-                              {scope === 'all' ? '🏁 Recommended' : '🎯 Single GP'}
+                              {scope === 'all' ? 'Recommended' : 'Single GP'}
                            </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 sm:gap-3">

@@ -272,8 +272,7 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
    useEffect(() => {
       if (!currentTime) return;
       const nowMs = currentTime.getTime();
-      // abs() so scrubbing/jumping backwards also forces an immediate refresh instead of
-      // waiting for forward playback to close a 1.5s gap that may never come while paused.
+
       if (Math.abs(nowMs - lastGapUpdateRef.current) >= 1500) {
          lastGapUpdateRef.current = nowMs;
          setGapCalcTime(currentTime);

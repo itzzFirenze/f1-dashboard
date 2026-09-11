@@ -498,7 +498,12 @@ const DriverDetailPage: React.FC = () => {
          {/* ─── TAB 1: Race Results & Positions ─── */}
          {activeTab === 'races' && (
             <div className="space-y-3">
-               {races.length === 0 && !historyLoading ? (
+               {historyLoading ? (
+                  <div className="telemetry-card p-8 flex flex-col items-center justify-center gap-3 animate-pulse">
+                     <div className="w-8 h-8 rounded-full border-2 border-f1-red border-t-transparent animate-spin" />
+                     <p className="text-xs font-mono text-f1-silver/50 uppercase tracking-widest">Loading race data…</p>
+                  </div>
+               ) : races.length === 0 && !historyLoading ? (
                   <div className="telemetry-card p-8 text-center">
                      <p className="text-sm font-mono text-f1-silver/60">No race results recorded for this season yet.</p>
                   </div>
@@ -698,7 +703,12 @@ const DriverDetailPage: React.FC = () => {
          {/* ─── TAB 2: Penalties & Stewards Dossier ─── */}
          {activeTab === 'penalties' && (
             <div className="space-y-3">
-               {penalties.length === 0 && !historyLoading ? (
+               {historyLoading ? (
+                  <div className="telemetry-card p-8 flex flex-col items-center justify-center gap-3 animate-pulse">
+                     <div className="w-8 h-8 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+                     <p className="text-xs font-mono text-f1-silver/50 uppercase tracking-widest">Loading penalties…</p>
+                  </div>
+               ) : penalties.length === 0 && !historyLoading ? (
                   <div className="telemetry-card p-10 text-center relative overflow-hidden">
                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3">
                         <CheckCircle2 className="w-6 h-6 text-emerald-400" />

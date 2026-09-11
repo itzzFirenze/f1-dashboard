@@ -1,14 +1,46 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowUpRight, Compass, Flag, Radio, Ruler, Search, Timer, Zap } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import InteractiveCircuitMap from '../components/circuit/InteractiveCircuitMap';
 import CircuitTrackThumbnail from '../components/circuit/CircuitTrackThumbnail';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import { circuits } from '../data/circuits';
 
 const CircuitExplorerPage: React.FC = () => {
-   const [search, setSearch] = useState('');
-   const [selectedId, setSelectedId] = useState<string | null>(null);
+   const navigate = useNavigate();
+   const [searchParams, setSearchParams] = useSearchParams();
+
+   // Derive selected circuit directly from URL param — no component state needed
+   const circuitParam = searchParams.get('circuit');
+   const fromParam = searchParams.get('from'); // 'race-details' when linked from a race page
+   const search = searchParams.get('q') ?? '';
+
+   const setSearch = (val: string) => {
+      setSearchParams((prev) => {
+         const next = new URLSearchParams(prev);
+         if (val) next.set('q', val); else next.delete('q');
+         return next;
+      }, { replace: true });
+   };
+
+   const selectCircuit = (id: string) => {
+      setSearchParams((prev) => {
+         const next = new URLSearchParams(prev);
+         next.set('circuit', id);
+         next.delete('q');
+         return next;
+      });
+   };
+
+   const clearCircuit = () => {
+      setSearchParams((prev) => {
+         const next = new URLSearchParams(prev);
+         next.delete('circuit');
+         next.delete('q');
+         return next;
+      });
+   };
 
    const filteredCircuits = useMemo(() => {
       const query = search.trim().toLowerCase();
@@ -18,7 +50,14 @@ const CircuitExplorerPage: React.FC = () => {
       );
    }, [search]);
 
-   const selectedCircuit = circuits.find((circuit) => circuit.id === selectedId) ?? null;
+   // Try exact id match first, then fall back to name match (handles links that pass circuit name)
+   const selectedCircuit = useMemo(() => {
+      if (!circuitParam) return null;
+      const byId = circuits.find((c) => c.id === circuitParam);
+      if (byId) return byId;
+      const decoded = decodeURIComponent(circuitParam).toLowerCase();
+      return circuits.find((c) => c.name.toLowerCase() === decoded) ?? null;
+   }, [circuitParam]);
 
    return (
       <div className="w-full">
@@ -35,14 +74,13 @@ const CircuitExplorerPage: React.FC = () => {
                   {/* Slim Top Action Bar */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-3 mb-2 border-b border-white/[0.06] flex-shrink-0">
                      <button
-                        onClick={() => {
-                           setSelectedId(null);
-                           setSearch('');
-                        }}
+                        onClick={() => fromParam === 'race-details' ? navigate(-1) : clearCircuit()}
                         className="pill-button gap-2 px-3.5 py-1.5 hover:border-f1-red/40 transition-colors self-start"
                      >
                         <ArrowLeft className="h-4 w-4 text-f1-red" />
-                        <span className="text-xs font-mono font-semibold text-f1-white">Back to all circuits</span>
+                        <span className="text-xs font-mono font-semibold text-f1-white">
+                           {fromParam === 'race-details' ? 'Back to Race Details' : 'Back to all circuits'}
+                        </span>
                      </button>
 
                      <div className="flex items-center gap-2 text-[11px] sm:text-xs font-mono text-f1-silver/50 uppercase tracking-widest bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06] self-start sm:self-auto">
@@ -84,7 +122,7 @@ const CircuitExplorerPage: React.FC = () => {
                            <PageHeroTitle titlePrefix="CIRCUIT" titleAccent="EXPLORER" />
 
                            <p className="text-f1-silver text-sm sm:text-base max-w-xl font-medium leading-relaxed">
-                              Track layouts, active aero zones, DRS points & apex telemetry for all {circuits.length} Grand Prix circuits.
+                              Track layouts, active aero zones, DRS points &amp; apex telemetry for all {circuits.length} Grand Prix circuits.
                            </p>
                         </div>
 
@@ -106,7 +144,7 @@ const CircuitExplorerPage: React.FC = () => {
                      {filteredCircuits.map((circuit) => (
                         <motion.button
                            key={circuit.id}
-                           onClick={() => setSelectedId(circuit.id)}
+                           onClick={() => selectCircuit(circuit.id)}
                            whileHover={{ y: -3, transition: { duration: 0 } }}
                            whileTap={{ scale: 0.985 }}
                            className="telemetry-card group flex flex-col p-5 text-left relative overflow-hidden"

@@ -330,8 +330,14 @@ const TelemetryGhostPage: React.FC = () => {
          const smoothPctA = findDistancePctAtTime(pts, elapsedSec, 'timeA');
          const smoothPctB = findDistancePctAtTime(pts, elapsedSec, 'timeB');
 
-         const posA = getPathXY(svgPathRef.current, smoothPctA, len);
-         const posB = getPathXY(svgPathRef.current, smoothPctB, len);
+         // NEW: translate lap-progress % (0 = start/finish) into raw path-length %
+         const startFinishPathPct = comparison.circuit.sectors[0].startPercent;
+         const isReversed = comparison.circuit.isReversed;
+         const pathPctA = lapProgressToPathPercent(smoothPctA, startFinishPathPct, isReversed);
+         const pathPctB = lapProgressToPathPercent(smoothPctB, startFinishPathPct, isReversed);
+
+         const posA = getPathXY(svgPathRef.current, pathPctA, len);
+         const posB = getPathXY(svgPathRef.current, pathPctB, len);
 
          // Nearest sample point for any consumers that want raw telemetry at this instant
          const refIdx = Math.min(
@@ -343,6 +349,17 @@ const TelemetryGhostPage: React.FC = () => {
       },
       [comparison],
    );
+
+   function lapProgressToPathPercent(
+      lapProgressPct: number,
+      startFinishPathPercent: number,
+      isReversed: boolean,
+   ): number {
+      if (!isReversed) {
+         return (startFinishPathPercent + lapProgressPct) % 100;
+      }
+      return (startFinishPathPercent - lapProgressPct + 100) % 100;
+   }
 
    // ── DOM-direct animation loop ──────────────────────────────────────────────
 

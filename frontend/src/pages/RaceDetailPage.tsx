@@ -367,7 +367,7 @@ const RaceDetailPage: React.FC = () => {
                      </span>
                   </div>
 
-                  <Link to="/circuits" className="block group">
+                  <Link to={`/circuits?circuit=${encodeURIComponent(race.circuit.name)}&from=race-details`} className="block group">
                      <h4 className="text-xl font-display font-black text-f1-white mb-4 group-hover:text-f1-red-light transition-colors">
                         {race.circuit.name}
                      </h4>
