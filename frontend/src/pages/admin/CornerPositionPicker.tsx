@@ -179,6 +179,19 @@ export default function CornerPositionPicker() {
       return path.getPointAtLength((pct / 100) * totalLength);
    };
 
+   // Returns the chain of sampled points running along the track from
+   // startPct to endPct, wrapping around the lap if endPct < startPct.
+   const getSegmentPoints = (startPct: number, endPct: number): SamplePoint[] => {
+      const samples = samplesRef.current;
+      if (samples.length === 0) return [];
+      const lastIdx = samples.length - 1;
+      const clamp = (n: number) => Math.min(lastIdx, Math.max(0, Math.round((n / 100) * lastIdx)));
+      const startIdx = clamp(startPct);
+      const endIdx = clamp(endPct);
+      if (startIdx <= endIdx) return samples.slice(startIdx, endIdx + 1);
+      return [...samples.slice(startIdx), ...samples.slice(0, endIdx + 1)];
+   };
+
    const handleMouseMove = (evt: ReactMouseEvent<SVGSVGElement>): void => {
       if (!totalLength) return;
       const pt = svgPointFromEvent(evt);
@@ -477,28 +490,32 @@ export default function CornerPositionPicker() {
                <path d={currentD} fill="none" stroke="#232838" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" />
                <path ref={trackPathRef} d={currentD} fill="none" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
 
-               {/* ── Active Aero zone arcs ── */}
-               {aeroZones.map(([s, e], i) => {
+               {/* ── Active Aero zone arcs (only in Active Aero mode) ── */}
+               {mode === 'activeAero' && aeroZones.map(([s, e], i) => {
                   const ps = pointAtPercent(s);
                   const pe = pointAtPercent(e);
+                  const segment = getSegmentPoints(s, e);
+                  const pointsAttr = segment.map((p) => `${p.x},${p.y}`).join(' ');
+                  const mid = segment[Math.floor(segment.length / 2)] ?? ps;
                   return (
                      <g key={`aero-arc-${i}`}>
-                        <circle cx={ps.x} cy={ps.y} r="5" fill="#22c55e" stroke="#0b0e14" strokeWidth="1.5" opacity="0.7" />
-                        <circle cx={pe.x} cy={pe.y} r="5" fill="#22c55e" stroke="#0b0e14" strokeWidth="1.5" opacity="0.7" />
-                        <line x1={ps.x} y1={ps.y} x2={pe.x} y2={pe.y} stroke="#22c55e" strokeWidth="2" opacity="0.4" strokeDasharray="4 2" />
-                        <text x={(ps.x + pe.x) / 2} y={(ps.y + pe.y) / 2 - 6} textAnchor="middle" fontSize="7" fill="#22c55e" fontWeight="700">AERO {i + 1}</text>
+                        <polyline points={pointsAttr} fill="none" stroke="#22c55e" strokeWidth="6"
+                           strokeLinecap="round" strokeLinejoin="round" opacity="0.55" />
+                        <circle cx={ps.x} cy={ps.y} r="5" fill="#22c55e" stroke="#0b0e14" strokeWidth="1.5" opacity="0.9" />
+                        <circle cx={pe.x} cy={pe.y} r="5" fill="#22c55e" stroke="#0b0e14" strokeWidth="1.5" opacity="0.9" />
+                        <text x={mid.x} y={mid.y - 8} textAnchor="middle" fontSize="7" fill="#22c55e" fontWeight="700">AERO {i + 1}</text>
                      </g>
                   );
                })}
 
-               {/* Pending aero zone start */}
-               {aeroZoneStart !== null && (() => {
+               {/* Pending aero zone start (only in Active Aero mode) */}
+               {mode === 'activeAero' && aeroZoneStart !== null && (() => {
                   const p = pointAtPercent(aeroZoneStart);
                   return <circle cx={p.x} cy={p.y} r="6" fill="none" stroke="#22c55e" strokeWidth="2" strokeDasharray="3 2" />;
                })()}
 
-               {/* ── Sector markers ── */}
-               {([['S1', sector1, '#f59e0b'], ['S2', sector2, '#fbbf24'], ['S3', sector3, '#fde68a']] as const).map(([label, val, color]) => {
+               {/* ── Sector markers (only in Sectors mode) ── */}
+               {mode === 'sectors' && ([['S1', sector1, '#f59e0b'], ['S2', sector2, '#fbbf24'], ['S3', sector3, '#fde68a']] as const).map(([label, val, color]) => {
                   if (val === null) return null;
                   const p = pointAtPercent(val);
                   return (
@@ -509,8 +526,8 @@ export default function CornerPositionPicker() {
                   );
                })}
 
-               {/* ── Overtake markers ── */}
-               {overtakeDetection !== null && (() => {
+               {/* ── Overtake markers (only in Overtake mode) ── */}
+               {mode === 'overtake' && overtakeDetection !== null && (() => {
                   const p = pointAtPercent(overtakeDetection);
                   return (
                      <g transform={`translate(${p.x} ${p.y})`}>
@@ -519,7 +536,7 @@ export default function CornerPositionPicker() {
                      </g>
                   );
                })()}
-               {overtakeActivation !== null && (() => {
+               {mode === 'overtake' && overtakeActivation !== null && (() => {
                   const p = pointAtPercent(overtakeActivation);
                   return (
                      <g transform={`translate(${p.x} ${p.y})`}>
@@ -529,8 +546,8 @@ export default function CornerPositionPicker() {
                   );
                })()}
 
-               {/* ── Speed Trap marker ── */}
-               {speedTrap !== null && (() => {
+               {/* ── Speed Trap marker (only in Speed Trap mode) ── */}
+               {mode === 'speedTrap' && speedTrap !== null && (() => {
                   const p = pointAtPercent(speedTrap);
                   return (
                      <g transform={`translate(${p.x} ${p.y})`}>
@@ -540,8 +557,8 @@ export default function CornerPositionPicker() {
                   );
                })()}
 
-               {/* ── Pit Lane markers ── */}
-               {pitEntry !== null && (() => {
+               {/* ── Pit Lane markers (only in Pit Lane mode) ── */}
+               {mode === 'pitLane' && pitEntry !== null && (() => {
                   const p = pointAtPercent(pitEntry);
                   return (
                      <g transform={`translate(${p.x} ${p.y})`}>
@@ -551,7 +568,7 @@ export default function CornerPositionPicker() {
                   );
                })()}
 
-               {pitExit !== null && (() => {
+               {mode === 'pitLane' && pitExit !== null && (() => {
                   const p = pointAtPercent(pitExit);
                   return (
                      <g transform={`translate(${p.x} ${p.y})`}>
@@ -561,18 +578,20 @@ export default function CornerPositionPicker() {
                   );
                })()}
 
-               {/* ── Corner markers (always visible) ── */}
-               <g>
-                  {points.map((pct, i) => {
-                     const p = pointAtPercent(pct);
-                     return (
-                        <g key={`c-${i}-${pct}`} transform={`translate(${p.x} ${p.y})`}>
-                           <circle r="7" fill="#E10600" stroke="#F5F5F5" strokeWidth="1.5" />
-                           <text y="2.5" textAnchor="middle" fontSize="7" fontWeight="700" fill="#F5F5F5">{i + 1}</text>
-                        </g>
-                     );
-                  })}
-               </g>
+               {/* ── Corner markers (only in Corners mode) ── */}
+               {mode === 'corners' && (
+                  <g>
+                     {points.map((pct, i) => {
+                        const p = pointAtPercent(pct);
+                        return (
+                           <g key={`c-${i}-${pct}`} transform={`translate(${p.x} ${p.y})`}>
+                              <circle r="7" fill="#E10600" stroke="#F5F5F5" strokeWidth="1.5" />
+                              <text y="2.5" textAnchor="middle" fontSize="7" fontWeight="700" fill="#F5F5F5">{i + 1}</text>
+                           </g>
+                        );
+                     })}
+                  </g>
+               )}
 
                {/* Hover cursor */}
                {hover && (

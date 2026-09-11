@@ -14,7 +14,7 @@ export default {
           'mid-gray': '#2D2D3F',
           'light-gray': '#38384F',
           white: '#F5F5F5',
-          silver: '#9B9BAD',
+          silver: '#C5C6D8',
           // New deeper tones for futuristic look
           'abyss': '#0B0B12',
           'carbon': '#1A1A26',

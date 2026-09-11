@@ -1,6 +1,6 @@
 import React, { useId, useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Flag, Info, MapPin, Ruler, Timer, Wind, Zap, Sparkles, Shuffle, BookOpen, Compass, Radio } from 'lucide-react';
+import { Activity, Flag, Info, MapPin, Ruler, Timer, Wind, Zap, Sparkles, Shuffle, BookOpen, Compass, Radio, GitBranch } from 'lucide-react';
 import type { CircuitCornerMarker, CircuitData, Sector, SpeedTrap, ActiveAeroZone as ActiveAeroZoneType } from '../../data/circuits';
 import { CIRCUIT_FACTS, CircuitFact } from '../../data/circuits/circuitFacts';
 import CornerMarker from './CornerMarker';
@@ -109,6 +109,10 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
    const [tooltip, setTooltip] = useState<Tooltip>(null);
    const [computedViewBox, setComputedViewBox] = useState<string>(circuit.viewBox || '0 0 500 500');
    const pathRef = React.useRef<SVGPathElement | null>(null);
+
+   // Layer Visibility Toggles (off by default)
+   const [showActiveAero, setShowActiveAero] = useState<boolean>(false);
+   const [showPitLane, setShowPitLane] = useState<boolean>(false);
 
    // Circuit Facts State & Auto-Rotation
    const [factIndex, setFactIndex] = useState<number>(0);
@@ -320,13 +324,72 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                   </p>
                </div>
 
-               {/* Sector & Aero Legend Pills */}
-               <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono font-bold">
-                  <span className="rounded-md border border-f1-red/30 bg-f1-red/10 px-2 py-0.5 text-f1-red-light uppercase tracking-wider">Sector 1</span>
-                  <span className="rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-sky-300 uppercase tracking-wider">Sector 2</span>
-                  <span className="rounded-md border border-yellow-400/30 bg-yellow-400/10 px-2 py-0.5 text-yellow-200 uppercase tracking-wider">Sector 3</span>
-                  <span className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-cyan-200 uppercase tracking-wider">Active Aero</span>
-                  <span className="rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-emerald-200 uppercase tracking-wider">DRS</span>
+               {/* Controls & Sector Legend */}
+               <div className="flex flex-col sm:items-end gap-2">
+                  {/* Layer Visibility Toggles */}
+                  <div className="flex items-center gap-1.5 bg-black/30 p-1 rounded-xl border border-white/[0.08] backdrop-blur-md">
+                     <span className="text-[9px] font-mono uppercase tracking-widest text-f1-silver/50 px-1.5 font-bold">
+                        Layers
+                     </span>
+
+                     {/* Active Aero Toggle */}
+                     <button
+                        type="button"
+                        onClick={() => setShowActiveAero((prev) => !prev)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 border cursor-pointer ${
+                           showActiveAero
+                              ? 'bg-cyan-400/20 border-cyan-400/50 text-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.25)]'
+                              : 'bg-white/[0.02] border-white/[0.06] text-f1-silver/60 hover:text-white hover:bg-white/[0.06]'
+                        }`}
+                        title={showActiveAero ? 'Hide Active Aero Straight Zones' : 'Show Active Aero Straight Zones'}
+                     >
+                        <Wind className={`w-3 h-3 ${showActiveAero ? 'text-cyan-300' : 'text-f1-silver/50'}`} />
+                        <span>Active Aero</span>
+                        <span
+                           className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+                              showActiveAero ? 'bg-cyan-400 shadow-[0_0_6px_#22d3ee]' : 'bg-white/20'
+                           }`}
+                        />
+                     </button>
+
+                     {/* Pit Lane Toggle */}
+                     <button
+                        type="button"
+                        onClick={() => setShowPitLane((prev) => !prev)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 border cursor-pointer ${
+                           showPitLane
+                              ? 'bg-amber-400/20 border-amber-400/50 text-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.25)]'
+                              : 'bg-white/[0.02] border-white/[0.06] text-f1-silver/60 hover:text-white hover:bg-white/[0.06]'
+                        }`}
+                        title={showPitLane ? 'Hide Pit Lane Overlay' : 'Show Pit Lane Overlay'}
+                     >
+                        <GitBranch className={`w-3 h-3 ${showPitLane ? 'text-amber-300' : 'text-f1-silver/50'}`} />
+                        <span>Pit Lane</span>
+                        <span
+                           className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+                              showPitLane ? 'bg-amber-400 shadow-[0_0_6px_#fbbf24]' : 'bg-white/20'
+                           }`}
+                        />
+                     </button>
+                  </div>
+
+                  {/* Sector & Aero Legend Pills */}
+                  <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono font-bold">
+                     <span className="rounded-md border border-f1-red/30 bg-f1-red/10 px-2 py-0.5 text-f1-red-light uppercase tracking-wider">Sector 1</span>
+                     <span className="rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-sky-300 uppercase tracking-wider">Sector 2</span>
+                     <span className="rounded-md border border-yellow-400/30 bg-yellow-400/10 px-2 py-0.5 text-yellow-200 uppercase tracking-wider">Sector 3</span>
+                     {showActiveAero && (
+                        <span className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-cyan-200 uppercase tracking-wider animate-fade-in">
+                           Active Aero
+                        </span>
+                     )}
+                     {showPitLane && (
+                        <span className="rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-amber-200 uppercase tracking-wider animate-fade-in">
+                           Pit Lane
+                        </span>
+                     )}
+                     <span className="rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-emerald-200 uppercase tracking-wider">DRS</span>
+                  </div>
                </div>
             </div>
 
@@ -371,7 +434,7 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                         onHover={handleSectorHover}
                      />
                   ))}
-                  {circuit.activeAeroZones.map((zone) => (
+                  {showActiveAero && circuit.activeAeroZones.map((zone) => (
                      <ActiveAeroZone
                         key={zone.id}
                         path={circuit.trackPath}
@@ -409,7 +472,9 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                      />
                   ))}
 
-                  <PitLaneOverlay pathId={pathId} pitLane={circuit.pitLane} isReversed={circuit.isReversed} onHover={handlePitLaneHover} />
+                  {showPitLane && circuit.pitLane && (
+                     <PitLaneOverlay pathId={pathId} pitLane={circuit.pitLane} isReversed={circuit.isReversed} onHover={handlePitLaneHover} />
+                  )}
 
                   <FinishLineMarker
                      pathId={pathId}

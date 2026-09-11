@@ -11,7 +11,7 @@
    --color-f1-red: #E10600;
    --color-f1-red-dark: #B30500;
    --color-f1-red-light: #FF1801;
-   --color-f1-silver: #9B9BAD;
+   --color-f1-silver: #C5C6D8;
    --color-f1-white: #F5F5F5;
 }
 
@@ -470,3 +470,16 @@
       animation-delay: 700ms;
    }
 }
+
+/* ─── High Readability Adjustments for Muted Silver Telemetry & Labels ─── */
+.text-f1-silver\/50 {
+   color: rgba(215, 217, 232, 0.78);
+}
+
+.text-f1-silver\/40 {
+   color: rgba(205, 208, 226, 0.68);
+}
+
+.text-f1-silver\/30 {
+   color: rgba(195, 198, 218, 0.58);
+}

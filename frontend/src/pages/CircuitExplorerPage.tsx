@@ -11,9 +11,8 @@ const CircuitExplorerPage: React.FC = () => {
    const navigate = useNavigate();
    const [searchParams, setSearchParams] = useSearchParams();
 
-   // Derive selected circuit directly from URL param — no component state needed
    const circuitParam = searchParams.get('circuit');
-   const fromParam = searchParams.get('from'); // 'race-details' when linked from a race page
+   const fromParam = searchParams.get('from');
    const search = searchParams.get('q') ?? '';
 
    const setSearch = (val: string) => {
@@ -50,7 +49,7 @@ const CircuitExplorerPage: React.FC = () => {
       );
    }, [search]);
 
-   // Try exact id match first, then fall back to name match (handles links that pass circuit name)
+   // Try exact id match first, then fall back to name match
    const selectedCircuit = useMemo(() => {
       if (!circuitParam) return null;
       const byId = circuits.find((c) => c.id === circuitParam);
@@ -72,7 +71,7 @@ const CircuitExplorerPage: React.FC = () => {
                   className="w-full flex flex-col min-h-0 lg:h-[calc(100vh-6.5rem)] lg:max-h-[calc(100vh-6.5rem)] lg:overflow-hidden"
                >
                   {/* Slim Top Action Bar */}
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-3 mb-2 border-b border-white/[0.06] flex-shrink-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-3 mb-2 mt-0.5 border-b border-white/[0.06] flex-shrink-0">
                      <button
                         onClick={() => fromParam === 'race-details' ? navigate(-1) : clearCircuit()}
                         className="pill-button gap-2 px-3.5 py-1.5 hover:border-f1-red/40 transition-colors self-start"
