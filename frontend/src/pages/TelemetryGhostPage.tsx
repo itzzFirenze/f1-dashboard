@@ -125,17 +125,52 @@ const TelemetryGhostPage: React.FC = () => {
 
    const currentCircuit = useMemo(() => {
       if (!activeRace) return circuits[0];
-      const loc = (activeRace.location || activeRace.country || '').toLowerCase();
-      return (
-         circuits.find(
+
+      // Strategy 1: match by the actual backend circuit name (most accurate)
+      // currentRaceDetail has circuit.name e.g. "Circuit de Barcelona-Catalunya"
+      if (currentRaceDetail?.circuit?.name) {
+         const backendName = currentRaceDetail.circuit.name.toLowerCase();
+         const byName = circuits.find(
+            (c) =>
+               c.name.toLowerCase() === backendName ||
+               c.name.toLowerCase().includes(backendName) ||
+               backendName.includes(c.name.toLowerCase()),
+         );
+         if (byName) return byName;
+      }
+
+      // Strategy 2: match by circuitName field on the Race summary object
+      if (activeRace.circuitName) {
+         const cn = activeRace.circuitName.toLowerCase();
+         const byCircuitName = circuits.find(
+            (c) =>
+               c.name.toLowerCase() === cn ||
+               c.name.toLowerCase().includes(cn) ||
+               cn.includes(c.name.toLowerCase()),
+         );
+         if (byCircuitName) return byCircuitName;
+      }
+
+      // Strategy 3: match by country (exact)
+      if (activeRace.country) {
+         const country = activeRace.country.toLowerCase();
+         const byCountry = circuits.find((c) => c.country.toLowerCase() === country);
+         if (byCountry) return byCountry;
+      }
+
+      // Strategy 4: match by location substring (both directions)
+      const loc = (activeRace.location || '').toLowerCase();
+      if (loc) {
+         const byLoc = circuits.find(
             (c) =>
                c.location.toLowerCase().includes(loc) ||
-               c.country.toLowerCase().includes(loc) ||
-               loc.includes(c.location.toLowerCase()) ||
-               loc.includes(c.id.toLowerCase()),
-         ) ?? circuits[0]
-      );
-   }, [activeRace]);
+               loc.includes(c.location.toLowerCase()),
+         );
+         if (byLoc) return byLoc;
+      }
+
+      return circuits[0];
+   }, [activeRace, currentRaceDetail]);
 
    const isTeammates = useMemo(
       () =>

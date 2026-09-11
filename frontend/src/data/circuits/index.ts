@@ -30,7 +30,7 @@ export const circuits = [
       cornerTypes: Array.from({ length: 27 }, (_, i) => (i % 7 === 0 ? 'Chicane' : i % 3 === 0 ? 'High-speed' : 'Kink')),
       cornerPositions: [15.5, 16.7, 18.8, 23.9, 25.9, 28.3, 30.1, 31.2, 33.8, 35.8, 37.1, 38.5, 47.1, 52.3, 55.8, 57.6, 59.4, 61.8, 64.8, 68.9, 73.5, 77.4, 79.1, 81.1, 85.4, 93, 97.8],
       activeAeroRanges: [[8, 18], [48, 59], [83, 97]], overtakeDetectionPercent: 80, speedTrapPercent: 92, speedTrapLocation: 'Start-finish straight', topSpeedKmh: 342,
-      sector1StartPercent: 0, sector2StartPercent: 33.4, sector3StartPercent: 66.7, overtakeActivationPercent: 80, pitLaneEntryPercent: 3.9, pitLaneExitPercent: 16.8
+      sector1StartPercent: 6.3, sector2StartPercent: 42.5, sector3StartPercent: 75.6, overtakeActivationPercent: 80, pitLaneEntryPercent: 3.9, pitLaneExitPercent: 16.8
    }),
    buildCircuit({
       id: 'australia', name: 'Albert Park Circuit', country: 'Australia', location: 'Melbourne',
