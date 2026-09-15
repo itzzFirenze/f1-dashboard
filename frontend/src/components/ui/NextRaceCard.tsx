@@ -13,6 +13,7 @@ interface NextRaceCardProps {
    nextSessionName?: string | null;
    nextSessionDate?: string | null;
    nextSessionTime?: string | null;
+   sessionLive?: boolean | null;
    nextRaceWeather?: Weather | null;
    onNotifyClick: () => void;
 }
@@ -25,6 +26,7 @@ const NextRaceCard: React.FC<NextRaceCardProps> = ({
    nextSessionName,
    nextSessionDate,
    nextSessionTime,
+   sessionLive,
    nextRaceWeather,
    onNotifyClick,
 }) => {
@@ -39,9 +41,9 @@ const NextRaceCard: React.FC<NextRaceCardProps> = ({
                {/* Top banner tag */}
                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2 mb-4 relative z-10">
                   <div className="flex items-center gap-2 min-w-0">
-                     <div className="w-2.5 h-2.5 rounded-full bg-f1-red animate-ping shrink-0" />
+                     <div className={`w-2.5 h-2.5 rounded-full bg-f1-red ${sessionLive ? 'animate-ping' : ''} shrink-0`} />
                      <span className="text-xs font-mono font-bold text-f1-red-light tracking-[0.2em] uppercase truncate">
-                        Upcoming: {nextSessionName || 'Grand Prix Weekend'}
+                        {sessionLive ? 'LIVE NOW: ' : 'UPCOMING: '}{nextSessionName || 'Grand Prix Weekend'}
                      </span>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
@@ -77,13 +79,20 @@ const NextRaceCard: React.FC<NextRaceCardProps> = ({
                         <span className="text-f1-white font-semibold truncate">{nextRaceCountry ?? '—'}</span>
                      </p>
 
-                     <CountdownTimer
-                        targetDate={
-                           nextSessionTime && nextSessionDate
-                              ? `${nextSessionDate}T${nextSessionTime}Z`
-                              : nextSessionDate || ''
-                        }
-                     />
+                     {nextSessionDate ? (
+                        <CountdownTimer
+                           targetDate={
+                              nextSessionTime && nextSessionDate
+                                 ? `${nextSessionDate}T${nextSessionTime}Z`
+                                 : nextSessionDate
+                           }
+                           isLive={sessionLive ?? false}
+                        />
+                     ) : (
+                        <div className="text-xs font-mono text-f1-silver/50 tracking-wider uppercase">
+                           SCHEDULE PENDING
+                        </div>
+                     )}
                   </div>
                </div>
             </div>

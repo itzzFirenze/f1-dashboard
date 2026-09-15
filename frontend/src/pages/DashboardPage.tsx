@@ -120,12 +120,14 @@ const DashboardPage: React.FC = () => {
    const { data, isLoading } = useQuery<DashboardData>({
       queryKey: ['dashboard'],
       queryFn: dashboardService.getData,
+      refetchInterval: (query) => (query.state.data?.sessionLive ? 30000 : 2 * 60 * 1000),
    });
 
    const { data: lastRaceDetail } = useQuery({
       queryKey: ['lastRaceResults'],
       queryFn: () => dashboardService.getLastRaceResults(),
-      staleTime: 5 * 60 * 1000,
+      staleTime: 60 * 1000,
+      refetchInterval: (query) => (data?.sessionLive ? 30000 : 5 * 60 * 1000),
    });
 
    if (isLoading) return <PageSkeleton />;
@@ -232,6 +234,7 @@ const DashboardPage: React.FC = () => {
                nextSessionName={data.nextSessionName}
                nextSessionDate={data.nextSessionDate}
                nextSessionTime={data.nextSessionTime}
+               sessionLive={data.sessionLive}
                nextRaceWeather={data.nextRaceWeather}
                onNotifyClick={() => setShowNotifyModal(true)}
             />

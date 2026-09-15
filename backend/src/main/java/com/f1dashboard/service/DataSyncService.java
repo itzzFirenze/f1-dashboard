@@ -18,8 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -69,6 +72,116 @@ public class DataSyncService {
          log.warn("Data sync failed. Error: {}", e.getMessage(), e);
          clearReadCaches();
       }
+   }
+
+   /**
+    * Runs every 5 minutes.
+    * Detects result-producing sessions (Race, Qualifying, Sprint, Sprint Qualifying)
+    * that have already started but whose results are not yet in the database.
+    * Triggers a targeted sync for each such session and keeps retrying until results land.
+    * The window for retrying is 4 hours after session start for race, 3 hours for the rest.
+    */
+   @Scheduled(cron = "0 */5 * * * *")
+   @Transactional
+   public void syncPostSessionResults() {
+      LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
+      LocalDate today = nowUtc.toLocalDate();
+      // Look across yesterday to 3 days ahead to cover the entire race weekend across all timezones
+      LocalDate fromDate = today.minusDays(1);
+      LocalDate toDate = today.plusDays(3);
+
+      int currentSeason = today.getYear();
+      List<Race> recentRaces = raceRepository.findBySeasonAndRaceDateBetween(currentSeason, fromDate, toDate);
+      if (recentRaces.isEmpty()) return;
+
+      boolean anySynced = false;
+
+      for (Race race : recentRaces) {
+         List<com.f1dashboard.entity.RaceSession> sessions =
+               raceSessionRepository.findByRaceIdOrderBySessionDateAscSessionTimeAsc(race.getId());
+
+         for (com.f1dashboard.entity.RaceSession session : sessions) {
+            if (session.getSessionDate() == null || session.getSessionTime() == null) continue;
+
+            com.f1dashboard.enums.SessionType type = session.getSessionType();
+
+            // Only check sessions that produce RaceResult records
+            if (type == com.f1dashboard.enums.SessionType.FP1
+                  || type == com.f1dashboard.enums.SessionType.FP2
+                  || type == com.f1dashboard.enums.SessionType.FP3) continue;
+
+            LocalDateTime sessionStart = LocalDateTime.of(session.getSessionDate(), session.getSessionTime());
+
+            // Session hasn't started yet — nothing to do
+            if (sessionStart.isAfter(nowUtc)) continue;
+
+            long minutesSinceStart = Duration.between(sessionStart, nowUtc).toMinutes();
+
+            // Session is still actively running on track — results cannot possibly exist yet
+            if (minutesSinceStart < getMinSessionDurationMinutes(type)) continue;
+
+            // Outside the retry window — give up on this session
+            if (minutesSinceStart > getPostSyncWindowMinutes(type)) continue;
+
+            // Results already present — no sync needed
+            boolean hasResults = raceResultRepository.existsByRaceIdAndSessionType(race.getId(), type);
+            if (hasResults) continue;
+
+            log.info("[PostSessionSync] {} for '{}' started {}min ago — results missing, syncing...",
+                  type, race.getName(), minutesSinceStart);
+
+            try {
+               switch (type) {
+                  case RACE -> {
+                     syncRaceResults();
+                     syncDriverStandings();
+                     syncConstructorStandings();
+                     updatePodiums();
+                  }
+                  case QUALIFYING -> syncQualifyingResults();
+                  case SPRINT -> {
+                     syncSprintResults();
+                     syncDriverStandings();
+                     syncConstructorStandings();
+                  }
+                  case SPRINT_QUALIFYING -> syncSprintQualifyingResults();
+                  default -> { /* no-op */ }
+               }
+               anySynced = true;
+               log.info("[PostSessionSync] Sync complete for {} — {}", type, race.getName());
+            } catch (Exception e) {
+               log.warn("[PostSessionSync] Sync failed for {} — {}: {}", type, race.getName(), e.getMessage());
+            }
+         }
+      }
+
+      if (anySynced) {
+         updateRaceStatusesByDate();
+         clearReadCaches();
+         cacheWarmupService.warmCommonCaches();
+      }
+   }
+
+   /** Minimum minutes from session start before checking for results (cars still on track). */
+   private int getMinSessionDurationMinutes(com.f1dashboard.enums.SessionType type) {
+      return switch (type) {
+         case RACE -> 60;
+         case QUALIFYING -> 40;
+         case SPRINT -> 25;
+         case SPRINT_QUALIFYING -> 25;
+         default -> 30;
+      };
+   }
+
+   /** Maximum minutes after session start to keep retrying for results every 5 minutes. */
+   private int getPostSyncWindowMinutes(com.f1dashboard.enums.SessionType type) {
+      return switch (type) {
+         case RACE -> 6 * 60;
+         case QUALIFYING -> 4 * 60;
+         case SPRINT -> 3 * 60;
+         case SPRINT_QUALIFYING -> 3 * 60;
+         default -> 3 * 60;
+      };
    }
 
    public void clearReadCaches() {
@@ -915,11 +1028,16 @@ public class DataSyncService {
          if (race.getRaceDate() == null)
             return;
 
-         if (race.getRaceDate().isBefore(today) && race.getStatus() != RaceStatus.COMPLETED) {
-            race.setStatus(RaceStatus.COMPLETED);
-            raceRepository.save(race);
-         } else if (!race.getRaceDate().isBefore(today) && race.getStatus() == RaceStatus.COMPLETED) {
-            // Future race incorrectly marked completed (edge case)
+         boolean hasRaceResults = raceResultRepository.existsByRaceIdAndSessionType(
+               race.getId(), com.f1dashboard.enums.SessionType.RACE);
+
+         if (hasRaceResults || race.getRaceDate().isBefore(today)) {
+            if (race.getStatus() != RaceStatus.COMPLETED) {
+               race.setStatus(RaceStatus.COMPLETED);
+               raceRepository.save(race);
+            }
+         } else if (race.getRaceDate().isAfter(today) && race.getStatus() == RaceStatus.COMPLETED) {
+            // Strictly future race without results was incorrectly marked completed
             race.setStatus(RaceStatus.UPCOMING);
             raceRepository.save(race);
          }

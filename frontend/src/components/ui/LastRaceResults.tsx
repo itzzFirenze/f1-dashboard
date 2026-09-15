@@ -119,7 +119,8 @@ const PodiumCard: React.FC<PodiumCardProps> = ({ result, position, elevated }) =
          </div>
 
          <div
-            className="px-2 sm:px-3 py-2 sm:py-2.5 flex flex-col items-center text-center"
+            className={`px-2 sm:px-3 flex flex-col items-center justify-center text-center ${elevated ? 'h-[52px] sm:h-[62px]' : 'h-[46px] sm:h-[56px]'
+               }`}
             style={{ backgroundColor: result.constructorColor }}
          >
             <FitText

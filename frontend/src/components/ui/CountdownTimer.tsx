@@ -3,18 +3,29 @@ import { useCountdown } from '../../hooks/useCountdown';
 
 interface CountdownTimerProps {
    targetDate: string;
+   isLive?: boolean;
 }
 
 /** Live countdown timer with futuristic LED segment readout. */
-const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate }) => {
+const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, isLive = false }) => {
    const { days, hours, minutes, seconds, total } = useCountdown(targetDate);
 
-   if (total <= 0) {
+   if (isLive) {
       return (
          <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-f1-red/10 border border-f1-red/30 shadow-[0_0_15px_rgba(225,6,0,0.2)]">
             <div className="w-2.5 h-2.5 bg-f1-red rounded-full animate-ping" />
             <span className="text-f1-red-light font-display font-black tracking-widest text-sm uppercase">
                TRACK SESSION LIVE
+            </span>
+         </div>
+      );
+   }
+
+   if (total <= 0) {
+      return (
+         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08]">
+            <span className="text-f1-silver/60 font-mono font-medium text-xs tracking-wider uppercase">
+               AWAITING RESULTS
             </span>
          </div>
       );

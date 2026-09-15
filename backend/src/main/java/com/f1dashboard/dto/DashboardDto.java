@@ -19,6 +19,7 @@ public record DashboardDto(
       String nextSessionName,
       LocalDate nextSessionDate,
       LocalTime nextSessionTime,
+      Boolean sessionLive,
 
       DriverDto driverChampionshipLeader,
       ConstructorDto constructorChampionshipLeader,

@@ -23,6 +23,8 @@ public interface RaceResultRepository extends JpaRepository<RaceResult, Long> {
 
    void deleteByRaceIdAndSessionType(Long raceId, SessionType sessionType);
 
+   boolean existsByRaceIdAndSessionType(Long raceId, SessionType sessionType);
+
    @EntityGraph(attributePaths = { "race", "race.circuit", "driver", "driver.constructor", "constructor" })
    List<RaceResult> findByRaceSeasonAndSessionTypeOrderByRaceRoundAsc(Integer season, SessionType sessionType);
 

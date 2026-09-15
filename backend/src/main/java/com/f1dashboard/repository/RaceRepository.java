@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -16,7 +17,7 @@ public interface RaceRepository extends JpaRepository<Race, Long> {
 
    List<Race> findBySeasonAndStatusOrderByRoundAsc(Integer season, RaceStatus status);
 
-   @Query("SELECT r FROM Race r WHERE r.raceDate >= CURRENT_DATE ORDER BY r.raceDate ASC LIMIT 1")
+   @Query("SELECT r FROM Race r WHERE r.status != com.f1dashboard.enums.RaceStatus.COMPLETED AND r.status != com.f1dashboard.enums.RaceStatus.CANCELLED AND r.raceDate >= CURRENT_DATE ORDER BY r.raceDate ASC, r.round ASC LIMIT 1")
    Race findNextUpcomingRace();
 
    long countBySeasonAndStatus(Integer season, RaceStatus status);
@@ -27,4 +28,6 @@ public interface RaceRepository extends JpaRepository<Race, Long> {
    List<Race> searchRaces(@Param("season") Integer season, @Param("query") String query);
 
    java.util.Optional<Race> findBySeasonAndRound(Integer season, Integer round);
+
+   List<Race> findBySeasonAndRaceDateBetween(Integer season, LocalDate from, LocalDate to);
 }

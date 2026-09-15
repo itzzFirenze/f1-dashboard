@@ -205,6 +205,7 @@ export interface DashboardData {
    nextSessionName: string | null;
    nextSessionDate: string | null;
    nextSessionTime: string | null;
+   sessionLive?: boolean | null;
    driverChampionshipLeader: Driver | null;
    constructorChampionshipLeader: Constructor | null;
    nextRaceWeather: Weather | null;
