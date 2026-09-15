@@ -64,7 +64,7 @@ public class NotificationService {
    @Value("${resend.from-email:${RESEND_FROM_EMAIL:onboarding@resend.dev}}")
    private String resendFromEmail;
 
-   @Value("${app.frontend-url:http://localhost:5173}")
+   @Value("${app.frontend-url:https://f1-dashboard-six-sage.vercel.app/}")
    private String frontendUrl;
 
    @jakarta.annotation.PostConstruct
