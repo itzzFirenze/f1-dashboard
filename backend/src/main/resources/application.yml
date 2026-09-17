@@ -114,3 +114,8 @@ logging:
   level:
     com.f1dashboard: INFO
     org.springframework.security: WARN
+
+# Sync API Key protection
+sync:
+  api-key: ${SYNC_API_KEY:}
+

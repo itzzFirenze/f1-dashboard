@@ -10,7 +10,12 @@ const api = axios.create({
 api.interceptors.response.use(
    (response) => response,
    (error) => {
-      console.error('API Error:', error.response?.data?.message || error.message);
+      const status = error.response?.status;
+      if (import.meta.env.DEV) {
+         console.error('API Error:', status, error.response?.data?.message || error.message);
+      } else {
+         console.error('API request failed with status:', status || 'network error');
+      }
       return Promise.reject(error);
    }
 );

@@ -252,11 +252,12 @@ public class NotificationService {
    /** Check whether an email is subscribed to a specific race or all races. */
    @Transactional(readOnly = true)
    public SubscriptionResponseDto getStatus(String email, Long raceId) {
+      String maskedEmail = maskEmail(email);
       List<NotificationSubscription> userSubs = subscriptionRepository.findAllByEmail(email);
       if (userSubs.isEmpty()) {
          Race race = raceId != null ? raceRepository.findById(raceId).orElse(null) : null;
          return new SubscriptionResponseDto(
-               null, email, raceId, race != null ? race.getName() : null, false,
+               null, maskedEmail, raceId, race != null ? race.getName() : null, false,
                true, true, true, null, "Not subscribed", false, 0);
       }
 
@@ -274,17 +275,30 @@ public class NotificationService {
 
       return new SubscriptionResponseDto(
             matchingSub.getId(),
-            email,
+            maskedEmail,
             raceId,
             raceName,
             true,
             matchingSub.isNotifyRaceWeek(),
             matchingSub.isNotifyDayBefore(),
             matchingSub.isNotifyBeforeSession(),
-            matchingSub.getUnsubscribeToken(),
+            null, // Omit unsubscribeToken from public status endpoint to prevent unauthorized unsubscriptions
             allUpcoming ? "Subscribed to " + totalSubbed + " upcoming races" : "Subscribed to " + raceName,
             allUpcoming,
             totalSubbed);
+   }
+
+   public static String maskEmail(String email) {
+      if (email == null || !email.contains("@")) {
+         return email;
+      }
+      int atIndex = email.indexOf('@');
+      String localPart = email.substring(0, atIndex);
+      String domain = email.substring(atIndex);
+      if (localPart.length() <= 1) {
+         return "*".repeat(localPart.length()) + domain;
+      }
+      return localPart.charAt(0) + "***" + domain;
    }
 
    // ──────────────────────────────────────────────────────────────────────────

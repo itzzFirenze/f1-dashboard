@@ -57,8 +57,6 @@ export interface OpenF1Pit {
    stop_duration?: number | null;
 }
 
-const OPENF1_BASE_URL = 'https://api.openf1.org/v1';
-
 const getCarData = async (
    sessionKey: number,
    driverNumber: number,
@@ -66,31 +64,20 @@ const getCarData = async (
    endDate?: string
 ): Promise<OpenF1CarData[]> => {
    return enqueue(async () => {
-      let url =
-         `${OPENF1_BASE_URL}/car_data` +
-         `?session_key=${sessionKey}` +
-         `&driver_number=${driverNumber}`;
+      const params: Record<string, string | number> = {
+         session_key: sessionKey,
+         driver_number: driverNumber,
+      };
 
       if (startDate) {
-         url += `&date>=${encodeURIComponent(startDate)}`;
+         params['date>='] = startDate;
       }
 
       if (endDate) {
-         url += `&date<${encodeURIComponent(endDate)}`;
+         params['date<'] = endDate;
       }
 
-      const response = await fetch(url);
-
-      if (!response.ok) {
-         const message = await response.text();
-
-         throw new Error(
-            `OpenF1 car_data failed: ${response.status} ${message}`
-         );
-      }
-
-      const data: OpenF1CarData[] = await response.json();
-
+      const { data } = await api.get<OpenF1CarData[]>('/telemetry/car_data', { params });
       return data;
    });
 };

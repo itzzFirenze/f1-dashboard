@@ -8,9 +8,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
@@ -29,7 +32,9 @@ public class NotificationController {
       } catch (IllegalArgumentException e) {
          return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
       } catch (Exception e) {
-         return ResponseEntity.status(500).body(ApiResponse.error("Subscription failed: " + e.getMessage()));
+         log.error("Subscription failed for request", e);
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+               .body(ApiResponse.error("Subscription failed. Please try again later."));
       }
    }
 

@@ -78,7 +78,7 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
             checkExistingStatus(email);
          }
       }
-   }, [isOpen]);
+   }, [isOpen, email, checkExistingStatus]);
 
    useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -159,11 +159,14 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
    };
 
    const handleUnsubscribe = async (all: boolean = false) => {
-      if (!existingSub?.unsubscribeToken) return;
       try {
          setIsUnsubscribing(true);
          setError(null);
-         await notificationService.unsubscribe(existingSub.unsubscribeToken, all || existingSub.allUpcoming);
+         if (existingSub?.unsubscribeToken) {
+            await notificationService.unsubscribe(existingSub.unsubscribeToken, all || existingSub.allUpcoming);
+         } else if (email) {
+            await notificationService.unsubscribeAll(email.trim());
+         }
          setExistingSub(null);
          setSuccessData(null);
       } catch (err: any) {
@@ -458,6 +461,8 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                            </div>
                         </label>
                      </div>
+
+
 
                      {/* Actions */}
                      <div className="pt-2 flex flex-col gap-2">
