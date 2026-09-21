@@ -70,8 +70,10 @@ public class AnalyticsService {
       // declarations further down since they're now declared above.
 
       // Group by race to compute H2H and race-by-race data
-      Map<Long, RaceResult> mapA = resultsA.stream().collect(Collectors.toMap(r -> r.getRace().getId(), r -> r));
-      Map<Long, RaceResult> mapB = resultsB.stream().collect(Collectors.toMap(r -> r.getRace().getId(), r -> r));
+      Map<Long, RaceResult> mapA = resultsA.stream().collect(
+            Collectors.toMap(r -> r.getRace().getId(), r -> r, (existing, replacement) -> existing));
+      Map<Long, RaceResult> mapB = resultsB.stream().collect(
+            Collectors.toMap(r -> r.getRace().getId(), r -> r, (existing, replacement) -> existing));
 
       List<Race> races = raceRepository.findBySeasonOrderByRoundAsc(season);
 

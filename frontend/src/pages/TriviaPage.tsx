@@ -130,6 +130,7 @@ const TriviaPage: React.FC = () => {
    const [currentIndex, setCurrentIndex] = useState<number>(0);
    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
    const [isAnswerSubmitted, setIsAnswerSubmitted] = useState<boolean>(false);
+   const [verifiedResult, setVerifiedResult] = useState<{ isCorrect: boolean; correctAnswer: string; explanation: string } | null>(null);
    const [score, setScore] = useState<number>(0);
    const [streak, setStreak] = useState<number>(0);
    const [bestStreak, setBestStreak] = useState<number>(0);
@@ -253,6 +254,7 @@ const TriviaPage: React.FC = () => {
          setBestStreak(0);
          setSelectedAnswer(null);
          setIsAnswerSubmitted(false);
+         setVerifiedResult(null);
          setUserAnswers([]);
          setLoading(false);
 
@@ -305,12 +307,14 @@ const TriviaPage: React.FC = () => {
 
       setIsAnswerSubmitted(true);
       const currentQ = questions[currentIndex];
-      const isCorrect = chosen === currentQ.correct_answer;
+      const verification = triviaService.verifyAnswer(currentQ.id, chosen);
+      const isCorrect = verification.isCorrect;
+      setVerifiedResult(verification);
 
       setUserAnswers((prev) => [
          ...prev,
          {
-            question: currentQ,
+            question: { ...currentQ, correct_answer: verification.correctAnswer, explanation: verification.explanation },
             selected: chosen || 'Time Expired',
             correct: isCorrect,
          },
@@ -338,7 +342,7 @@ const TriviaPage: React.FC = () => {
    };
 
    const handleNextQuestion = () => {
-      if (gameMode === 'survival' && selectedAnswer !== questions[currentIndex].correct_answer) {
+      if (gameMode === 'survival' && !verifiedResult?.isCorrect) {
          setGameState('finished');
          return;
       }
@@ -347,6 +351,7 @@ const TriviaPage: React.FC = () => {
          setCurrentIndex((prev) => prev + 1);
          setSelectedAnswer(null);
          setIsAnswerSubmitted(false);
+         setVerifiedResult(null);
       } else {
          setGameState('finished');
       }
@@ -688,7 +693,7 @@ const TriviaPage: React.FC = () => {
                      {shuffledOptions.map((opt, idx) => {
                         const letter = ['A', 'B', 'C', 'D'][idx] || `${idx + 1}`;
                         const isSelected = selectedAnswer === opt;
-                        const isCorrect = opt === currentQuestion.correct_answer;
+                        const isCorrect = opt === (verifiedResult?.correctAnswer ?? currentQuestion.correct_answer);
 
                         let cardStyle =
                            'bg-white/[0.03] border-white/[0.06] text-f1-white hover:bg-white/[0.06] hover:border-white/[0.14] hover:shadow-lg hover:shadow-black/20';
@@ -732,23 +737,23 @@ const TriviaPage: React.FC = () => {
                   {isAnswerSubmitted && (
                      <div className="mt-2.5 sm:mt-4 pt-2.5 sm:pt-4 border-t border-white/[0.06] animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
                         <div
-                           className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border flex items-center gap-2.5 sm:gap-3 flex-1 ${selectedAnswer === currentQuestion.correct_answer
+                           className={`p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl border flex items-center gap-2.5 sm:gap-3 flex-1 ${verifiedResult?.isCorrect
                               ? 'bg-emerald-950/40 border-emerald-800/40 text-emerald-200'
                               : 'bg-rose-950/40 border-rose-800/40 text-rose-200'
                               }`}
                         >
-                           {selectedAnswer === currentQuestion.correct_answer ? (
+                           {verifiedResult?.isCorrect ? (
                               <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 flex-shrink-0" />
                            ) : (
                               <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400 flex-shrink-0" />
                            )}
                            <div className="leading-snug">
                               <span className="font-bold text-xs sm:text-sm mr-1">
-                                 {selectedAnswer === currentQuestion.correct_answer
+                                 {verifiedResult?.isCorrect
                                     ? '🏁 Correct!'
-                                    : `❌ Correct: "${currentQuestion.correct_answer}".`}
+                                    : `❌ Correct: "${verifiedResult?.correctAnswer}".`}
                               </span>
-                              <span className="text-f1-silver/70 text-[11px] sm:text-xs leading-relaxed">{currentQuestion.explanation}</span>
+                              <span className="text-f1-silver/70 text-[11px] sm:text-xs leading-relaxed">{verifiedResult?.explanation}</span>
                            </div>
                         </div>
 

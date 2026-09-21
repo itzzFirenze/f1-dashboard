@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-@Profile({ "dev", "default" })
+@Profile("dev")
 public class DevCircuitService {
 
    @Value("${circuits.index.path}")

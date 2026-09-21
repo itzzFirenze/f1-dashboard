@@ -31,7 +31,6 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional
 public class DataSyncService {
 
    @Value("${app.api.jolpica-base-url:https://api.jolpi.ca/ergast/f1}")

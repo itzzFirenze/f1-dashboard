@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/dev/circuits")
 @RequiredArgsConstructor
-@Profile({ "dev", "default" })
+@Profile("dev")
 @Tag(name = "Dev Circuits", description = "Development-only circuit editor utilities")
 public class DevCircuitController {
 

@@ -53,18 +53,18 @@ public class NotificationController {
    @DeleteMapping("/unsubscribe-all")
    @Operation(summary = "Unsubscribe from all races by email")
    public ResponseEntity<ApiResponse<String>> unsubscribeAll(@RequestParam String email) {
-      boolean removed = notificationService.unsubscribeAllByEmail(email);
-      if (removed) {
-         return ResponseEntity.ok(ApiResponse.success("Successfully unsubscribed from all races."));
+      if (email == null || !email.contains("@")) {
+         return ResponseEntity.badRequest().body(ApiResponse.error("Invalid email address."));
       }
-      return ResponseEntity.status(404).body(ApiResponse.error("No active subscriptions found for this email."));
+      notificationService.unsubscribeAllByEmail(email.trim());
+      return ResponseEntity.ok(ApiResponse.success("If subscriptions existed for this email, they have been successfully removed."));
    }
 
    @GetMapping("/status")
    @Operation(summary = "Check if an email is subscribed to a specific race")
    public ResponseEntity<ApiResponse<SubscriptionResponseDto>> getStatus(
          @RequestParam String email,
-         @RequestParam Long raceId) {
+         @RequestParam(required = false) Long raceId) {
       SubscriptionResponseDto result = notificationService.getStatus(email, raceId);
       return ResponseEntity.ok(ApiResponse.success(result));
    }

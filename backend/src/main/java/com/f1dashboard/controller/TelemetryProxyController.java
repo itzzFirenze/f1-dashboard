@@ -1,15 +1,17 @@
 package com.f1dashboard.controller;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
-import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,17 +28,15 @@ public class TelemetryProxyController {
          "team_radio", "location", "car_data", "weather", "intervals", "position"
    );
 
-   private static final int MAX_CACHE_SIZE = 300;
-
-   // Thread-safe bounded LRU cache
-   private final Map<URI, Object[]> cache = Collections.synchronizedMap(
-         new LinkedHashMap<URI, Object[]>(16, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<URI, Object[]> eldest) {
-               return size() > MAX_CACHE_SIZE;
-            }
-         }
-   );
+   /**
+    * Caffeine cache: 60-second TTL, max 150 entries.
+    * Entries expire automatically so memory usage is strictly bounded and stale data
+    * is never served beyond one minute — correct for live telemetry.
+    */
+   private final Cache<URI, Object[]> cache = Caffeine.newBuilder()
+         .expireAfterWrite(Duration.ofSeconds(60))
+         .maximumSize(150)
+         .build();
 
    @GetMapping("/{endpoint}")
    public ResponseEntity<Object[]> proxyRequest(
@@ -50,15 +50,13 @@ public class TelemetryProxyController {
                .body(new Object[] { Map.of("error", "Invalid or disallowed telemetry endpoint") });
       }
 
-      String queryString = request.getQueryString();
-      String urlString = OPENF1_BASE_URL + "/" + endpoint;
-      if (queryString != null) {
-         urlString += "?" + queryString;
-      }
+      // Build a properly encoded URI; avoids IllegalArgumentException on spaces or special chars
+      UriComponentsBuilder builder = UriComponentsBuilder
+            .fromUriString(OPENF1_BASE_URL + "/" + endpoint);
+      allParams.forEach(builder::queryParam);
+      URI targetUri = builder.build().toUri();
 
-      URI targetUri = URI.create(urlString);
-
-      Object[] cached = cache.get(targetUri);
+      Object[] cached = cache.getIfPresent(targetUri);
       if (cached != null) {
          return ResponseEntity.ok(cached);
       }
@@ -92,4 +90,5 @@ public class TelemetryProxyController {
 
       return ResponseEntity.status(429).body(new Object[] { Map.of("error", "Rate limit exceeded after retries") });
    }
-}
+}
+

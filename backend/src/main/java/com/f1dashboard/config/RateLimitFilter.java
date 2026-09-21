@@ -39,7 +39,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
    /** Bucket config: tokens allowed per windowMs interval */
    private record BucketConfig(long maxTokens, long windowMs) {}
 
-   private static final BucketConfig SUBSCRIBE_LIMIT  = new BucketConfig(5,   10 * 60_000L);
+   private static final BucketConfig SUBSCRIBE_LIMIT   = new BucketConfig(5,   10 * 60_000L);
+   private static final BucketConfig UNSUBSCRIBE_LIMIT = new BucketConfig(5,   10 * 60_000L);
+   private static final BucketConfig STATUS_LIMIT      = new BucketConfig(20,  60_000L);
    private static final BucketConfig SYNC_LIMIT        = new BucketConfig(3,   60 * 60_000L);
    private static final BucketConfig BACKFILL_LIMIT    = new BucketConfig(2,   60 * 60_000L);
    private static final BucketConfig TELEMETRY_LIMIT   = new BucketConfig(120, 60_000L);
@@ -80,6 +82,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
       if ("POST".equalsIgnoreCase(method) && path.equals("/api/notifications/subscribe")) {
          return SUBSCRIBE_LIMIT;
       }
+      if ("DELETE".equalsIgnoreCase(method) && path.startsWith("/api/notifications/unsubscribe")) {
+         return UNSUBSCRIBE_LIMIT;
+      }
+      if ("GET".equalsIgnoreCase(method) && path.equals("/api/notifications/status")) {
+         return STATUS_LIMIT;
+      }
       if ("POST".equalsIgnoreCase(method) && path.equals("/api/sync")) {
          return SYNC_LIMIT;
       }
@@ -94,10 +102,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
    /** Collapsed key for grouping similar paths (e.g., all /api/telemetry/* share one bucket per IP). */
    private String bucketKey(String method, String path) {
-      if (path.equals("/api/notifications/subscribe"))  return "notify-subscribe";
-      if (path.equals("/api/sync"))                     return "sync";
-      if (path.startsWith("/api/sync/backfill"))        return "sync-backfill";
-      if (path.startsWith("/api/telemetry/"))           return "telemetry";
+      if (path.equals("/api/notifications/subscribe"))        return "notify-subscribe";
+      if (path.startsWith("/api/notifications/unsubscribe"))  return "notify-unsubscribe";
+      if (path.equals("/api/notifications/status"))           return "notify-status";
+      if (path.equals("/api/sync"))                           return "sync";
+      if (path.startsWith("/api/sync/backfill"))              return "sync-backfill";
+      if (path.startsWith("/api/telemetry/"))                 return "telemetry";
       return "api-default";
    }
 
@@ -109,14 +119,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
       long nowMs = Instant.now().toEpochMilli();
 
       if (buckets.size() > 2000) {
-         buckets.entrySet().removeIf(e -> nowMs - e.getValue()[1] > config.windowMs() * 2);
+         // Accurately clean up entries based on their individual windowMs stored at index 2
+         buckets.entrySet().removeIf(e -> nowMs - e.getValue()[1] > e.getValue()[2] * 2);
       }
 
       final boolean[] allowed = new boolean[1];
       buckets.compute(key, (k, existing) -> {
          if (existing == null || nowMs - existing[1] >= config.windowMs()) {
             allowed[0] = true;
-            return new long[]{ config.maxTokens() - 1, nowMs };
+            return new long[]{ config.maxTokens() - 1, nowMs, config.windowMs() };
          }
          if (existing[0] > 0) {
             allowed[0] = true;

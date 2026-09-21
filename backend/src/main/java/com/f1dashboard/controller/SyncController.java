@@ -27,10 +27,16 @@ public class SyncController {
 
    private boolean isAuthorized(String headerKey) {
       if (syncApiKey == null || syncApiKey.isBlank()) {
-         log.warn("SYNC_API_KEY is not set. Sync endpoints are unprotected. Set SYNC_API_KEY in production.");
-         return true;
+         log.warn("SYNC_API_KEY is not configured on the server. Sync endpoints are disabled.");
+         return false;
       }
-      return syncApiKey.equals(headerKey);
+      if (headerKey == null || headerKey.isBlank()) {
+         return false;
+      }
+      return java.security.MessageDigest.isEqual(
+            syncApiKey.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            headerKey.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+      );
    }
 
    @PostMapping

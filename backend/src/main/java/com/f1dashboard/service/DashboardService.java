@@ -1,7 +1,8 @@
 package com.f1dashboard.service;
 
-import com.f1dashboard.dto.*;
 import com.f1dashboard.config.CacheConfig;
+import com.f1dashboard.config.SeasonConfig;
+import com.f1dashboard.dto.*;
 import com.f1dashboard.entity.Race;
 import com.f1dashboard.enums.RaceStatus;
 import com.f1dashboard.repository.RaceRepository;
@@ -22,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class DashboardService {
 
-   private static final int CURRENT_SEASON = 2026;
+   private final SeasonConfig seasonConfig;
 
    private final RaceRepository raceRepository;
    private final WeatherDataRepository weatherRepository;
@@ -35,8 +36,9 @@ public class DashboardService {
    /** Build the complete dashboard payload */
    @Cacheable(cacheNames = CacheConfig.DASHBOARD, key = "'home'")
    public DashboardDto getDashboardData() {
-      long totalRaces = raceRepository.findBySeasonOrderByRoundAsc(CURRENT_SEASON).size();
-      long completed = raceRepository.countBySeasonAndStatus(CURRENT_SEASON, RaceStatus.COMPLETED);
+      int currentSeason = seasonConfig.getCurrentSeason();
+      long totalRaces = raceRepository.findBySeasonOrderByRoundAsc(currentSeason).size();
+      long completed = raceRepository.countBySeasonAndStatus(currentSeason, RaceStatus.COMPLETED);
       long remaining = totalRaces - completed;
 
       Race nextRace = raceService.getNextRace();
@@ -110,7 +112,7 @@ public class DashboardService {
       }
 
       return new DashboardDto(
-            CURRENT_SEASON,
+            currentSeason,
             (int) totalRaces,
             (int) completed,
             (int) remaining,
