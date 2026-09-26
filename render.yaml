@@ -6,7 +6,7 @@ services:
     dockerContext: backend
     plan: free
     region: singapore
-    healthCheckPath: /actuator/health
+    healthCheckPath: /api/health
     envVars:
       - key: PORT
         value: 8080
