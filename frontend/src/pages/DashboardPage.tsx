@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
    Trophy, Flag, Users, Calendar, ChevronRight, TrendingUp,
-   Activity, Compass, Shield,
+   Activity, Shield,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { dashboardService } from '../services/dashboardService';
@@ -22,7 +22,6 @@ interface StatGaugeCardProps {
    icon: React.ElementType;
    percent: number;
    colorHex: string;
-   glowClass: string;
    badgeText?: string;
 }
 
@@ -33,7 +32,6 @@ const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
    icon: Icon,
    percent,
    colorHex,
-   glowClass,
    badgeText
 }) => {
    const radius = 36;
@@ -127,7 +125,7 @@ const DashboardPage: React.FC = () => {
       queryKey: ['lastRaceResults'],
       queryFn: () => dashboardService.getLastRaceResults(),
       staleTime: 60 * 1000,
-      refetchInterval: (query) => (data?.sessionLive ? 30000 : 5 * 60 * 1000),
+      refetchInterval: () => (data?.sessionLive ? 30000 : 5 * 60 * 1000),
    });
 
    if (isLoading) return <PageSkeleton />;
@@ -189,7 +187,6 @@ const DashboardPage: React.FC = () => {
                icon={Flag}
                percent={seasonProgress}
                colorHex="#10b981"
-               glowClass="emerald"
                badgeText="PASSED"
             />
             <StatGaugeCard
@@ -199,7 +196,6 @@ const DashboardPage: React.FC = () => {
                icon={Calendar}
                percent={100 - seasonProgress}
                colorHex="#E10600"
-               glowClass="red"
                badgeText="PENDING"
             />
             <StatGaugeCard
@@ -209,7 +205,6 @@ const DashboardPage: React.FC = () => {
                icon={Trophy}
                percent={100}
                colorHex="#f59e0b"
-               glowClass="amber"
                badgeText="OFFICIAL"
             />
             <StatGaugeCard
@@ -219,7 +214,6 @@ const DashboardPage: React.FC = () => {
                icon={TrendingUp}
                percent={seasonProgress}
                colorHex="#38bdf8"
-               glowClass="sky"
                badgeText="LIVE RATIO"
             />
          </div>

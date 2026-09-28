@@ -1,5 +1,5 @@
 import { circuits } from '../data/circuits';
-import type { CircuitData, CircuitCornerMarker } from '../data/circuits/types';
+import type { CircuitData } from '../data/circuits/types';
 
 export interface LapTelemetryMeta {
    code: string;

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useReplay } from '../../context/ReplayContext';
-import { Flag, ShieldAlert, Radio, AlertTriangle, Play, Pause, HelpCircle } from 'lucide-react';
+import { ShieldAlert, Radio, AlertTriangle, Play, Pause } from 'lucide-react';
 import type { CircuitData } from '../../data/circuits';
 import type { OpenF1Lap } from '../../services/telemetryService';
 
@@ -102,13 +102,11 @@ const formatGap = (gapSeconds: number): string =>
 export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) => {
    const {
       drivers,
-      driverLocations,
       stints,
       pits,
       raceControl,
       teamRadios,
       currentTime,
-      jumpToLap,
       laps,
       isDriverOutAt,
       isDriverPittingAt,

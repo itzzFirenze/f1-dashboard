@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
    Cloud, CloudRain, Sun, Wind, Droplets, ThermometerSun, AlertTriangle,
-   CloudLightning, Compass, ArrowUpRight, Radio, MapPin, Gauge, Activity,
-   Sparkles, ShieldCheck
+   CloudLightning, Compass, ArrowUpRight, Radio, MapPin, Activity,
+   Sparkles
 } from 'lucide-react';
 import { ResponsiveLine } from '@nivo/line';
 import { weatherService, WeekendWeatherDto } from '../services/weatherService';

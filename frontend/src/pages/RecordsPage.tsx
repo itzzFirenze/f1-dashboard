@@ -83,36 +83,6 @@ const RecordAvatar: React.FC<{
    );
 };
 
-const BarValueLabelsLayer = (activeRecords: (DriverRecord | ConstructorRecord)[]) =>
-   ({ bars }: any) => (
-      <g>
-         {bars.map((bar: any) => {
-            const { x, y, width, height, data, key } = bar;
-            const record = activeRecords.find(r => {
-               if ('driverCode' in r) return (r as DriverRecord).driverCode === data.indexValue;
-               return (r as ConstructorRecord).constructorName === data.indexValue;
-            });
-            const labelText = record?.displayValue ?? String(data.value);
-            return (
-               <text
-                  key={key}
-                  x={x + width + 8}
-                  y={y + height / 2}
-                  textAnchor="start"
-                  dominantBaseline="central"
-                  style={{
-                     fill: '#fff',
-                     fontSize: 11,
-                     fontFamily: 'ui-monospace, monospace',
-                     fontWeight: 700,
-                  }}
-               >
-                  {labelText}
-               </text>
-            );
-         })}
-      </g>
-   );
 
 const RecordsPage: React.FC = () => {
    const [season, setSeason] = useState<number | null>(2026);

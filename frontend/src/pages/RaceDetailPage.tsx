@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
-   ArrowLeft, Clock, ArrowUpRight, Ruler, CornerDownRight, Timer, Zap, Trophy,
+   Clock, Ruler, CornerDownRight, Timer, Zap, Trophy,
    Compass, Radio, Flag, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { raceService } from '../services/raceService';
@@ -15,7 +15,6 @@ type ResultTab = 'race' | 'qualifying' | 'sprint' | 'sprint_qualifying';
 
 const RaceDetailPage: React.FC = () => {
    const { id } = useParams<{ id: string }>();
-   const navigate = useNavigate();
    const [race, setRace] = useState<RaceDetail | null>(null);
    const [loading, setLoading] = useState(true);
    const [activeTab, setActiveTab] = useState<ResultTab>('race');

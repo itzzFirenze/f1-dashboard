@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Grid3x3, Target, Radio, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { Grid3x3, Target, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { ResponsiveHeatMapCanvas } from '@nivo/heatmap';
 import { ResponsiveScatterPlot } from '@nivo/scatterplot';
 import { analyticsService } from '../services/analyticsService';

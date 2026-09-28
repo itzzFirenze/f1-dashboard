@@ -12,7 +12,6 @@ const FinishLineMarker: React.FC<FinishLineMarkerProps> = ({ pathId, positionPer
    const patternId = `checker-${pathId}`;
    const cell = 3;
    const cols = 4;
-   const rows = 4;
    const size = cell * cols;
 
    return (

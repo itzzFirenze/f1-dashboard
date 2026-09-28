@@ -16,7 +16,7 @@ import SectionHeader from '../components/ui/SectionHeader';
 import TabBar from '../components/ui/TabBar';
 import LoadingCard from '../components/ui/LoadingCard';
 import PositionDelta from '../components/ui/PositionDelta';
-import FinishBadge, { getFinishBadgeStyle } from '../components/ui/FinishBadge';
+import FinishBadge from '../components/ui/FinishBadge';
 import FastestLapBadge from '../components/ui/FastestLapBadge';
 import type { DriverDetail, DriverHistoryData, DriverRaceResult, DriverPenaltyEvent, DriverPerformanceStats } from '../types';
 
@@ -453,9 +453,7 @@ const DriverDetailPage: React.FC = () => {
                   <>
                      {/* Mobile: stacked cards, no horizontal scroll */}
                      <div className="sm:hidden space-y-2.5">
-                        {races.map((race) => {
-                           const isDnf = race.status === 'Retired' || race.status === 'DNF';
-                           return (
+                        {races.map((race) => (
                               <div
                                  key={race.raceId}
                                  className="telemetry-card p-3.5 relative overflow-hidden cursor-pointer active:bg-white/[0.03] transition-colors"
@@ -512,8 +510,7 @@ const DriverDetailPage: React.FC = () => {
                                     </div>
                                  )}
                               </div>
-                           );
-                        })}
+                        ))}
                      </div>
 
                      {/* Desktop/tablet: full table */}
@@ -533,9 +530,7 @@ const DriverDetailPage: React.FC = () => {
                                  </tr>
                               </thead>
                               <tbody className="divide-y divide-white/[0.04] text-xs font-mono">
-                                 {races.map((race) => {
-                                    const isDnf = race.status === 'Retired' || race.status === 'DNF';
-                                    return (
+                                 {races.map((race) => (
                                        <tr
                                           key={race.raceId}
                                           className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
@@ -591,8 +586,7 @@ const DriverDetailPage: React.FC = () => {
                                              </span>
                                           </td>
                                        </tr>
-                                    );
-                                 })}
+                                 ))}
                               </tbody>
                            </table>
                         </div>

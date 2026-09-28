@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import {
-   Swords, Users, Trophy, Flag, Timer, ChevronRight, X,
-   Zap, ShieldAlert, Award, TrendingUp
-} from 'lucide-react';
+import { Users, ChevronRight, X } from 'lucide-react';
 import PageHeroTitle from '../components/ui/PageHeroTitle';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import {
    teammateBattleService,
    TeammateBattle,
-   SeasonBattlesResult,
-   RoundDuel
+   SeasonBattlesResult
 } from '../services/teammateBattleService';
 
 const TeammateBattlesPage: React.FC = () => {
@@ -130,9 +126,6 @@ const TeammateBattlesPage: React.FC = () => {
                   const teamColor = battle.constructor.color || '#E10600';
                   const d1Color = teamColor;
                   const d2Color = '#94A3B8';
-
-                  const isD1AheadQuali = battle.qualiH2H1 > battle.qualiH2H2;
-                  const isD1AheadRace = battle.raceH2H1 > battle.raceH2H2;
 
                   return (
                      <div

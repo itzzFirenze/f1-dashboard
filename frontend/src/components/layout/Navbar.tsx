@@ -37,7 +37,7 @@ const Navbar: React.FC = () => {
 
                {/* Desktop Navigation */}
                <div className="hidden md:flex items-center gap-1">
-                  {navItems.map(({ path, label, icon: Icon, tag }) => {
+                  {navItems.map(({ path, label, icon: Icon }) => {
                      const active = location.pathname === path;
                      return (
                         <Link

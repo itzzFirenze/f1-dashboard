@@ -1,5 +1,4 @@
 import React from 'react';
-import type { LucideIcon } from 'lucide-react';
 
 interface PageHeroCardProps {
    badge?: React.ReactNode;

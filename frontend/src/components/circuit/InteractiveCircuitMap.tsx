@@ -1,6 +1,6 @@
 import React, { useId, useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Flag, Info, MapPin, Ruler, Timer, Wind, Zap, Sparkles, Shuffle, BookOpen, Compass, Radio, GitBranch } from 'lucide-react';
+import { Activity, Flag, Info, Ruler, Timer, Wind, Zap, Sparkles, Shuffle, Compass, Radio, GitBranch } from 'lucide-react';
 import type { CircuitCornerMarker, CircuitData, Sector, SpeedTrap, ActiveAeroZone as ActiveAeroZoneType } from '../../data/circuits';
 import { CIRCUIT_FACTS, CircuitFact } from '../../data/circuits/circuitFacts';
 import CornerMarker from './CornerMarker';

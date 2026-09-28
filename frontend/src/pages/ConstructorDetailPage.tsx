@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
    Trophy, Medal, Shield, ChevronRight,
-   Flag, Zap, Gauge,
+   Flag, Zap,
    Users, Star, BarChart2, Award, Radio
 } from 'lucide-react';
 import { constructorService } from '../services/constructorService';
@@ -13,7 +13,6 @@ import BackButton from '../components/ui/BackButton';
 import QuickStatCard from '../components/ui/QuickStatCard';
 import SectionHeader from '../components/ui/SectionHeader';
 import TabBar from '../components/ui/TabBar';
-import LoadingCard from '../components/ui/LoadingCard';
 import PositionDelta from '../components/ui/PositionDelta';
 import FinishBadge from '../components/ui/FinishBadge';
 import type { ConstructorDetail, RaceResult } from '../types';
@@ -446,9 +445,7 @@ const ConstructorDetailPage: React.FC = () => {
 
                               {/* Per-driver results */}
                               <div className="space-y-2">
-                                 {round.driverResults.map((dr) => {
-                                    const isDnf = dr.status === 'Retired' || dr.status === 'DNF';
-                                    return (
+                                 {round.driverResults.map((dr) => (
                                        <div key={dr.driverCode} className="flex items-center gap-2 bg-white/[0.03] rounded-lg px-2.5 py-2">
                                           <span className="text-[11px] font-mono font-bold text-white w-9 shrink-0">
                                              {dr.driverCode}
@@ -471,8 +468,7 @@ const ConstructorDetailPage: React.FC = () => {
                                              </span>
                                           </div>
                                        </div>
-                                    );
-                                 })}
+                                 ))}
                               </div>
                            </div>
                         ))}
@@ -514,7 +510,6 @@ const ConstructorDetailPage: React.FC = () => {
                                        {team.drivers.map((d) => {
                                           const dr = round.driverResults.find((r) => r.driverCode === d.code);
                                           if (!dr) return <td key={d.id} className="py-3 px-4 text-center text-f1-silver/30">—</td>;
-                                          const isDnf = dr.status === 'Retired' || dr.status === 'DNF';
                                           return (
                                              <td key={d.id} className="py-3 px-4 text-center">
                                                 <div className="flex flex-col items-center gap-1">

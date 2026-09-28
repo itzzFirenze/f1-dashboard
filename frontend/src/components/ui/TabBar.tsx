@@ -1,6 +1,5 @@
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Flag } from 'lucide-react';
 
 interface TabItem {
    key: string;

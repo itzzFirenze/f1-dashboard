@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
    LayoutDashboard, Trophy, Calendar, Map,
-   Menu, X, Flag, ChevronDown, ChevronRight, Activity, GitCompare, Tv, Sparkles,
+   Menu, X, ChevronDown, ChevronRight, Activity, GitCompare, Tv, Sparkles,
    ChevronsLeft, ChevronsRight, Gauge
 } from 'lucide-react';
 import logoPng from '../../assets/pitwall-logo.png'

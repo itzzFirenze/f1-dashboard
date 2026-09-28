@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, TrendingUp, TrendingDown, Minus, Flame, Snowflake, Gauge, ChevronRight, Radio } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, Minus, Flame, Snowflake, Gauge } from 'lucide-react';
 import { ResponsiveBar } from '@nivo/bar';
 import { ResponsiveLine } from '@nivo/line';
 import { driverService } from '../services/driverService';

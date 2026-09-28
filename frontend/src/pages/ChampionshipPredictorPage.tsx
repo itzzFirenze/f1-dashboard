@@ -254,7 +254,6 @@ const ChampionshipPredictorPage: React.FC = () => {
 
    const eliminatedDrivers = useMemo(() => {
       if (projectedStandings.length === 0) return new Set<number>();
-      const leaderMax = projectedStandings[0].currentPoints + maxTheoreticalPoints;
       const eliminated = new Set<number>();
       sortedDrivers.forEach(d => {
          const driverMax = (d.points || 0) + maxTheoreticalPoints;

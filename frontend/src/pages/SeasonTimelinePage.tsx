@@ -189,8 +189,8 @@ const SeasonTimelinePage: React.FC = () => {
             <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-f1-red via-white/10 to-transparent" />
 
             <div className="space-y-1">
-               {filteredEvents.map((event, idx) => (
-                  <TimelineNode key={event.round} event={event} isLast={idx === filteredEvents.length - 1} />
+               {filteredEvents.map((event) => (
+                  <TimelineNode key={event.round} event={event} />
                ))}
             </div>
          </div>
@@ -263,7 +263,7 @@ const RightAnchoredSlices: React.FC<any> = ({ slices, innerHeight, innerWidth, m
    );
 };
 
-const TimelineNode: React.FC<{ event: TimelineEvent; isLast: boolean }> = ({ event, isLast }) => {
+const TimelineNode: React.FC<{ event: TimelineEvent }> = ({ event }) => {
    const isCompleted = event.status === 'COMPLETED';
 
    return (

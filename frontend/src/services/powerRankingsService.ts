@@ -1,5 +1,4 @@
 import { driverService } from './driverService';
-import { analyticsService } from './analyticsService';
 import type { Driver } from '../types';
 
 export interface DriverPowerRanking {

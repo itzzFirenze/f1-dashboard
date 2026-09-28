@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart3, Radio } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { driverService } from '../services/driverService';
 import { constructorService } from '../services/constructorService';
 import PointsDistributionChart from '../components/charts/PointsDistributionChart';

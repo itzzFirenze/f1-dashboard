@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-   Flame, TrendingUp, TrendingDown, Minus, Shield, Zap,
-   Trophy, Activity, Star, CheckCircle, Award, Users
+   Flame, TrendingUp, TrendingDown, Minus,
+   Activity, Users
 } from 'lucide-react';
 import { ResponsiveRadar } from '@nivo/radar';
 import PageHeroTitle from '../components/ui/PageHeroTitle';

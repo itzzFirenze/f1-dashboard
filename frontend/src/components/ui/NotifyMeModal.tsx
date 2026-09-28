@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
    Bell, X, Check, Mail, Calendar, Flag, Clock, ShieldCheck,
-   AlertCircle, Loader2, Trash2, CheckCircle2, Trophy, Sparkles
+   AlertCircle, Loader2, Trash2, CheckCircle2, Trophy
 } from 'lucide-react';
 import { notificationService } from '../../services/notificationService';
 import type { SubscriptionRequest, SubscriptionResponse } from '../../types';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gauge, Activity, ArrowLeftRight, Ban, Calendar, AlertCircle, UserCheck } from 'lucide-react';
+import { Gauge, ArrowLeftRight, Ban, Calendar, AlertCircle, UserCheck } from 'lucide-react';
 import PageHeroTitle from '../ui/PageHeroTitle';
 import SeasonSelector from '../ui/SeasonSelector';
 import DriverSelector from '../ui/DriverSelector';
