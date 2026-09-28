@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -15,6 +17,7 @@ public interface RaceSessionRepository extends JpaRepository<RaceSession, Long> 
 
    List<RaceSession> findByRaceIdOrderBySessionDateAscSessionTimeAsc(Long raceId);
 
+   @Transactional
    void deleteByRaceId(Long raceId);
 
    /**

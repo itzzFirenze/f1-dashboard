@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Repository
@@ -19,8 +21,10 @@ public interface RaceResultRepository extends JpaRepository<RaceResult, Long> {
 
    int countByDriverIdAndPositionLessThanEqualAndSessionType(Long driverId, Integer position, SessionType sessionType);
 
+   @Transactional
    void deleteByRaceId(Long raceId);
 
+   @Transactional
    void deleteByRaceIdAndSessionType(Long raceId, SessionType sessionType);
 
    boolean existsByRaceIdAndSessionType(Long raceId, SessionType sessionType);

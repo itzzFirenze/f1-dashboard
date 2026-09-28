@@ -52,7 +52,7 @@ public class DataSyncService {
 
    private final ObjectMapper objectMapper = new ObjectMapper();
 
-   @Scheduled(fixedRateString = "${app.api.sync-interval-hours:6}", timeUnit = java.util.concurrent.TimeUnit.HOURS, initialDelay = 60)
+   @Scheduled(cron = "${app.api.sync-cron:0 0 */6 * * *}")
    public void syncData() {
       log.info("Starting scheduled dynamic data synchronization...");
       try {
@@ -85,8 +85,8 @@ public class DataSyncService {
    public void syncPostSessionResults() {
       LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
       LocalDate today = nowUtc.toLocalDate();
-      // Look across yesterday to 3 days ahead to cover the entire race weekend across all timezones
-      LocalDate fromDate = today.minusDays(1);
+      // Look across up to 4 days ago to 3 days ahead to cover the entire race weekend across all timezones
+      LocalDate fromDate = today.minusDays(4);
       LocalDate toDate = today.plusDays(3);
 
       int currentSeason = today.getYear();
@@ -256,6 +256,7 @@ public class DataSyncService {
       }
    }
 
+   @Transactional
    public void syncRaceCalendar(Integer season) {
       log.info("Syncing race calendar dynamically from Jolpica API...");
       try {
@@ -411,6 +412,7 @@ public class DataSyncService {
       syncConstructorStandings(null);
    }
 
+   @Transactional
    public void syncConstructorStandings(Integer season) {
       log.info("Syncing constructor standings dynamically from Jolpica API...");
       try {
@@ -475,6 +477,7 @@ public class DataSyncService {
       syncDriverStandings(null);
    }
 
+   @Transactional
    public void syncDriverStandings(Integer season) {
       log.info("Syncing driver standings dynamically from Jolpica API...");
       try {
@@ -561,6 +564,7 @@ public class DataSyncService {
       syncRaceResults(null);
    }
 
+   @Transactional
    public void syncRaceResults(Integer season) {
       log.info("Syncing race results dynamically from Jolpica API...");
       int offset = 0;
@@ -701,6 +705,7 @@ public class DataSyncService {
       syncSprintResults(null);
    }
 
+   @Transactional
    public void syncSprintResults(Integer season) {
       log.info("Syncing sprint results dynamically from Jolpica API...");
       int offset = 0;
@@ -798,6 +803,7 @@ public class DataSyncService {
       syncQualifyingResults(null);
    }
 
+   @Transactional
    public void syncQualifyingResults(Integer season) {
       log.info("Syncing qualifying results dynamically from Jolpica API...");
       int offset = 0;
@@ -894,6 +900,7 @@ public class DataSyncService {
       syncSprintQualifyingResults(null);
    }
 
+   @Transactional
    public void syncSprintQualifyingResults(Integer targetSeason) {
       int seasonYear = (targetSeason != null) ? targetSeason : LocalDate.now().getYear();
       log.info("Syncing sprint qualifying results from Jolpica Alpha API for season {}...", seasonYear);
@@ -1016,6 +1023,7 @@ public class DataSyncService {
     * Any race whose date has passed should be COMPLETED;
     * any race in the future should be UPCOMING (unless already CANCELLED).
     */
+   @Transactional
    public void updateRaceStatusesByDate() {
       log.info("Reconciling race statuses based on current date...");
       LocalDate today = LocalDate.now();

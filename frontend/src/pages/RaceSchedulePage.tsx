@@ -16,20 +16,24 @@ const RaceSchedulePage: React.FC = () => {
    const debouncedSearch = useDebouncedValue(search, search ? 300 : 0);
 
    const { data: allRaces = [], isLoading } = useQuery<Race[]>({
-      queryKey: ['races', 2026, statusFilter],
-      queryFn: () => raceService.getAll(2026, statusFilter || undefined),
+      queryKey: ['races', 2026],
+      queryFn: () => raceService.getAll(2026),
    });
 
    const races = React.useMemo(() => {
+      let filtered = allRaces;
+      if (statusFilter) {
+         filtered = filtered.filter((race) => race.status === statusFilter);
+      }
       const term = debouncedSearch.trim().toLowerCase();
-      if (!term) return allRaces;
-      return allRaces.filter(
+      if (!term) return filtered;
+      return filtered.filter(
          (race) =>
             race.circuitName?.toLowerCase().startsWith(term) ||
             race.name?.toLowerCase().startsWith(term) ||
             race.country?.toLowerCase().startsWith(term)
       );
-   }, [allRaces, debouncedSearch]);
+   }, [allRaces, statusFilter, debouncedSearch]);
 
    if (isLoading) return <PageSkeleton />;
 

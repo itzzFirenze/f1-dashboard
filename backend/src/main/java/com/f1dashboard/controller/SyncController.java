@@ -25,10 +25,17 @@ public class SyncController {
    @Value("${sync.api-key:}")
    private String syncApiKey;
 
-   private boolean isAuthorized(String headerKey) {
+   private boolean isAuthorized(String headerKey, jakarta.servlet.http.HttpServletRequest request) {
+      // Always permit requests from localhost/loopback in local development
+      if (request != null) {
+         String remoteAddr = request.getRemoteAddr();
+         if ("127.0.0.1".equals(remoteAddr) || "0:0:0:0:0:0:0:1".equals(remoteAddr) || "localhost".equals(remoteAddr)) {
+            return true;
+         }
+      }
       if (syncApiKey == null || syncApiKey.isBlank()) {
-         log.warn("SYNC_API_KEY is not configured on the server. Sync endpoints are disabled.");
-         return false;
+         log.info("SYNC_API_KEY is not configured on the server. Allowing sync request for unauthenticated environment.");
+         return true;
       }
       if (headerKey == null || headerKey.isBlank()) {
          return false;
@@ -39,11 +46,12 @@ public class SyncController {
       );
    }
 
-   @PostMapping
+   @RequestMapping(method = {RequestMethod.GET, RequestMethod.POST})
    @Operation(summary = "Manually trigger 2026 season data sync", description = "Fetches latest driver standings, constructor standings, and race results from external APIs.")
    public ResponseEntity<ApiResponse<String>> triggerSync(
-         @RequestHeader(value = "X-Sync-Key", required = false) String apiKeyHeader) {
-      if (!isAuthorized(apiKeyHeader)) {
+         @RequestHeader(value = "X-Sync-Key", required = false) String apiKeyHeader,
+         jakarta.servlet.http.HttpServletRequest request) {
+      if (!isAuthorized(apiKeyHeader, request)) {
          return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                .body(ApiResponse.error("Unauthorized: invalid or missing sync API key."));
       }
@@ -62,18 +70,23 @@ public class SyncController {
          return ResponseEntity.ok(
                ApiResponse.success("Synchronization successful! Live 2026 standings, calendar, and results updated."));
       } catch (Exception e) {
-         log.error("Failed to sync data", e);
+         log.error("Failed to sync data: {}", e.getMessage(), e);
+         String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+         if (e.getCause() != null && e.getCause().getMessage() != null) {
+            msg += " (Cause: " + e.getCause().getMessage() + ")";
+         }
          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-               .body(ApiResponse.error("Failed to sync data. Please check server logs."));
+               .body(ApiResponse.error("Failed to sync data: " + msg));
       }
    }
 
-   @PostMapping("/backfill/{season}")
+   @RequestMapping(value = "/backfill/{season}", method = {RequestMethod.GET, RequestMethod.POST})
    @Operation(summary = "Backfill historical race/qualifying/sprint results for a past season")
    public ResponseEntity<ApiResponse<String>> triggerBackfill(
          @PathVariable Integer season,
-         @RequestHeader(value = "X-Sync-Key", required = false) String apiKeyHeader) {
-      if (!isAuthorized(apiKeyHeader)) {
+         @RequestHeader(value = "X-Sync-Key", required = false) String apiKeyHeader,
+         jakarta.servlet.http.HttpServletRequest request) {
+      if (!isAuthorized(apiKeyHeader, request)) {
          return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                .body(ApiResponse.error("Unauthorized: invalid or missing sync API key."));
       }
