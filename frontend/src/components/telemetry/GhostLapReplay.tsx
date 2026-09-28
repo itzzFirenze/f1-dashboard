@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Crosshair, Maximize2, RotateCcw, Play, Pause } from 'lucide-react';
 import type { CircuitData } from '../../data/circuits/types';
 import type { TelemetryComparisonResult } from '../../services/telemetryAnalysisService';
@@ -49,6 +49,40 @@ export const GhostLapReplay: React.FC<GhostLapReplayProps> = ({
    resetPlay,
    handleScrub,
 }) => {
+   // ── Finish-line marker (on-track checkered stripe) ───────────────────────
+   const finishMarkerPathRef = useRef<SVGPathElement | null>(null);
+   const [finishLine, setFinishLine] = useState<{ x: number; y: number; angleDeg: number } | null>(null);
+
+   // Sync our hidden path ref whenever the svgPathRef updates (it's a callback ref)
+   const setPathRef = (el: SVGPathElement | null) => {
+      finishMarkerPathRef.current = el;
+      if (typeof svgPathRef === 'function') (svgPathRef as React.RefCallback<SVGPathElement>)(el);
+      else if (svgPathRef && typeof svgPathRef === 'object')
+         (svgPathRef as React.MutableRefObject<SVGPathElement | null>).current = el;
+   };
+
+   useEffect(() => {
+      const el = finishMarkerPathRef.current;
+      if (!el) return;
+      try {
+         const totalLen = el.getTotalLength();
+         const startPct = comparison.circuit.sectors[0].startPercent;
+         const len = (startPct / 100) * totalLen;
+         const pt = el.getPointAtLength(len);
+         // Sample ±1% of total length to get a stable tangent
+         const delta = Math.max(totalLen * 0.005, 1);
+         const ptBefore = el.getPointAtLength(Math.max(0, len - delta));
+         const ptAfter  = el.getPointAtLength(Math.min(totalLen, len + delta));
+         const dx = ptAfter.x - ptBefore.x;
+         const dy = ptAfter.y - ptBefore.y;
+         // Angle of the track tangent; the stripe runs perpendicular (+90°)
+         const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+         setFinishLine({ x: pt.x, y: pt.y, angleDeg });
+      } catch {
+         setFinishLine(null);
+      }
+   }, [currentCircuit, comparison.circuit.sectors]);
+
    return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
          {/* Track Mini-Map with Driver Focus / Full Circuit Camera */}
@@ -150,7 +184,7 @@ export const GhostLapReplay: React.FC<GhostLapReplayProps> = ({
                      />
                      {/* Track surface */}
                      <path
-                        ref={svgPathRef}
+                        ref={setPathRef}
                         id={`ghost-track-${currentCircuit.id}`}
                         d={currentCircuit.trackPath}
                         fill="none"
@@ -159,6 +193,51 @@ export const GhostLapReplay: React.FC<GhostLapReplayProps> = ({
                         strokeLinecap="round"
                         strokeLinejoin="round"
                      />
+
+                     {/* ── On-track Checkered Finish Line ── */}
+                     {finishLine && (
+                        <g transform={`translate(${finishLine.x} ${finishLine.y}) rotate(${finishLine.angleDeg})`}>
+                           {/* Soft glow behind the stripe */}
+                           <rect x="-14" y="-3" width="28" height="6" rx="1" fill="#ffffff" fillOpacity="0.08" />
+                           {/*
+                              Checkered stripe: 4 columns × 2 rows of 3.5×3 squares
+                              Total width ≈ 14 px (matches track strokeWidth ~10)
+                              Centred on x=0 → starts at x=-7
+                           */}
+                           {([0,1,2,3] as const).map((col) =>
+                              ([0,1] as const).map((row) => {
+                                 const isWhite = (col + row) % 2 === 0;
+                                 return (
+                                    <rect
+                                       key={`${col}-${row}`}
+                                       x={-7 + col * 3.5}
+                                       y={-3 + row * 3}
+                                       width="3.5"
+                                       height="3"
+                                       fill={isWhite ? '#ffffff' : '#000000'}
+                                       fillOpacity={isWhite ? 0.92 : 0.88}
+                                    />
+                                 );
+                              })
+                           )}
+                           {/* Thin border around the whole stripe */}
+                           <rect x="-7" y="-3" width="14" height="6" fill="none" stroke="#ffffff" strokeWidth="0.4" strokeOpacity="0.5" />
+                           {/* S/F label – rendered un-rotated so it always reads upright */}
+                           <text
+                              transform={`rotate(${-finishLine.angleDeg})`}
+                              x="0"
+                              y="-6"
+                              textAnchor="middle"
+                              fontSize="4.5"
+                              fontWeight="bold"
+                              fill="#ffffff"
+                              fillOpacity="0.75"
+                              fontFamily="monospace"
+                           >
+                              S/F
+                           </text>
+                        </g>
+                     )}
 
                      {/* Ghost A */}
                      <g ref={ghostARef} transform="translate(0 0)">
