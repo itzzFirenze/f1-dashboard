@@ -8,6 +8,7 @@ import { raceService } from '../services/raceService';
 import WeatherCard from '../components/ui/WeatherCard';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import { useTimezone } from '../context/TimezoneContext';
+import BackButton from '../components/ui/BackButton';
 import type { RaceDetail, RaceResult } from '../types';
 
 type ResultTab = 'race' | 'qualifying' | 'sprint' | 'sprint_qualifying';
@@ -74,13 +75,7 @@ const RaceDetailPage: React.FC = () => {
 
    return (
       <div className="space-y-7 animate-fade-in">
-         <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-f1-silver hover:text-f1-white transition-colors group w-fit cursor-pointer"
-         >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="text-sm font-mono uppercase tracking-widest">Back</span>
-         </button>
+         <BackButton />
 
          {/* ─── Race Header: Mission Control HUD ─── */}
          <div className="relative overflow-hidden rounded-3xl bg-f1-carbon/90 border border-white/[0.06] p-7 sm:p-9 shadow-2xl dot-grid">

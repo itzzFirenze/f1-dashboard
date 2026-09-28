@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-   ArrowLeft, Trophy, Medal, Shield, ChevronRight, Radio,
-   Flag, TrendingUp, TrendingDown, Minus, Zap, Gauge,
-   Users, Star, BarChart2, Award, Sparkles
+   Trophy, Medal, Shield, ChevronRight,
+   Flag, Zap, Gauge,
+   Users, Star, BarChart2, Award, Radio
 } from 'lucide-react';
 import { constructorService } from '../services/constructorService';
 import { raceService } from '../services/raceService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import { resolveTheme, getDriverImage } from '../config/teamThemes';
+import BackButton from '../components/ui/BackButton';
+import QuickStatCard from '../components/ui/QuickStatCard';
+import SectionHeader from '../components/ui/SectionHeader';
+import TabBar from '../components/ui/TabBar';
+import LoadingCard from '../components/ui/LoadingCard';
+import PositionDelta from '../components/ui/PositionDelta';
+import FinishBadge from '../components/ui/FinishBadge';
 import type { ConstructorDetail, RaceResult } from '../types';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -48,18 +55,6 @@ interface ConstructorSeasonStats {
    doublesOnPodium: number;
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function getFinishBadgeStyle(pos: number, status: string) {
-   const isDnf = status === 'Retired' || status === 'DNF';
-   if (isDnf) return 'bg-red-500/15 text-red-400 border-red-500/30';
-   if (pos === 1) return 'bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-[0_0_10px_rgba(251,191,36,0.25)]';
-   if (pos === 2) return 'bg-slate-300/20 text-slate-200 border-slate-300/30';
-   if (pos === 3) return 'bg-amber-700/20 text-amber-500 border-amber-700/30';
-   if (pos <= 10) return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25';
-   return 'bg-white/[0.04] text-f1-silver border-white/[0.08]';
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const ConstructorDetailPage: React.FC = () => {
@@ -86,7 +81,6 @@ const ConstructorDetailPage: React.FC = () => {
             setTeam(teamData);
             setLoading(false);
 
-            // Aggregate race telemetry from completed 2026 races
             try {
                const driverCodes = new Set(teamData.drivers.map((d) => d.code));
                const driverNames = new Set(
@@ -235,13 +229,7 @@ const ConstructorDetailPage: React.FC = () => {
    return (
       <div className="flex flex-col gap-5 animate-fade-in pb-10">
          {/* ─── Back Button ─── */}
-         <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-f1-silver hover:text-f1-white transition-colors shrink-0 group w-fit"
-         >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="text-xs font-mono uppercase tracking-widest">Back</span>
-         </button>
+         <BackButton />
 
          {/* ─── Team Hero HUD Card ─── */}
          <div className="telemetry-card overflow-hidden shrink-0 shadow-2xl">
@@ -337,39 +325,18 @@ const ConstructorDetailPage: React.FC = () => {
 
          {/* ─── Quick Stat Cards ─── */}
          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
-            {stats.map(({ label, value, icon: Icon, color, accent }) => (
-               <div key={label} className="telemetry-card p-2.5 relative overflow-hidden">
-                  <div className={`absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent ${accent} to-transparent`} />
-                  <div className="flex items-center gap-2">
-                     <div
-                        className="w-6 h-6 rounded-lg flex items-center justify-center border border-white/[0.06] shrink-0"
-                        style={{ backgroundColor: `${color}15` }}
-                     >
-                        <Icon className="w-3.5 h-3.5" style={{ color }} />
-                     </div>
-                     <div>
-                        <p className="stat-value font-mono leading-tight" style={{ color }}>{value}</p>
-                        <p className="stat-label text-[9px] font-mono uppercase tracking-widest text-f1-silver/50 leading-tight">{label}</p>
-                     </div>
-                  </div>
-               </div>
+            {stats.map((s) => (
+               <QuickStatCard key={s.label} {...s} />
             ))}
          </div>
 
          {/* ─── Season Performance Telemetry Matrix ─── */}
          {seasonStats && (
             <div className="space-y-2.5">
-               <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                     <Gauge className="w-4 h-4 text-emerald-400" />
-                     <h2 className="text-xs font-mono uppercase tracking-[0.2em] text-f1-silver font-bold">
-                        Season Performance Telemetry
-                     </h2>
-                  </div>
-                  <span className="text-[10px] font-mono text-f1-silver/40 uppercase tracking-widest">
-                     2026 · {seasonStats.totalRaces} Grands Prix
-                  </span>
-               </div>
+               <SectionHeader
+                  title="Season Performance Telemetry"
+                  meta={`2026 · ${seasonStats.totalRaces} Grands Prix`}
+               />
 
                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                   <div className="telemetry-card p-3 relative overflow-hidden">
@@ -425,28 +392,14 @@ const ConstructorDetailPage: React.FC = () => {
          )}
 
          {/* ─── Tab Navigation ─── */}
-         <div className="flex items-center gap-2 border-b border-white/[0.08] pb-1">
-            <button
-               onClick={() => setActiveTab('races')}
-               className={`px-4 py-2 text-xs font-mono uppercase tracking-wider rounded-t-lg transition-all flex items-center gap-2 border-b-2 ${activeTab === 'races'
-                  ? 'border-f1-red text-white bg-white/[0.04] font-bold'
-                  : 'border-transparent text-f1-silver/60 hover:text-f1-silver hover:bg-white/[0.02]'
-                  }`}
-            >
-               <Flag className="w-3.5 h-3.5 text-f1-red" />
-               Race Results &amp; Positions ({rounds.length})
-            </button>
-            <button
-               onClick={() => setActiveTab('drivers')}
-               className={`px-4 py-2 text-xs font-mono uppercase tracking-wider rounded-t-lg transition-all flex items-center gap-2 border-b-2 ${activeTab === 'drivers'
-                  ? 'border-amber-400 text-white bg-white/[0.04] font-bold'
-                  : 'border-transparent text-f1-silver/60 hover:text-f1-silver hover:bg-white/[0.02]'
-                  }`}
-            >
-               <Shield className="w-3.5 h-3.5 text-amber-400" />
-               Driver Lineup &amp; Head-to-Head ({team.drivers.length})
-            </button>
-         </div>
+         <TabBar
+            activeTab={activeTab}
+            onChange={(k) => setActiveTab(k as 'races' | 'drivers')}
+            tabs={[
+               { key: 'races', label: 'Race Results & Positions', count: rounds.length, icon: Flag, activeColor: 'border-f1-red', iconColor: 'text-f1-red' },
+               { key: 'drivers', label: 'Driver Lineup & Head-to-Head', count: team.drivers.length, icon: Shield, activeColor: 'border-amber-400', iconColor: 'text-amber-400' },
+            ]}
+         />
 
          {/* ─── TAB 1: Race Results ─── */}
          {activeTab === 'races' && (
@@ -500,8 +453,8 @@ const ConstructorDetailPage: React.FC = () => {
                                           <span className="text-[11px] font-mono font-bold text-white w-9 shrink-0">
                                              {dr.driverCode}
                                           </span>
-                                          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${getFinishBadgeStyle(dr.finishPosition, dr.status)}`}>
-                                             {isDnf ? 'DNF' : `P${dr.finishPosition}`}
+                                          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border`}>
+                                             <FinishBadge position={dr.finishPosition} status={dr.status} />
                                           </span>
                                           {dr.gridPosition > 0 && (
                                              <span className="text-[9px] font-mono text-f1-silver/40">
@@ -509,20 +462,8 @@ const ConstructorDetailPage: React.FC = () => {
                                              </span>
                                           )}
                                           <div className="ml-auto flex items-center gap-2">
-                                             {dr.positionsGained > 0 && (
-                                                <span className="inline-flex items-center gap-0.5 text-emerald-400 text-[10px] font-mono">
-                                                   <TrendingUp className="w-3 h-3" />+{dr.positionsGained}
-                                                </span>
-                                             )}
-                                             {dr.positionsGained < 0 && (
-                                                <span className="inline-flex items-center gap-0.5 text-red-400 text-[10px] font-mono">
-                                                   <TrendingDown className="w-3 h-3" />{dr.positionsGained}
-                                                </span>
-                                             )}
-                                             {dr.positionsGained === 0 && (
-                                                <span className="inline-flex items-center gap-0.5 text-f1-silver/40 text-[10px] font-mono">
-                                                   <Minus className="w-3 h-3" />0
-                                                </span>
+                                             {dr.positionsGained !== 0 && (
+                                                <PositionDelta delta={dr.positionsGained} sizeClass="text-[10px]" iconClass="w-3 h-3" />
                                              )}
                                              {dr.fastestLap && <Zap className="w-3 h-3 text-purple-400 shrink-0" />}
                                              <span className="text-amber-400 font-mono font-bold text-[10px]">
@@ -577,9 +518,7 @@ const ConstructorDetailPage: React.FC = () => {
                                           return (
                                              <td key={d.id} className="py-3 px-4 text-center">
                                                 <div className="flex flex-col items-center gap-1">
-                                                   <span className={`inline-block px-2.5 py-0.5 rounded-full font-bold border text-[10px] ${getFinishBadgeStyle(dr.finishPosition, dr.status)}`}>
-                                                      {isDnf ? 'DNF' : `P${dr.finishPosition}`}
-                                                   </span>
+                                                   <FinishBadge position={dr.finishPosition} status={dr.status} className="text-[10px]" />
                                                    <div className="flex items-center gap-1.5 text-[9px]">
                                                       {dr.gridPosition > 0 && (
                                                          <span className="text-f1-silver/40">G:P{dr.gridPosition}</span>

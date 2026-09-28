@@ -1,15 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-   ArrowLeft, Trophy, Medal, Hash, Globe, Calendar, Radio, ChevronRight,
-   TrendingUp, TrendingDown, Minus, ShieldAlert, Flag, Award, Zap,
-   CheckCircle2, AlertTriangle, AlertOctagon, Info, Compass, Gauge,
-   Clock, LayoutGrid, GitBranch
+   Trophy, Medal, Hash, Globe, Calendar, ChevronRight,
+   ShieldAlert, Flag, Zap,
+   CheckCircle2, AlertOctagon,
+   Clock, LayoutGrid, GitBranch, TrendingDown, TrendingUp
 } from 'lucide-react';
 import { driverService } from '../services/driverService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import { resolveTheme, getDriverImage } from '../config/teamThemes';
 import { raceService } from '../services/raceService';
+import BackButton from '../components/ui/BackButton';
+import QuickStatCard from '../components/ui/QuickStatCard';
+import SectionHeader from '../components/ui/SectionHeader';
+import TabBar from '../components/ui/TabBar';
+import LoadingCard from '../components/ui/LoadingCard';
+import PositionDelta from '../components/ui/PositionDelta';
+import FinishBadge, { getFinishBadgeStyle } from '../components/ui/FinishBadge';
+import FastestLapBadge from '../components/ui/FastestLapBadge';
 import type { DriverDetail, DriverHistoryData, DriverRaceResult, DriverPenaltyEvent, DriverPerformanceStats } from '../types';
 
 const DriverDetailPage: React.FC = () => {
@@ -187,27 +195,6 @@ const DriverDetailPage: React.FC = () => {
       return message.replace(/\s*\(\d{1,2}:\d{2}(:\d{2})?\)\s*$/, '').trim();
    };
 
-   // Helper for finish badge styling
-   const getFinishBadgeStyle = (pos: number, status: string) => {
-      const isDnf = status === 'Retired' || status === 'DNF';
-      if (isDnf) {
-         return 'bg-red-500/15 text-red-400 border-red-500/30';
-      }
-      if (pos === 1) {
-         return 'bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-[0_0_10px_rgba(251,191,36,0.25)]';
-      }
-      if (pos === 2) {
-         return 'bg-slate-300/20 text-slate-200 border-slate-300/30';
-      }
-      if (pos === 3) {
-         return 'bg-amber-700/20 text-amber-500 border-amber-700/30';
-      }
-      if (pos <= 10) {
-         return 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25';
-      }
-      return 'bg-white/[0.04] text-f1-silver border-white/[0.08]';
-   };
-
    // Helper for penalty type badge
    const getPenaltyTypeBadge = (penaltyType?: string) => {
       switch (penaltyType) {
@@ -227,13 +214,7 @@ const DriverDetailPage: React.FC = () => {
    return (
       <div className="flex flex-col gap-5 animate-fade-in pb-10">
          {/* ─── Back Button ─── */}
-         <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 text-f1-silver hover:text-f1-white transition-colors shrink-0 group w-fit"
-         >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="text-xs font-mono uppercase tracking-widest">Back</span>
-         </button>
+         <BackButton />
 
          {/* ─── Driver Hero HUD Card ─── */}
          <div className="telemetry-card overflow-hidden shrink-0 shadow-2xl">
@@ -340,22 +321,8 @@ const DriverDetailPage: React.FC = () => {
 
          {/* ─── Stats Grid (telemetry cards) ─── */}
          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
-            {stats.map(({ label, value, icon: Icon, color, accent }) => (
-               <div key={label} className="telemetry-card p-2.5 relative overflow-hidden">
-                  <div className={`absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent ${accent} to-transparent`} />
-                  <div className="flex items-center gap-2">
-                     <div
-                        className="w-6 h-6 rounded-lg flex items-center justify-center border border-white/[0.06] shrink-0"
-                        style={{ backgroundColor: `${color}15` }}
-                     >
-                        <Icon className="w-3.5 h-3.5" style={{ color }} />
-                     </div>
-                     <div>
-                        <p className="stat-value font-mono leading-tight" style={{ color }}>{value}</p>
-                        <p className="stat-label text-[9px] font-mono uppercase tracking-widest text-f1-silver/50 leading-tight">{label}</p>
-                     </div>
-                  </div>
-               </div>
+            {stats.map((s) => (
+               <QuickStatCard key={s.label} {...s} />
             ))}
          </div>
 
@@ -398,17 +365,10 @@ const DriverDetailPage: React.FC = () => {
          {/* ─── Driver Performance Matrix (Insights) ─── */}
          {perf && (
             <div className="space-y-2.5">
-               <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                     <Gauge className="w-4 h-4 text-emerald-400" />
-                     <h2 className="text-xs font-mono uppercase tracking-[0.2em] text-f1-silver font-bold">
-                        Season Performance Telemetry
-                     </h2>
-                  </div>
-                  <span className="text-[10px] font-mono text-f1-silver/40 uppercase tracking-widest">
-                     Season 2026 · {perf.totalRaces} Grands Prix
-                  </span>
-               </div>
+               <SectionHeader
+                  title="Season Performance Telemetry"
+                  meta={`Season 2026 · ${perf.totalRaces} Grands Prix`}
+               />
 
                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
                   {/* Avg Grid */}
@@ -471,38 +431,20 @@ const DriverDetailPage: React.FC = () => {
          )}
 
          {/* ─── Nav Tabs: Race Performance vs Penalties ─── */}
-         <div className="flex items-center gap-2 border-b border-white/[0.08] pb-1">
-            <button
-               onClick={() => setActiveTab('races')}
-               className={`px-4 py-2 text-xs font-mono uppercase tracking-wider rounded-t-lg transition-all flex items-center gap-2 border-b-2 ${activeTab === 'races'
-                  ? 'border-f1-red text-white bg-white/[0.04] font-bold'
-                  : 'border-transparent text-f1-silver/60 hover:text-f1-silver hover:bg-white/[0.02]'
-                  }`}
-            >
-               <Flag className="w-3.5 h-3.5 text-f1-red" />
-               Race Results &amp; Positions ({races.length})
-            </button>
-
-            <button
-               onClick={() => setActiveTab('penalties')}
-               className={`px-4 py-2 text-xs font-mono uppercase tracking-wider rounded-t-lg transition-all flex items-center gap-2 border-b-2 ${activeTab === 'penalties'
-                  ? 'border-amber-400 text-white bg-white/[0.04] font-bold'
-                  : 'border-transparent text-f1-silver/60 hover:text-f1-silver hover:bg-white/[0.02]'
-                  }`}
-            >
-               <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-               Penalties &amp; Stewards Records ({penalties.length})
-            </button>
-         </div>
+         <TabBar
+            activeTab={activeTab}
+            onChange={(k) => setActiveTab(k as 'races' | 'penalties')}
+            tabs={[
+               { key: 'races', label: 'Race Results & Positions', count: races.length, icon: Flag, activeColor: 'border-f1-red', iconColor: 'text-f1-red' },
+               { key: 'penalties', label: 'Penalties & Stewards Records', count: penalties.length, icon: ShieldAlert, activeColor: 'border-amber-400', iconColor: 'text-amber-400' },
+            ]}
+         />
 
          {/* ─── TAB 1: Race Results & Positions ─── */}
          {activeTab === 'races' && (
             <div className="space-y-3">
                {historyLoading ? (
-                  <div className="telemetry-card p-8 flex flex-col items-center justify-center gap-3 animate-pulse">
-                     <div className="w-8 h-8 rounded-full border-2 border-f1-red border-t-transparent animate-spin" />
-                     <p className="text-xs font-mono text-f1-silver/50 uppercase tracking-widest">Loading race data…</p>
-                  </div>
+                  <LoadingCard message="Loading race data…" />
                ) : races.length === 0 && !historyLoading ? (
                   <div className="telemetry-card p-8 text-center">
                      <p className="text-sm font-mono text-f1-silver/60">No race results recorded for this season yet.</p>
@@ -546,26 +488,12 @@ const DriverDetailPage: React.FC = () => {
 
                                     <div className="flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
                                        <span className="text-[8px] font-mono uppercase tracking-wider text-f1-silver/40">Finish</span>
-                                       <span className={`text-[11px] font-bold font-mono px-1.5 rounded-full border ${getFinishBadgeStyle(race.finishPosition, race.status)}`}>
-                                          {isDnf ? 'DNF' : `P${race.finishPosition}`}
-                                       </span>
+                                       <FinishBadge position={race.finishPosition} status={race.status} className="text-[11px] px-1.5" />
                                     </div>
 
                                     <div className="flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
                                        <span className="text-[8px] font-mono uppercase tracking-wider text-f1-silver/40">Delta</span>
-                                       {race.positionsGained > 0 ? (
-                                          <span className="inline-flex items-center gap-0.5 text-emerald-400 font-mono text-[11px] font-bold">
-                                             <TrendingUp className="w-3 h-3" />+{race.positionsGained}
-                                          </span>
-                                       ) : race.positionsGained < 0 ? (
-                                          <span className="inline-flex items-center gap-0.5 text-red-400 font-mono text-[11px] font-bold">
-                                             <TrendingDown className="w-3 h-3" />{race.positionsGained}
-                                          </span>
-                                       ) : (
-                                          <span className="inline-flex items-center gap-0.5 text-f1-silver/40 font-mono text-[11px] font-bold">
-                                             <Minus className="w-3 h-3" />0
-                                          </span>
-                                       )}
+                                       <PositionDelta delta={race.positionsGained} />
                                     </div>
 
                                     <div className="flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
@@ -580,9 +508,7 @@ const DriverDetailPage: React.FC = () => {
 
                                  {race.fastestLap && (
                                     <div className="mt-2 flex justify-end">
-                                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[10px]">
-                                          <Zap className="w-3 h-3" /> Fastest Lap
-                                       </span>
+                                       <FastestLapBadge show={race.fastestLap} variant="full" />
                                     </div>
                                  )}
                               </div>
@@ -637,32 +563,10 @@ const DriverDetailPage: React.FC = () => {
                                              )}
                                           </td>
                                           <td className="py-3 px-4 text-center">
-                                             <span
-                                                className={`inline-block px-2.5 py-0.5 rounded-full font-bold border ${getFinishBadgeStyle(
-                                                   race.finishPosition,
-                                                   race.status
-                                                )}`}
-                                             >
-                                                {isDnf ? 'DNF' : `P${race.finishPosition}`}
-                                             </span>
+                                             <FinishBadge position={race.finishPosition} status={race.status} />
                                           </td>
                                           <td className="py-3 px-3 text-center font-bold">
-                                             {race.positionsGained > 0 ? (
-                                                <span className="inline-flex items-center gap-0.5 text-emerald-400 font-mono">
-                                                   <TrendingUp className="w-3 h-3" />
-                                                   +{race.positionsGained}
-                                                </span>
-                                             ) : race.positionsGained < 0 ? (
-                                                <span className="inline-flex items-center gap-0.5 text-red-400 font-mono">
-                                                   <TrendingDown className="w-3 h-3" />
-                                                   {race.positionsGained}
-                                                </span>
-                                             ) : (
-                                                <span className="inline-flex items-center gap-0.5 text-f1-silver/40 font-mono">
-                                                   <Minus className="w-3 h-3" />
-                                                   0
-                                                </span>
-                                             )}
+                                             <PositionDelta delta={race.positionsGained} sizeClass="text-xs" iconClass="w-3 h-3" />
                                           </td>
                                           <td className="py-3 px-4 text-center">
                                              {race.points > 0 ? (
@@ -675,9 +579,7 @@ const DriverDetailPage: React.FC = () => {
                                           </td>
                                           <td className="py-3 px-3 text-center">
                                              {race.fastestLap ? (
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[10px]">
-                                                   <Zap className="w-3 h-3" /> FL
-                                                </span>
+                                                <FastestLapBadge show={race.fastestLap} variant="short" />
                                              ) : (
                                                 <span className="text-f1-silver/20">—</span>
                                              )}
@@ -704,10 +606,7 @@ const DriverDetailPage: React.FC = () => {
          {activeTab === 'penalties' && (
             <div className="space-y-3">
                {historyLoading ? (
-                  <div className="telemetry-card p-8 flex flex-col items-center justify-center gap-3 animate-pulse">
-                     <div className="w-8 h-8 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-                     <p className="text-xs font-mono text-f1-silver/50 uppercase tracking-widest">Loading penalties…</p>
-                  </div>
+                  <LoadingCard message="Loading penalties…" spinnerColorClass="border-amber-400" />
                ) : penalties.length === 0 && !historyLoading ? (
                   <div className="telemetry-card p-10 text-center relative overflow-hidden">
                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3">
