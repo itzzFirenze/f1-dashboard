@@ -322,7 +322,7 @@ const RecordsPage: React.FC = () => {
                      padding={0.3}
                      colors={({ data }) => (data as { color?: string }).color || '#e11d48'}
                      theme={{
-                        text: { fill: '#000' },
+                        text: { fill: '#fff' },
                         axis: { ticks: { text: { fill: '#fff', fontSize: 11, fontFamily: 'monospace', fontWeight: 600 } } },
                         grid: { line: { stroke: '#333' } },
                         tooltip: { container: { background: '#1a1a2e', color: '#fff', border: '1px solid #333' } },

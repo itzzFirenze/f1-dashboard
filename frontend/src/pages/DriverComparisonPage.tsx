@@ -9,9 +9,11 @@ import DriverSelector from '../components/ui/DriverSelector';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
+import { useIsMobile } from '../hooks/useIsMobile';
 import type { Driver, DriverComparisonData } from '../types';
 
 const DriverComparisonPage: React.FC = () => {
+   const isMobile = useIsMobile();
    const [season, setSeason] = useState<number>(2026);
    const [drivers, setDrivers] = useState<Driver[]>([]);
    const [driverA, setDriverA] = useState<Driver | null>(null);
@@ -271,90 +273,146 @@ const DriverComparisonPage: React.FC = () => {
 
                {/* Cumulative Points Line Chart */}
                {cumulativeLineData.length > 0 && cumulativeLineData[0].data.length > 0 && (
-                  <div className="telemetry-card p-6 relative overflow-visible">
+                  <div className="telemetry-card p-4 sm:p-6 relative overflow-visible">
                      <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
-                     <div className="flex items-center gap-2.5 mb-4">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-emerald-400/10">
-                           <ArrowLeftRight className="w-4 h-4 text-emerald-400 rotate-90" />
+                     <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+                        <div className="flex items-center gap-2.5">
+                           <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-emerald-400/10">
+                              <ArrowLeftRight className="w-4 h-4 text-emerald-400 rotate-90" />
+                           </div>
+                           <h3 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Points Progression</h3>
                         </div>
-                        <h3 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Points Progression</h3>
+
+                        {/* Chart Legend & Mobile Scroll Hint */}
+                        <div className="flex items-center gap-3">
+                           {isMobile && cumulativeLineData[0].data.length > 6 && (
+                              <span className="text-[10px] font-mono text-f1-silver/40 flex items-center gap-1">
+                                 Swipe &rarr;
+                              </span>
+                           )}
+                           <div className="flex items-center gap-1.5 font-mono text-xs text-f1-white">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: data.driverA.constructorColor }} />
+                              <span>{data.driverA.code}</span>
+                           </div>
+                           <div className="flex items-center gap-1.5 font-mono text-xs text-f1-white">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: data.driverB.constructorColor }} />
+                              <span>{data.driverB.code}</span>
+                           </div>
+                        </div>
                      </div>
-                     <div className="h-72">
-                        <ResponsiveLine
-                           data={cumulativeLineData}
-                           margin={{ top: 20, right: 30, bottom: 50, left: 50 }}
-                           xScale={{ type: 'point' }}
-                           yScale={{ type: 'linear', min: 0, max: 'auto' }}
-                           curve="monotoneX"
-                           lineWidth={3}
-                           colors={[data.driverA.constructorColor, data.driverB.constructorColor]}
-                           pointSize={8}
-                           pointColor={{ theme: 'background' }}
-                           pointBorderWidth={2}
-                           pointBorderColor={{ from: 'serieColor' }}
-                           enableArea={true}
-                           areaOpacity={0.08}
-                           useMesh={true}
-                           animate={true}
-                           axisBottom={{ tickRotation: -45 }}
-                           theme={{
-                              text: { fill: '#9ca3af' },
-                              axis: { ticks: { text: { fill: '#9ca3af' } }, legend: { text: { fill: '#9ca3af' } } },
-                              grid: { line: { stroke: '#333' } },
-                              crosshair: { line: { stroke: '#e10600' } },
-                              tooltip: { container: { background: '#1a1a2e', color: '#fff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' } },
-                           }}
-                           legends={[
-                              {
-                                 anchor: 'top-right',
-                                 direction: 'row',
-                                 translateY: -10,
-                                 itemWidth: 80,
-                                 itemHeight: 20,
-                                 symbolSize: 12,
-                                 symbolShape: 'circle',
-                                 itemTextColor: '#9ca3af',
-                              },
-                           ]}
-                        />
+
+                     <div className={isMobile ? "overflow-x-auto -mx-2 px-2 scrollbar-thin" : undefined}>
+                        <div style={{ minWidth: isMobile ? Math.max(cumulativeLineData[0].data.length * 48, 340) : '100%', height: isMobile ? 260 : 288 }}>
+                           <ResponsiveLine
+                              data={cumulativeLineData}
+                              margin={isMobile ? { top: 15, right: 20, bottom: 42, left: 38 } : { top: 20, right: 30, bottom: 50, left: 50 }}
+                              xScale={{ type: 'point' }}
+                              yScale={{ type: 'linear', min: 0, max: 'auto' }}
+                              curve="monotoneX"
+                              lineWidth={isMobile ? 2.5 : 3}
+                              colors={[data.driverA.constructorColor, data.driverB.constructorColor]}
+                              pointSize={isMobile ? 6 : 8}
+                              pointColor={{ theme: 'background' }}
+                              pointBorderWidth={2}
+                              pointBorderColor={{ from: 'serieColor' }}
+                              enableArea={true}
+                              areaOpacity={0.08}
+                              useMesh={true}
+                              animate={true}
+                              axisBottom={{
+                                 tickRotation: isMobile ? 0 : -45,
+                                 tickSize: 4,
+                                 tickPadding: 6,
+                              }}
+                              axisLeft={{
+                                 tickSize: 4,
+                                 tickPadding: 4,
+                              }}
+                              theme={{
+                                 text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' },
+                                 axis: { ticks: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } }, legend: { text: { fill: '#9ca3af' } } },
+                                 grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
+                                 crosshair: { line: { stroke: '#e10600' } },
+                                 tooltip: { container: { background: '#1a1a2e', color: '#fff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' } },
+                              }}
+                              legends={isMobile ? [] : [
+                                 {
+                                    anchor: 'top-right',
+                                    direction: 'row',
+                                    translateY: -10,
+                                    itemWidth: 80,
+                                    itemHeight: 20,
+                                    symbolSize: 12,
+                                    symbolShape: 'circle',
+                                    itemTextColor: '#9ca3af',
+                                 },
+                              ]}
+                           />
+                        </div>
                      </div>
                   </div>
                )}
 
                {/* Position Bump Chart */}
                {bumpData.length > 0 && bumpData[0].data.length > 1 && (
-                  <div className="telemetry-card p-6 relative overflow-hidden">
+                  <div className="telemetry-card p-4 sm:p-6 relative overflow-hidden">
                      <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
-                     <div className="flex items-center gap-2.5 mb-4">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-f1-red/10">
-                           <GitCompare className="w-4 h-4 text-f1-red-light" />
+                     <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+                        <div className="flex items-center gap-2.5">
+                           <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-f1-red/10">
+                              <GitCompare className="w-4 h-4 text-f1-red-light" />
+                           </div>
+                           <h3 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Position History</h3>
                         </div>
-                        <h3 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Position History</h3>
+
+                        {/* Chart Legend & Mobile Scroll Hint */}
+                        <div className="flex items-center gap-3">
+                           {isMobile && bumpData[0].data.length > 6 && (
+                              <span className="text-[10px] font-mono text-f1-silver/40 flex items-center gap-1">
+                                 Swipe &rarr;
+                              </span>
+                           )}
+                           <div className="flex items-center gap-1.5 font-mono text-xs text-f1-white">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: data.driverA.constructorColor }} />
+                              <span>{data.driverA.code}</span>
+                           </div>
+                           <div className="flex items-center gap-1.5 font-mono text-xs text-f1-white">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: data.driverB.constructorColor }} />
+                              <span>{data.driverB.code}</span>
+                           </div>
+                        </div>
                      </div>
-                     <div className="h-72">
-                        <ResponsiveBump
-                           data={bumpData}
-                           margin={{ top: 20, right: 60, bottom: 50, left: 60 }}
-                           colors={[data.driverA.constructorColor, data.driverB.constructorColor]}
-                           lineWidth={3}
-                           activeLineWidth={5}
-                           inactiveLineWidth={2}
-                           pointSize={10}
-                           activePointSize={14}
-                           inactivePointSize={6}
-                           pointColor={{ theme: 'background' }}
-                           pointBorderWidth={3}
-                           activePointBorderWidth={3}
-                           pointBorderColor={{ from: 'serie.color' }}
-                           axisTop={null}
-                           axisBottom={{ tickRotation: -45 }}
-                           axisLeft={{ tickSize: 5, tickPadding: 5 }}
-                           theme={{
-                              text: { fill: '#9ca3af' },
-                              axis: { ticks: { text: { fill: '#9ca3af' } } },
-                              tooltip: { container: { background: '#1a1a2e', color: '#fff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' } },
-                           }}
-                        />
+
+                     <div className={isMobile ? "overflow-x-auto -mx-2 px-2 scrollbar-thin" : undefined}>
+                        <div style={{ minWidth: isMobile ? Math.max(bumpData[0].data.length * 48, 340) : '100%', height: isMobile ? 260 : 288 }}>
+                           <ResponsiveBump
+                              data={bumpData}
+                              margin={isMobile ? { top: 15, right: 30, bottom: 42, left: 38 } : { top: 20, right: 60, bottom: 50, left: 60 }}
+                              colors={[data.driverA.constructorColor, data.driverB.constructorColor]}
+                              lineWidth={isMobile ? 2.5 : 3}
+                              activeLineWidth={isMobile ? 4 : 5}
+                              inactiveLineWidth={2}
+                              pointSize={isMobile ? 8 : 10}
+                              activePointSize={isMobile ? 12 : 14}
+                              inactivePointSize={isMobile ? 5 : 6}
+                              pointColor={{ theme: 'background' }}
+                              pointBorderWidth={2.5}
+                              activePointBorderWidth={3}
+                              pointBorderColor={{ from: 'serie.color' }}
+                              axisTop={null}
+                              axisBottom={{
+                                 tickRotation: isMobile ? 0 : -45,
+                                 tickSize: 4,
+                                 tickPadding: 6,
+                              }}
+                              axisLeft={{ tickSize: 4, tickPadding: 4 }}
+                              theme={{
+                                 text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' },
+                                 axis: { ticks: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } } },
+                                 tooltip: { container: { background: '#1a1a2e', color: '#fff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' } },
+                              }}
+                           />
+                        </div>
                      </div>
                   </div>
                )}

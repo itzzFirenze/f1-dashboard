@@ -7,6 +7,7 @@ import { analyticsService } from '../services/analyticsService';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
+import { useIsMobile } from '../hooks/useIsMobile';
 import type { ConsistencyData } from '../types';
 
 const heatmapTheme = {
@@ -33,6 +34,7 @@ const getFinishColor = (value: number | null) => {
 };
 
 const ConsistencyPage: React.FC = () => {
+   const isMobile = useIsMobile();
    const [season, setSeason] = useState<number>(2026);
    const [data, setData] = useState<ConsistencyData | null>(null);
    const [loading, setLoading] = useState(true);
@@ -80,10 +82,11 @@ const ConsistencyPage: React.FC = () => {
       if (!data) return [];
       return data.drivers.map(d => ({
          id: d.driver.code,
+         color: d.driver.constructorColor,
          data: data.races.map(race => {
             const val = d.resultsByRace[race];
             const numVal = val === 'DNF' ? 21 : parseInt(val) || 0;
-            return { x: race.replace(' Grand Prix', ''), y: numVal }; // no more .substring(0, 8)
+            return { x: race.replace(' Grand Prix', ''), y: numVal };
          })
       }));
    }, [data]);
@@ -209,39 +212,99 @@ const ConsistencyPage: React.FC = () => {
          {heatmapData.length > 0 && (
             <div className="telemetry-card p-4 sm:p-6 relative overflow-hidden">
                <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
-               <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-4">
-                  Season Results Heatmap
-               </h3>
-               <div className="overflow-x-auto relative w-full">
-                  <div style={{ height: `${heatmapData.length * 36 + 80}px`, minWidth: '700px' }}>
-                     <ResponsiveHeatMapCanvas
-                        data={heatmapData}
-                        margin={{ top: 90, right: 30, bottom: 20, left: 60 }}  // top increased from 40 → 90
-                        axisTop={{
-                           tickSize: 0,
-                           tickPadding: 10,
-                           tickRotation: -45,
-                        }}
-
-                        axisLeft={{
-                           tickSize: 0,
-                           tickPadding: 8,
-                        }}
-                        colors={(cell) => getFinishColor(cell.value)}
-                        emptyColor="#1e1e2e"
-                        borderWidth={1}
-                        borderColor="#0d0d14"
-                        labelTextColor="#fff"
-                        label={(cell) => {
-                           const v = cell.value;
-                           if (v === null || v === undefined) return '';
-                           return v >= 21 ? 'DNF' : `${v}`;
-                        }}
-                        hoverTarget="cell"
-                        theme={heatmapTheme}
-                     />
-                  </div>
+               <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+                  <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50">
+                     Season Results Heatmap
+                  </h3>
+                  {isMobile && (
+                     <span className="text-[10px] font-mono text-f1-silver/40 flex items-center gap-1">
+                        Swipe races &rarr;
+                     </span>
+                  )}
                </div>
+               {isMobile ? (
+                  /* Mobile: Side-by-side flex with fixed driver column and scrollable heatmap */
+                  <div className="flex rounded-xl border border-white/[0.06] bg-[#0d0d14] overflow-hidden">
+                     {/* Fixed Driver Column on the Left */}
+                     <div
+                        className="shrink-0 w-11 bg-[#161622] border-r border-white/10 flex flex-col z-10"
+                        style={{ height: `${heatmapData.length * 36 + 110}px` }}
+                     >
+                        <div style={{ height: '90px' }} className="border-b border-white/10 flex items-end justify-center pb-2 text-[9px] font-mono text-f1-silver/50 font-bold uppercase tracking-wider">
+                           DRV
+                        </div>
+                        {heatmapData.map((d) => (
+                           <div
+                              key={d.id}
+                              className="flex items-center justify-between px-1.5 font-mono text-[10px] font-bold text-f1-silver"
+                              style={{ height: '36px' }}
+                           >
+                              <span className="w-1 h-3 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                              <span>{d.id}</span>
+                           </div>
+                        ))}
+                     </div>
+
+                     {/* Scrollable Heatmap Canvas on the Right */}
+                     <div className="flex-1 min-w-0 overflow-x-auto scrollbar-thin">
+                        <div style={{ width: '660px', height: `${heatmapData.length * 36 + 110}px` }}>
+                           <ResponsiveHeatMapCanvas
+                              data={heatmapData}
+                              margin={{ top: 90, right: 30, bottom: 20, left: 6 }}
+                              axisTop={{
+                                 tickSize: 0,
+                                 tickPadding: 10,
+                                 tickRotation: -45,
+                              }}
+                              axisLeft={null}
+                              colors={(cell) => getFinishColor(cell.value)}
+                              emptyColor="#1e1e2e"
+                              borderWidth={1}
+                              borderColor="#0d0d14"
+                              labelTextColor="#fff"
+                              label={(cell) => {
+                                 const v = cell.value;
+                                 if (v === null || v === undefined) return '';
+                                 return v >= 21 ? 'DNF' : `${v}`;
+                              }}
+                              hoverTarget="cell"
+                              theme={heatmapTheme}
+                           />
+                        </div>
+                     </div>
+                  </div>
+               ) : (
+                  /* Desktop: Full original untouched Heatmap */
+                  <div className="overflow-x-auto relative w-full scrollbar-thin">
+                     <div style={{ height: `${heatmapData.length * 36 + 110}px`, minWidth: '700px' }}>
+                        <ResponsiveHeatMapCanvas
+                           data={heatmapData}
+                           margin={{ top: 90, right: 60, bottom: 20, left: 60 }}
+                           axisTop={{
+                              tickSize: 0,
+                              tickPadding: 10,
+                              tickRotation: -45,
+                           }}
+                           axisLeft={{
+                              tickSize: 0,
+                              tickPadding: 8,
+                           }}
+                           colors={(cell) => getFinishColor(cell.value)}
+                           emptyColor="#1e1e2e"
+                           borderWidth={1}
+                           borderColor="#0d0d14"
+                           labelTextColor="#fff"
+                           label={(cell) => {
+                              const v = cell.value;
+                              if (v === null || v === undefined) return '';
+                              return v >= 21 ? 'DNF' : `${v}`;
+                           }}
+                           hoverTarget="cell"
+                           theme={heatmapTheme}
+                        />
+                     </div>
+                  </div>
+               )}
             </div>
          )}
 
