@@ -110,6 +110,9 @@ app:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
   season:
     current: ${CURRENT_SEASON:2026}
+  # Self-ping to prevent Render free-tier spin-down (set APP_SELF_PING_URL in env)
+  self-ping-url: ${APP_SELF_PING_URL:}
+  self-ping-interval-ms: ${APP_SELF_PING_INTERVAL_MS:480000}
 
 # Logging
 logging:
