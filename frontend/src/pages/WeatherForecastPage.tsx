@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
    Cloud, CloudRain, Sun, Wind, Droplets, ThermometerSun, AlertTriangle,
    CloudLightning, Compass, ArrowUpRight, Radio, MapPin, Activity,
-   Sparkles
+   Sparkles, History, Clock
 } from 'lucide-react';
 import { ResponsiveLine } from '@nivo/line';
 import { weatherService, WeekendWeatherDto } from '../services/weatherService';
@@ -282,49 +282,11 @@ const WeekendForecast: React.FC<{ forecast: WeekendWeatherDto }> = ({ forecast }
             <div>
                <h3 className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-f1-silver/70 mb-4 flex items-center gap-2">
                   <Sparkles className="w-3.5 h-3.5 text-f1-red" />
-                  SESSION ATMOSPHERIC PROJECTIONS
+                  SESSION ATMOSPHERIC CONDITIONS
                </h3>
                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   {forecast.sessions.map(session => (
-                     <div key={session.sessionName} className="telemetry-card p-4 flex flex-col items-center text-center relative overflow-hidden">
-                        <div
-                           className="absolute top-0 inset-x-0 h-[2px] opacity-60"
-                           style={{ background: 'linear-gradient(90deg, transparent, #38bdf8, transparent)' }}
-                        />
-                        <div className="text-[10px] font-mono font-semibold text-f1-silver/60 uppercase tracking-widest mb-1">
-                           {session.sessionName}
-                        </div>
-                        {session.sessionDate && (
-                           <div className="text-[9px] font-mono text-f1-silver/40 mb-2">
-                              {session.sessionDate}
-                           </div>
-                        )}
-
-                        <WeatherIcon condition={session.condition} />
-
-                        <div className="font-display font-black text-xl text-f1-white mt-2">{session.temperature}°C</div>
-                        <div className="text-[11px] font-mono text-f1-silver/50 uppercase tracking-wider mb-3">{session.condition}</div>
-
-                        {/* Rain Probability HUD Dial */}
-                        <div className="flex items-center justify-center mb-3">
-                           <HudDial percent={session.rainProbability} colorHex="#3b82f6" />
-                        </div>
-
-                        <div className="w-full space-y-1.5 pt-3 border-t border-white/[0.06] text-[11px] font-mono">
-                           <div className="flex justify-between items-center text-sky-300">
-                              <span className="flex items-center gap-1"><Droplets className="w-3 h-3" /> RAIN</span>
-                              <span>{session.rainProbability}%</span>
-                           </div>
-                           <div className="flex justify-between items-center text-emerald-400">
-                              <span className="flex items-center gap-1"><Wind className="w-3 h-3" /> WIND</span>
-                              <span>{session.windSpeed} km/h</span>
-                           </div>
-                           <div className="flex justify-between items-center text-amber-300">
-                              <span className="flex items-center gap-1"><ThermometerSun className="w-3 h-3" /> TRACK</span>
-                              <span>{session.trackTemperature}°C</span>
-                           </div>
-                        </div>
-                     </div>
+                     <SessionCard key={session.sessionName} session={session} />
                   ))}
                </div>
             </div>
@@ -403,6 +365,90 @@ const WeekendForecast: React.FC<{ forecast: WeekendWeatherDto }> = ({ forecast }
                </div>
             </div>
          </div>
+      </div>
+   );
+};
+
+const SessionCard: React.FC<{ session: import('../services/weatherService').SessionWeather }> = ({ session }) => {
+   const status = session.sessionStatus ?? 'UPCOMING';
+
+   const isCompleted = status === 'COMPLETED';
+   const isLive = status === 'LIVE';
+
+   const accentColor = isCompleted ? '#6b7280' : isLive ? '#22c55e' : '#38bdf8';
+   const cardOpacity = isCompleted ? 'opacity-75' : 'opacity-100';
+
+   return (
+      <div className={`telemetry-card p-4 flex flex-col items-center text-center relative overflow-hidden transition-all ${cardOpacity}`}>
+         {/* Top accent bar */}
+         <div
+            className="absolute top-0 inset-x-0 h-[2px]"
+            style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`, opacity: isCompleted ? 0.4 : 0.7 }}
+         />
+
+         {/* Session status badge */}
+         <div className="flex flex-col items-center gap-1 mb-2 w-full">
+            <div className="text-[10px] font-mono font-semibold uppercase tracking-widest"
+               style={{ color: isCompleted ? '#6b7280' : isLive ? '#4ade80' : '#93c5fd' }}>
+               {session.sessionName}
+            </div>
+
+            {isCompleted && (
+               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-500/10 border border-gray-500/25 text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest">
+                  <History className="w-2.5 h-2.5" /> Recorded
+               </span>
+            )}
+            {isLive && (
+               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/15 border border-green-500/30 text-[9px] font-mono font-bold text-green-400 uppercase tracking-widest">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
+                  Live Now
+               </span>
+            )}
+            {!isCompleted && !isLive && (
+               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-[9px] font-mono font-bold text-sky-400 uppercase tracking-widest">
+                  <Clock className="w-2.5 h-2.5" /> Forecast
+               </span>
+            )}
+         </div>
+
+         {session.sessionDate && (
+            <div className="text-[9px] font-mono text-f1-silver/35 mb-2">
+               {session.sessionDate}{session.sessionTime ? ` · ${session.sessionTime.slice(0, 5)}` : ''}
+            </div>
+         )}
+
+         <div className={isCompleted ? 'opacity-60' : ''}>
+            <WeatherIcon condition={session.condition} />
+         </div>
+
+         <div className={`font-display font-black text-xl mt-2 ${isCompleted ? 'text-f1-silver/70' : 'text-f1-white'}`}>
+            {session.temperature}°C
+         </div>
+         <div className="text-[11px] font-mono text-f1-silver/50 uppercase tracking-wider mb-3">{session.condition}</div>
+
+         <div className="flex items-center justify-center mb-3">
+            <HudDial percent={session.rainProbability} colorHex={accentColor} />
+         </div>
+
+         <div className="w-full space-y-1.5 pt-3 border-t border-white/[0.06] text-[11px] font-mono">
+            <div className={`flex justify-between items-center ${isCompleted ? 'text-sky-300/60' : 'text-sky-300'}`}>
+               <span className="flex items-center gap-1"><Droplets className="w-3 h-3" /> RAIN</span>
+               <span>{session.rainProbability}%</span>
+            </div>
+            <div className={`flex justify-between items-center ${isCompleted ? 'text-emerald-400/60' : 'text-emerald-400'}`}>
+               <span className="flex items-center gap-1"><Wind className="w-3 h-3" /> WIND</span>
+               <span>{session.windSpeed} km/h</span>
+            </div>
+            <div className={`flex justify-between items-center ${isCompleted ? 'text-amber-300/60' : 'text-amber-300'}`}>
+               <span className="flex items-center gap-1"><ThermometerSun className="w-3 h-3" /> TRACK</span>
+               <span>{session.trackTemperature}°C</span>
+            </div>
+         </div>
+
+         {isCompleted && (
+            <div className="absolute inset-0 pointer-events-none"
+               style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.12) 0%, transparent 100%)' }} />
+         )}
       </div>
    );
 };

@@ -21,6 +21,9 @@ export interface SessionWeather {
    condition: string;
    trackTemperature: number;
    sessionDate?: string;
+   sessionTime?: string;
+   /** 'COMPLETED' = session is over | 'LIVE' = session running now | 'UPCOMING' = future */
+   sessionStatus?: 'COMPLETED' | 'LIVE' | 'UPCOMING';
 }
 
 export interface WeekendWeatherDto {

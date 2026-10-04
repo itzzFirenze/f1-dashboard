@@ -18,8 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -144,6 +147,11 @@ public class WeatherService {
                 ? new String[]{"FP1", "Sprint Quali", "Sprint", "Qualifying", "Race"}
                 : new String[]{"FP1", "FP2", "FP3", "Qualifying", "Race"};
 
+        // Map session enum keys to display names for lookup
+        Map<String, String> enumToDisplayName = race.getSprintWeekend()
+                ? Map.of("FP1","FP1","SPRINT_QUALIFYING","Sprint Quali","SPRINT","Sprint","QUALIFYING","Qualifying","RACE","Race")
+                : Map.of("FP1","FP1","FP2","FP2","FP3","FP3","QUALIFYING","Qualifying","RACE","Race");
+
         List<WeekendWeatherDto.SessionWeather> sessions = new ArrayList<>();
         JsonNode hourly = root.path("hourly");
         JsonNode hourlyTimes = hourly.path("time");
@@ -163,22 +171,49 @@ public class WeatherService {
             }
         }
 
+        LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
+
         for (int i = 0; i < sessionNames.length; i++) {
             String sName = sessionNames[i];
             WeekendWeatherDto.SessionWeather sw = new WeekendWeatherDto.SessionWeather();
             sw.setSessionName(sName);
 
-            // Determine target session date
-            LocalDate targetDate = race.getRaceDate();
-            if (i < sessionNames.length - 2) {
-                targetDate = race.getRaceDate().minusDays(2);
-            } else if (i < sessionNames.length - 1) {
-                targetDate = race.getRaceDate().minusDays(1);
+            // Find the matching RaceSession entity for this slot
+            RaceSession entity = null;
+            for (Map.Entry<String, String> e : enumToDisplayName.entrySet()) {
+                if (e.getValue().equals(sName)) {
+                    entity = sessionEntityMap.get(e.getKey());
+                    break;
+                }
+            }
+
+            // Determine actual session date/time (from entity if available, else estimate)
+            LocalDate targetDate;
+            LocalTime targetTime = LocalTime.of(14, 0);
+            if (entity != null && entity.getSessionDate() != null) {
+                targetDate = entity.getSessionDate();
+                if (entity.getSessionTime() != null) targetTime = entity.getSessionTime();
+            } else {
+                // Estimate: FP1/FP2 → race-2 days, FP3/Quali → race-1 day, Race → race day
+                if (i < sessionNames.length - 2) {
+                    targetDate = race.getRaceDate().minusDays(2);
+                } else if (i < sessionNames.length - 1) {
+                    targetDate = race.getRaceDate().minusDays(1);
+                } else {
+                    targetDate = race.getRaceDate();
+                }
             }
             sw.setSessionDate(targetDate.toString());
+            sw.setSessionTime(targetTime.toString());
 
-            // Try to find matching hourly slot from Open-Meteo
-            int matchedIndex = findHourlyIndex(hourlyTimes, targetDate, 14); // Target 14:00 session time
+            // Compute session status
+            sw.setSessionStatus(computeSessionStatus(entity, targetDate, targetTime, nowUtc));
+
+            // Try to find matching hourly slot from Open-Meteo at the actual session time
+            int matchedIndex = findHourlyIndex(hourlyTimes, targetDate, targetTime.getHour());
+            if (matchedIndex == -1) {
+                matchedIndex = findHourlyIndex(hourlyTimes, targetDate, 14); // fallback to 14:00
+            }
             if (matchedIndex != -1 && matchedIndex < hourlyTemps.size()) {
                 double temp = hourlyTemps.path(matchedIndex).asDouble(22.0);
                 int rain = hourlyRain.path(matchedIndex).asInt(10);
@@ -241,8 +276,24 @@ public class WeatherService {
                 ? new String[]{"FP1", "Sprint Quali", "Sprint", "Qualifying", "Race"}
                 : new String[]{"FP1", "FP2", "FP3", "Qualifying", "Race"};
 
+        Map<String, RaceSession> sessionEntityMap = new HashMap<>();
+        if (race.getSessions() != null) {
+            for (RaceSession s : race.getSessions()) {
+                if (s.getSessionType() != null) {
+                    sessionEntityMap.put(s.getSessionType().name(), s);
+                }
+            }
+        }
+
+        Map<String, String> enumToDisplayName = race.getSprintWeekend()
+                ? Map.of("FP1","FP1","SPRINT_QUALIFYING","Sprint Quali","SPRINT","Sprint","QUALIFYING","Qualifying","RACE","Race")
+                : Map.of("FP1","FP1","FP2","FP2","FP3","FP3","QUALIFYING","Qualifying","RACE","Race");
+
+        LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
+
         List<WeekendWeatherDto.SessionWeather> sessions = new ArrayList<>();
-        for (String sessionName : sessionNames) {
+        for (int i = 0; i < sessionNames.length; i++) {
+            String sessionName = sessionNames[i];
             WeekendWeatherDto.SessionWeather sw = new WeekendWeatherDto.SessionWeather();
             sw.setSessionName(sessionName);
             sw.setTemperature(existing.getTemperature());
@@ -251,6 +302,21 @@ public class WeatherService {
             sw.setHumidity(existing.getHumidity());
             sw.setCondition(existing.getWeatherCondition());
             sw.setTrackTemperature(round1(existing.getTemperature() + 16.0));
+
+            RaceSession entity = null;
+            for (Map.Entry<String, String> e : enumToDisplayName.entrySet()) {
+                if (e.getValue().equals(sessionName)) { entity = sessionEntityMap.get(e.getKey()); break; }
+            }
+            LocalDate targetDate = (entity != null && entity.getSessionDate() != null) ? entity.getSessionDate()
+                    : (i < sessionNames.length - 2 ? race.getRaceDate().minusDays(2)
+                        : i < sessionNames.length - 1 ? race.getRaceDate().minusDays(1)
+                        : race.getRaceDate());
+            LocalTime targetTime = (entity != null && entity.getSessionTime() != null) ? entity.getSessionTime()
+                    : LocalTime.of(14, 0);
+            sw.setSessionDate(targetDate.toString());
+            sw.setSessionTime(targetTime.toString());
+            sw.setSessionStatus(computeSessionStatus(entity, targetDate, targetTime, nowUtc));
+
             sessions.add(sw);
         }
         dto.setSessions(sessions);
@@ -270,8 +336,21 @@ public class WeatherService {
                 ? new String[]{"FP1", "Sprint Quali", "Sprint", "Qualifying", "Race"}
                 : new String[]{"FP1", "FP2", "FP3", "Qualifying", "Race"};
 
+        Map<String, RaceSession> sessionEntityMap = new HashMap<>();
+        if (race.getSessions() != null) {
+            for (RaceSession s : race.getSessions()) {
+                if (s.getSessionType() != null) sessionEntityMap.put(s.getSessionType().name(), s);
+            }
+        }
+        Map<String, String> enumToDisplayName = race.getSprintWeekend()
+                ? Map.of("FP1","FP1","SPRINT_QUALIFYING","Sprint Quali","SPRINT","Sprint","QUALIFYING","Qualifying","RACE","Race")
+                : Map.of("FP1","FP1","FP2","FP2","FP3","FP3","QUALIFYING","Qualifying","RACE","Race");
+
+        LocalDateTime nowUtc = LocalDateTime.now(ZoneOffset.UTC);
+
         List<WeekendWeatherDto.SessionWeather> sessions = new ArrayList<>();
-        for (String sessionName : sessionNames) {
+        for (int i = 0; i < sessionNames.length; i++) {
+            String sessionName = sessionNames[i];
             WeekendWeatherDto.SessionWeather sw = new WeekendWeatherDto.SessionWeather();
             sw.setSessionName(sessionName);
 
@@ -286,9 +365,47 @@ public class WeatherService {
             sw.setHumidity(humidity);
             sw.setCondition(getFallbackCondition(rain));
             sw.setTrackTemperature(round1(temp + 15.0 + rng.nextDouble() * 8.0));
+
+            RaceSession entity = null;
+            for (Map.Entry<String, String> e : enumToDisplayName.entrySet()) {
+                if (e.getValue().equals(sessionName)) { entity = sessionEntityMap.get(e.getKey()); break; }
+            }
+            LocalDate targetDate = (entity != null && entity.getSessionDate() != null) ? entity.getSessionDate()
+                    : (i < sessionNames.length - 2 ? race.getRaceDate().minusDays(2)
+                        : i < sessionNames.length - 1 ? race.getRaceDate().minusDays(1)
+                        : race.getRaceDate());
+            LocalTime targetTime = (entity != null && entity.getSessionTime() != null) ? entity.getSessionTime()
+                    : LocalTime.of(14, 0);
+            sw.setSessionDate(targetDate.toString());
+            sw.setSessionTime(targetTime.toString());
+            sw.setSessionStatus(computeSessionStatus(entity, targetDate, targetTime, nowUtc));
+
             sessions.add(sw);
         }
         dto.setSessions(sessions);
+    }
+
+    /**
+     * Determines session status:
+     * - COMPLETED: session entity marked COMPLETED, or session start is more than 2h in the past
+     * - LIVE: session has started but not yet COMPLETED (within 2h window)
+     * - UPCOMING: session is in the future
+     */
+    private String computeSessionStatus(RaceSession entity, LocalDate date, LocalTime time, LocalDateTime nowUtc) {
+        if (entity != null && entity.getStatus() == RaceStatus.COMPLETED) {
+            return "COMPLETED";
+        }
+        LocalDateTime sessionStart = LocalDateTime.of(date, time);
+        long minutesSinceStart = Duration.between(sessionStart, nowUtc).toMinutes();
+        if (minutesSinceStart >= 120) {
+            // More than 2 hours since session started — consider it done
+            return "COMPLETED";
+        } else if (minutesSinceStart >= 0) {
+            // Session has started but is within the 2h window
+            return "LIVE";
+        } else {
+            return "UPCOMING";
+        }
     }
 
     private double calculateTrackTemp(double airTemp, int wCode, double irradiance) {

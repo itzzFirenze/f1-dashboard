@@ -61,6 +61,9 @@ public class WeekendWeatherDto {
       private String condition;
       private Double trackTemperature;
       private String sessionDate;
+      private String sessionTime;
+      /** COMPLETED = session is over, LIVE = session currently running, UPCOMING = future */
+      private String sessionStatus;
 
       public String getSessionName() { return sessionName; }
       public void setSessionName(String sessionName) { this.sessionName = sessionName; }
@@ -85,6 +88,12 @@ public class WeekendWeatherDto {
 
       public String getSessionDate() { return sessionDate; }
       public void setSessionDate(String sessionDate) { this.sessionDate = sessionDate; }
+
+      public String getSessionTime() { return sessionTime; }
+      public void setSessionTime(String sessionTime) { this.sessionTime = sessionTime; }
+
+      public String getSessionStatus() { return sessionStatus; }
+      public void setSessionStatus(String sessionStatus) { this.sessionStatus = sessionStatus; }
    }
 
    // Getters and Setters
