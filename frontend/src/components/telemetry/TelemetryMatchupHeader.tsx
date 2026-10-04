@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gauge, ArrowLeftRight, Ban, Calendar, AlertCircle, UserCheck } from 'lucide-react';
+import { Gauge, ArrowLeftRight, Ban, Calendar, UserCheck } from 'lucide-react';
 import PageHeroTitle from '../ui/PageHeroTitle';
 import SeasonSelector from '../ui/SeasonSelector';
 import DriverSelector from '../ui/DriverSelector';
@@ -26,6 +26,10 @@ interface TelemetryMatchupHeaderProps {
    swapDrivers: () => void;
    isCompletedSession: boolean;
    isCancelled: boolean;
+   isLoadingDetail?: boolean;
+   hasQualifyingData?: boolean;
+   hasRaceData?: boolean;
+   racesWithQuali?: number[];
    comparison: TelemetryComparisonResult | null;
    driverAResult: any;
    driverBResult: any;
@@ -53,6 +57,10 @@ export const TelemetryMatchupHeader: React.FC<TelemetryMatchupHeaderProps> = ({
    swapDrivers,
    isCompletedSession,
    isCancelled,
+   isLoadingDetail = false,
+   hasQualifyingData = false,
+   hasRaceData = false,
+   racesWithQuali = [],
    comparison,
    driverAResult,
    driverBResult,
@@ -91,11 +99,15 @@ export const TelemetryMatchupHeader: React.FC<TelemetryMatchupHeaderProps> = ({
                      onChange={(e) => setSelectedRaceId(Number(e.target.value))}
                      className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3.5 py-2 text-xs font-mono text-f1-white focus:outline-none focus:border-f1-red/50 cursor-pointer w-full min-w-0 sm:w-auto sm:max-w-xs"
                   >
-                     {races.map((r) => (
-                        <option key={r.id} value={r.id} className="bg-f1-black">
-                           R{r.round}: {r.name} ({r.country}) {r.status === 'COMPLETED' ? '✓' : ''}
-                        </option>
-                     ))}
+                     {races.map((r) => {
+                        const hasQuali = racesWithQuali.includes(r.id);
+                        const labelStatus = r.status === 'COMPLETED' ? '✓' : hasQuali ? '⏱ Quali' : '';
+                        return (
+                           <option key={r.id} value={r.id} className="bg-f1-black">
+                              R{r.round}: {r.name} ({r.country}) {labelStatus}
+                           </option>
+                        );
+                     })}
                   </select>
 
                   {/* Mode toggle — Q3 vs Race */}
@@ -117,25 +129,36 @@ export const TelemetryMatchupHeader: React.FC<TelemetryMatchupHeaderProps> = ({
             </div>
          </div>
 
-         {/* ─── Non-Completed / Cancelled Session Alert ─── */}
-         {!isCompletedSession ? (
+         {/* ─── Non-Completed / Cancelled Session Alert or Loading State ─── */}
+         {isLoadingDetail ? (
+            <div className="telemetry-card p-10 sm:p-14 text-center relative overflow-hidden rounded-3xl border border-white/[0.08] dot-grid animate-fade-in">
+               <div className="scanline-overlay" />
+               <div className="max-w-md mx-auto space-y-4 relative z-10">
+                  <div className="w-12 h-12 rounded-2xl bg-f1-red/10 border border-f1-red/20 flex items-center justify-center mx-auto text-f1-red-light animate-spin">
+                     <Gauge className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-display font-bold text-f1-white">
+                     Loading Session Telemetry...
+                  </h3>
+                  <p className="text-xs font-mono text-f1-silver/60">
+                     Retrieving telemetry timing data for {activeRace?.name || 'selected Grand Prix'}
+                  </p>
+               </div>
+            </div>
+         ) : !isCompletedSession ? (
             <div className="telemetry-card p-10 sm:p-14 text-center relative overflow-hidden rounded-3xl border border-white/[0.08] dot-grid animate-fade-in">
                <div className="scanline-overlay" />
                <div className="max-w-lg mx-auto space-y-5 relative z-10">
                   <div
                      className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-xl ${isCancelled
                         ? 'bg-red-500/15 border border-red-500/30 text-red-400'
-                        : season >= 2026
-                           ? 'bg-amber-500/15 border border-amber-500/30 text-amber-400'
-                           : 'bg-white/[0.06] border border-white/10 text-f1-silver'
+                        : 'bg-amber-500/15 border border-amber-500/30 text-amber-400'
                         }`}
                   >
                      {isCancelled ? (
                         <Ban className="w-8 h-8" />
-                     ) : season >= 2026 ? (
-                        <Calendar className="w-8 h-8" />
                      ) : (
-                        <AlertCircle className="w-8 h-8" />
+                        <Calendar className="w-8 h-8" />
                      )}
                   </div>
 
@@ -143,18 +166,48 @@ export const TelemetryMatchupHeader: React.FC<TelemetryMatchupHeaderProps> = ({
                      <h3 className="text-xl sm:text-2xl font-display font-bold text-f1-white">
                         {isCancelled
                            ? 'Race Cancelled'
-                           : season >= 2026
-                              ? 'Race Has Not Been Conducted Yet'
-                              : 'No Data Available or Race Cancelled'}
+                           : lapMode === 'Q3'
+                              ? 'Qualifying Has Not Been Conducted Yet'
+                              : 'Race Has Not Been Conducted Yet'}
                      </h3>
                      <p className="text-sm font-mono text-f1-silver/70 leading-relaxed max-w-md mx-auto">
                         {isCancelled
                            ? `The ${season} ${activeRace?.name || 'Grand Prix'} was officially cancelled. No qualifying, race, or telemetry records exist.`
-                           : season >= 2026
-                              ? `The ${activeRace?.name || 'Grand Prix'} for the ${season} season has not been conducted yet. Official recorded telemetry will become available once the race weekend concludes.`
-                              : `No telemetry or session timing data is available for the ${season} ${activeRace?.name || 'Grand Prix'}, or the race was cancelled.`}
+                           : lapMode === 'Q3'
+                              ? `The qualifying session for the ${activeRace?.name || 'Grand Prix'} has not been conducted yet. Official recorded qualifying telemetry will become available once qualifying concludes.`
+                              : `The ${activeRace?.name || 'Grand Prix'} for the ${season} season has not been conducted yet. Official recorded race telemetry will become available once the Grand Prix concludes.`}
                      </p>
                   </div>
+
+                  {lapMode === 'Race' && hasQualifyingData && (
+                     <div className="pt-2">
+                        <p className="text-xs font-mono text-amber-400 mb-3">
+                           Qualifying telemetry is available for this Grand Prix!
+                        </p>
+                        <button
+                           type="button"
+                           onClick={() => setLapMode('Q3')}
+                           className="px-4 py-2 rounded-xl bg-f1-red hover:bg-f1-red-dark text-white text-xs font-mono font-bold transition-all shadow-lg shadow-f1-red/20 inline-flex items-center gap-2 cursor-pointer"
+                        >
+                           Switch to Qualifying Telemetry →
+                        </button>
+                     </div>
+                  )}
+
+                  {lapMode === 'Q3' && hasRaceData && (
+                     <div className="pt-2">
+                        <p className="text-xs font-mono text-amber-400 mb-3">
+                           Race telemetry is available for this Grand Prix!
+                        </p>
+                        <button
+                           type="button"
+                           onClick={() => setLapMode('Race')}
+                           className="px-4 py-2 rounded-xl bg-f1-red hover:bg-f1-red-dark text-white text-xs font-mono font-bold transition-all shadow-lg shadow-f1-red/20 inline-flex items-center gap-2 cursor-pointer"
+                        >
+                           Switch to Race Telemetry →
+                        </button>
+                     </div>
+                  )}
 
                   {activeRace && (
                      <div className="inline-flex items-center gap-3 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs font-mono text-f1-silver/60">

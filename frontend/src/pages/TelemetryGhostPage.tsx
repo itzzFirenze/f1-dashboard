@@ -44,6 +44,11 @@ const TelemetryGhostPage: React.FC = () => {
    const [races, setRaces] = useState<Race[]>([]);
    const [selectedRaceId, setSelectedRaceId] = useState<number | null>(null);
    const [currentRaceDetail, setCurrentRaceDetail] = useState<RaceDetail | null>(null);
+   const [isLoadingDetail, setIsLoadingDetail] = useState<boolean>(false);
+   const [racesWithQuali, setRacesWithQuali] = useState<number[]>([]);
+
+   const raceDetailRef = useRef<RaceDetail | null>(null);
+   raceDetailRef.current = currentRaceDetail;
 
    const [lapMode, setLapMode] = useState<LapMode>('Q3');
 
@@ -93,26 +98,72 @@ const TelemetryGhostPage: React.FC = () => {
       setSelectedRaceId(null);
       setCurrentRaceDetail(null);
       setRaces([]);
+      setRacesWithQuali([]);
 
       Promise.all([
          driverService.getAll(undefined, season),
          raceService.getAll(season),
       ])
-         .then(([dList, rList]) => {
+         .then(async ([dList, rList]) => {
             setDrivers(dList);
             setRaces(rList);
-            // Default to most recent completed race if possible
+            if (rList.length === 0) return;
+
+            // Find the most recent completed race
             const completed = rList.filter((r) => r.status === 'COMPLETED');
-            const defaultRace = completed[completed.length - 1] ?? rList[0];
-            if (defaultRace) setSelectedRaceId(defaultRace.id);
+            const lastCompleted = completed[completed.length - 1];
+
+            // The upcoming candidate immediately following the last completed race (or round 1 if none completed)
+            const upcomingCandidate = lastCompleted
+               ? rList.find((r) => r.round === lastCompleted.round + 1) || rList[rList.indexOf(lastCompleted) + 1]
+               : rList[0];
+
+            let targetRace = lastCompleted ?? rList[0];
+            let initialDetail: RaceDetail | null = null;
+
+            // Check if the upcoming candidate has completed qualifying
+            if (upcomingCandidate && upcomingCandidate.id !== targetRace?.id) {
+               try {
+                  const candidateDetail = await raceService.getById(upcomingCandidate.id);
+                  if (candidateDetail?.qualifyingResults && candidateDetail.qualifyingResults.length > 0) {
+                     targetRace = upcomingCandidate;
+                     initialDetail = candidateDetail;
+                     setRacesWithQuali((prev) => Array.from(new Set([...prev, upcomingCandidate.id])));
+                  }
+               } catch (e) {
+                  console.error('Failed to probe upcoming race for qualifying:', e);
+               }
+            }
+
+            if (targetRace) {
+               setSelectedRaceId(targetRace.id);
+               if (initialDetail) {
+                  setCurrentRaceDetail(initialDetail);
+               }
+            }
          })
          .catch(console.error);
    }, [season]);
 
    useEffect(() => {
       if (selectedRaceId) {
-         setCurrentRaceDetail(null);
-         raceService.getById(selectedRaceId).then(setCurrentRaceDetail).catch(console.error);
+         if (raceDetailRef.current?.id === selectedRaceId) {
+            if (raceDetailRef.current?.qualifyingResults && raceDetailRef.current.qualifyingResults.length > 0) {
+               setRacesWithQuali((prev) => Array.from(new Set([...prev, selectedRaceId])));
+            }
+            return;
+         }
+         setIsLoadingDetail(true);
+         raceService
+            .getById(selectedRaceId)
+            .then((detail) => {
+               setCurrentRaceDetail(detail);
+               if (detail?.qualifyingResults && detail.qualifyingResults.length > 0) {
+                  setRacesWithQuali((prev) => Array.from(new Set([...prev, selectedRaceId])));
+               }
+            })
+            .catch(console.error)
+            .finally(() => setIsLoadingDetail(false));
       }
    }, [selectedRaceId]);
 
@@ -181,14 +232,58 @@ const TelemetryGhostPage: React.FC = () => {
    );
 
    const isCancelled = activeRace?.status === 'CANCELLED';
+
+   const hasQualifyingData = useMemo(() => {
+      return Boolean(
+         !isCancelled &&
+         currentRaceDetail?.qualifyingResults &&
+         currentRaceDetail.qualifyingResults.length > 0
+      );
+   }, [isCancelled, currentRaceDetail]);
+
+   const hasRaceData = useMemo(() => {
+      return Boolean(
+         !isCancelled &&
+         currentRaceDetail?.results &&
+         currentRaceDetail.results.length > 0
+      );
+   }, [isCancelled, currentRaceDetail]);
+
+   // Qualifying only requires qualifying results; Race requires race results.
+   // Neither session should be blocked by the overall race status if results are available.
    const isCompletedSession = useMemo(() => {
-      if (!activeRace || activeRace.status !== 'COMPLETED' || isCancelled) return false;
-      if (!currentRaceDetail) return false;
+      if (!activeRace || isCancelled || !currentRaceDetail) return false;
       if (lapMode === 'Q3') {
-         return Boolean(currentRaceDetail.qualifyingResults && currentRaceDetail.qualifyingResults.length > 0);
+         return hasQualifyingData;
       }
-      return Boolean(currentRaceDetail.results && currentRaceDetail.results.length > 0);
-   }, [activeRace, currentRaceDetail, lapMode, isCancelled]);
+      return hasRaceData;
+   }, [activeRace, isCancelled, currentRaceDetail, lapMode, hasQualifyingData, hasRaceData]);
+
+   // Auto-select P1 and P2 if drivers are not yet chosen or not in the active session
+   useEffect(() => {
+      if (!currentRaceDetail || drivers.length === 0) return;
+
+      const results = lapMode === 'Q3'
+         ? currentRaceDetail.qualifyingResults
+         : currentRaceDetail.results;
+
+      if (!results || results.length < 2) return;
+
+      const hasA = driverA && results.some((r) => r.driverCode === driverA.code);
+      const hasB = driverB && results.some((r) => r.driverCode === driverB.code);
+
+      // If both drivers are set and distinct and participated in this session, keep them
+      if (hasA && hasB && driverA?.id !== driverB?.id) return;
+
+      const p1Result = results.find((r) => r.position === 1) ?? results[0];
+      const p2Result = results.find((r) => r.position === 2) ?? results[1];
+
+      const d1 = drivers.find((d) => d.code === p1Result?.driverCode) ?? null;
+      const d2 = drivers.find((d) => d.code === p2Result?.driverCode && d.id !== d1?.id) ?? null;
+
+      if (d1 && (!driverA || !hasA)) setDriverA(d1);
+      if (d2 && (!driverB || !hasB)) setDriverB(d2);
+   }, [currentRaceDetail, lapMode, drivers]);
 
    const driverAResult = useMemo(() => {
       if (!currentRaceDetail || !driverA) return null;
@@ -605,6 +700,10 @@ const TelemetryGhostPage: React.FC = () => {
             swapDrivers={swapDrivers}
             isCompletedSession={isCompletedSession}
             isCancelled={isCancelled}
+            isLoadingDetail={isLoadingDetail}
+            hasQualifyingData={hasQualifyingData}
+            hasRaceData={hasRaceData}
+            racesWithQuali={racesWithQuali}
             comparison={comparison}
             driverAResult={driverAResult}
             driverBResult={driverBResult}
