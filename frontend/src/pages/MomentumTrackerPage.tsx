@@ -99,6 +99,7 @@ const MomentumTrackerPage: React.FC = () => {
       : '0.0';
 
    const recentRacesDesc = data ? [...data.recentRaces].reverse() : [];
+   const chartMinWidth = waterfallData.length * 36;
 
    // Gauge arc math
    const gaugeRadius = 70;
@@ -235,36 +236,38 @@ const MomentumTrackerPage: React.FC = () => {
                      <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-4">
                         Position Gains / Losses (Grid → Finish)
                      </h3>
-                     <div className="h-64">
-                        <ResponsiveBar
-                           data={waterfallData}
-                           keys={['delta']}
-                           indexBy="race"
-                           margin={{ top: 10, right: 20, bottom: 40, left: 40 }}
-                           padding={0.3}
-                           valueScale={{ type: 'linear', min: 'auto', max: 'auto' }}
-                           colors={({ data }) => (data as any).deltaColor}
-                           borderRadius={4}
-                           axisBottom={{ tickRotation: 0 }}
-                           axisLeft={{ tickSize: 5, format: (v: number) => v > 0 ? `+${v}` : `${v}` }}
-                           enableLabel={true}
-                           label={d => d.value !== null && d.value !== undefined ? (d.value > 0 ? `+${d.value}` : `${d.value}`) : ''}
-                           labelTextColor="#fff"
-                           markers={[
-                              {
-                                 axis: 'y',
-                                 value: 0,
-                                 lineStyle: { stroke: 'rgba(255,255,255,0.15)', strokeWidth: 1 },
-                              },
-                           ]}
-                           animate={true}
-                           theme={{
-                              text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace', fontSize: 11 },
-                              axis: { ticks: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } } },
-                              grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
-                              tooltip: { container: { background: '#0d0d14', color: '#fff', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'ui-monospace, monospace', fontSize: 12 } },
-                           }}
-                        />
+                     <div className="overflow-x-auto pb-2">
+                        <div className="h-64" style={{ minWidth: chartMinWidth }}>
+                           <ResponsiveBar
+                              data={waterfallData}
+                              keys={['delta']}
+                              indexBy="race"
+                              margin={{ top: 10, right: 20, bottom: 40, left: 40 }}
+                              padding={0.3}
+                              valueScale={{ type: 'linear', min: 'auto', max: 'auto' }}
+                              colors={({ data }) => (data as any).deltaColor}
+                              borderRadius={4}
+                              axisBottom={{ tickRotation: 0 }}
+                              axisLeft={{ tickSize: 5, format: (v: number) => v > 0 ? `+${v}` : `${v}` }}
+                              enableLabel={true}
+                              label={d => d.value !== null && d.value !== undefined ? (d.value > 0 ? `+${d.value}` : `${d.value}`) : ''}
+                              labelTextColor="#fff"
+                              markers={[
+                                 {
+                                    axis: 'y',
+                                    value: 0,
+                                    lineStyle: { stroke: 'rgba(255,255,255,0.15)', strokeWidth: 1 },
+                                 },
+                              ]}
+                              animate={true}
+                              theme={{
+                                 text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace', fontSize: 11 },
+                                 axis: { ticks: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } } },
+                                 grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
+                                 tooltip: { container: { background: '#0d0d14', color: '#fff', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'ui-monospace, monospace', fontSize: 12 } },
+                              }}
+                           />
+                        </div>
                      </div>
                   </div>
                )}
@@ -273,43 +276,45 @@ const MomentumTrackerPage: React.FC = () => {
                {rollingLineData.length > 0 && rollingLineData[0].data.length > 0 && (
                   <div className="telemetry-card p-6 relative overflow-visible">
                      <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-sky-400 to-transparent rounded-t-2xl" />
-                     <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-4">
-                        Rolling Averages
-                     </h3>
-                     <div className="h-64">
-                        <ResponsiveLine
-                           data={rollingLineData}
-                           margin={{ top: 20, right: 30, bottom: 50, left: 50 }}
-                           xScale={{ type: 'point' }}
-                           yScale={{ type: 'linear', min: 0, max: 'auto' }}
-                           curve="monotoneX"
-                           lineWidth={3}
-                           colors={['#3b82f6', '#10b981']}
-                           pointSize={8}
-                           pointColor={{ theme: 'background' }}
-                           pointBorderWidth={2}
-                           pointBorderColor={{ from: 'serieColor' }}
-                           useMesh={true}
-                           animate={true}
-                           theme={{
-                              text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace', fontSize: 11 },
-                              axis: { ticks: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } } },
-                              grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
-                              tooltip: { container: { background: '#0d0d14', color: '#fff', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'ui-monospace, monospace', fontSize: 12 } },
-                           }}
-                           legends={[
-                              {
-                                 anchor: 'top-right',
-                                 direction: 'row',
-                                 translateY: -10,
-                                 itemWidth: 100,
-                                 itemHeight: 20,
-                                 symbolSize: 12,
-                                 symbolShape: 'circle',
-                                 itemTextColor: '#9ca3af',
-                              },
-                           ]}
-                        />
+                     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-4">
+                        <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50">
+                           Rolling Averages
+                        </h3>
+                        <div className="flex items-center gap-4 text-[10px] font-mono text-f1-silver/70">
+                           <span className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#3b82f6' }} />
+                              Avg Finish
+                           </span>
+                           <span className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
+                              Avg Points
+                           </span>
+                        </div>
+                     </div>
+                     <div className="overflow-x-auto pb-2">
+                        <div className="h-64" style={{ minWidth: chartMinWidth }}>
+                           <ResponsiveLine
+                              data={rollingLineData}
+                              margin={{ top: 20, right: 30, bottom: 50, left: 50 }}
+                              xScale={{ type: 'point' }}
+                              yScale={{ type: 'linear', min: 0, max: 'auto' }}
+                              curve="monotoneX"
+                              lineWidth={3}
+                              colors={['#3b82f6', '#10b981']}
+                              pointSize={8}
+                              pointColor={{ theme: 'background' }}
+                              pointBorderWidth={2}
+                              pointBorderColor={{ from: 'serieColor' }}
+                              useMesh={true}
+                              animate={true}
+                              theme={{
+                                 text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace', fontSize: 11 },
+                                 axis: { ticks: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } } },
+                                 grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
+                                 tooltip: { container: { background: '#0d0d14', color: '#fff', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'ui-monospace, monospace', fontSize: 12 } },
+                              }}
+                           />
+                        </div>
                      </div>
                   </div>
                )}

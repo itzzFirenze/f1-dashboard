@@ -394,11 +394,11 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
          {/* Map area */}
          <div className="relative flex-1 min-h-0 p-3 pb-1">
             {/* HUD Info */}
-            <div className="absolute left-3 top-3 z-10 space-y-0.5">
-               <h3 className="font-display text-sm font-bold text-f1-white">{circuit.name}</h3>
-               <p className="flex items-center gap-1 text-[10px] font-mono text-f1-silver/60 uppercase tracking-wide">
-                  <MapPin className="h-3 w-3 text-f1-red-light" />
-                  {circuit.location}, {circuit.country}
+            <div className="absolute left-3 top-3 z-10 space-y-0.5 max-w-[42%] sm:max-w-[50%]">
+               <h3 className="font-display text-xs sm:text-sm font-bold text-f1-white leading-tight">{circuit.name}</h3>
+               <p className="flex items-start gap-1 text-[9px] sm:text-[10px] font-mono text-f1-silver/60 uppercase tracking-wide leading-tight">
+                  <MapPin className="h-3 w-3 shrink-0 text-f1-red-light" />
+                  <span>{circuit.location}, {circuit.country}</span>
                </p>
             </div>
 

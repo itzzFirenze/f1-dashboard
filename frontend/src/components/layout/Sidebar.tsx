@@ -81,6 +81,36 @@ const Sidebar: React.FC<SidebarProps> = ({
       window.dispatchEvent(new CustomEvent('f1-sidebar-toggle', { detail: { collapsed: next } }));
    };
 
+   // Lock background scrolling on mobile when sidebar is open
+   useEffect(() => {
+      if (mobileOpen) {
+         document.body.style.overflow = 'hidden';
+         document.documentElement.style.overflow = 'hidden';
+      } else {
+         document.body.style.overflow = '';
+         document.documentElement.style.overflow = '';
+      }
+      return () => {
+         document.body.style.overflow = '';
+         document.documentElement.style.overflow = '';
+      };
+   }, [mobileOpen]);
+
+   // Close mobile sidebar on route change or when resizing to desktop
+   useEffect(() => {
+      setMobileOpen(false);
+   }, [location.pathname]);
+
+   useEffect(() => {
+      const handleResize = () => {
+         if (window.innerWidth >= 768) {
+            setMobileOpen(false);
+         }
+      };
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+   }, []);
+
    // Auto-expand sections that contain the active route
    useEffect(() => {
       navItems.forEach(item => {
@@ -162,7 +192,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="mx-3 carbon-divider" />
 
             {/* Navigation links */}
-            <div className={`flex-1 overflow-y-auto px-2.5 pb-6 pt-3 space-y-1 ${isExpanded ? 'circuit-line' : ''}`}>
+            <div className="flex-1 overflow-y-auto px-2.5 pb-6 pt-3 space-y-1">
                {navItems.map((item, idx) => (
                   <div key={item.label} className="relative">
                      {item.subItems ? (
@@ -281,7 +311,9 @@ const Sidebar: React.FC<SidebarProps> = ({
          {mobileOpen && (
             <div
                className="md:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+               style={{ touchAction: 'none' }}
                onClick={() => setMobileOpen(false)}
+               onTouchMove={(e) => e.preventDefault()}
             />
          )}
 
