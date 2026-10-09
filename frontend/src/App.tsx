@@ -30,6 +30,7 @@ const TelemetryGhostPage      = React.lazy(() => import('./pages/TelemetryGhostP
 const TeammateBattlesPage     = React.lazy(() => import('./pages/TeammateBattlesPage'));
 const PowerRankingsPage       = React.lazy(() => import('./pages/PowerRankingsPage'));
 const CornerPositionPicker    = React.lazy(() => import('./pages/admin/CornerPositionPicker'));
+const UnsubscribePage         = React.lazy(() => import('./pages/UnsubscribePage'));
 const NotFoundPage            = React.lazy(() => import('./pages/NotFoundPage'));
 
 /** Minimal full-screen spinner shown while a lazy page chunk loads */
@@ -79,6 +80,8 @@ const App: React.FC = () => {
                            <Route path="/weather" element={<WeatherForecastPage />} />
                            <Route path="/replay" element={<RaceReplayCenterPage />} />
                            <Route path="/admin/corner-picker" element={<CornerPositionPicker />} />
+                           <Route path="/unsubscribe/:token" element={<UnsubscribePage />} />
+                           <Route path="/unsubscribe" element={<UnsubscribePage />} />
                            <Route path="*" element={<NotFoundPage />} />
                         </Route>
                      </Routes>

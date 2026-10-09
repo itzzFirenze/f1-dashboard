@@ -248,6 +248,36 @@ public class NotificationService {
       return unsubscribe(token, false);
    }
 
+   /** Get subscription info using an unsubscribe token. */
+   @Transactional(readOnly = true)
+   public SubscriptionResponseDto getSubscriptionByToken(String token) {
+      Optional<NotificationSubscription> subOpt = subscriptionRepository.findByUnsubscribeToken(token);
+      if (subOpt.isEmpty()) {
+         return null;
+      }
+      NotificationSubscription sub = subOpt.get();
+      String maskedEmail = maskEmail(sub.getEmail());
+      List<NotificationSubscription> userSubs = subscriptionRepository.findAllByEmail(sub.getEmail());
+      int totalSubbed = userSubs.size();
+      boolean allUpcoming = totalSubbed > 1;
+      Race race = sub.getRace();
+      String raceName = race != null ? race.getName() : "F1 Race";
+
+      return new SubscriptionResponseDto(
+            sub.getId(),
+            maskedEmail,
+            race != null ? race.getId() : null,
+            raceName,
+            true,
+            sub.isNotifyRaceWeek(),
+            sub.isNotifyDayBefore(),
+            sub.isNotifyBeforeSession(),
+            token,
+            allUpcoming ? "Subscribed to " + totalSubbed + " upcoming races" : "Subscribed to " + raceName,
+            allUpcoming,
+            totalSubbed);
+   }
+
    /** Remove all subscriptions for an email address. */
    @Transactional
    public boolean unsubscribeAllByEmail(String email) {

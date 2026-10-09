@@ -18,6 +18,13 @@ export const notificationService = {
       return data.data;
    },
 
+   getSubscriptionByToken: async (token: string): Promise<SubscriptionResponse> => {
+      const { data } = await api.get<ApiResponse<SubscriptionResponse>>(
+         `/notifications/unsubscribe/${token}`
+      );
+      return data.data;
+   },
+
    unsubscribe: async (token: string, all: boolean = false): Promise<void> => {
       await api.delete(`/notifications/unsubscribe/${token}`, {
          params: { all },

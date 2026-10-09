@@ -38,6 +38,16 @@ public class NotificationController {
       }
    }
 
+   @GetMapping("/unsubscribe/{token}")
+   @Operation(summary = "Get subscription details using the unsubscribe token")
+   public ResponseEntity<ApiResponse<SubscriptionResponseDto>> getSubscriptionByToken(@PathVariable String token) {
+      SubscriptionResponseDto result = notificationService.getSubscriptionByToken(token);
+      if (result != null) {
+         return ResponseEntity.ok(ApiResponse.success(result));
+      }
+      return ResponseEntity.status(404).body(ApiResponse.error("Token not found or already unsubscribed."));
+   }
+
    @DeleteMapping("/unsubscribe/{token}")
    @Operation(summary = "Unsubscribe using the token from the confirmation email")
    public ResponseEntity<ApiResponse<String>> unsubscribe(
