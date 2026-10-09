@@ -188,8 +188,12 @@ const DriverDetailPage: React.FC = () => {
    ];
 
    const perf = history?.stats;
-   const races = history?.races || [];
-   const penalties = history?.penalties || [];
+   const races = [...(history?.races || [])].sort((a, b) => b.round - a.round);
+   const penalties = [...(history?.penalties || [])].sort((a, b) => {
+      const ta = new Date((a as any).timestamp ?? 0).getTime() || 0;
+      const tb = new Date((b as any).timestamp ?? 0).getTime() || 0;
+      return tb - ta;
+   });
 
    const formatPenaltyMessage = (message: string) => {
       return message.replace(/\s*\(\d{1,2}:\d{2}(:\d{2})?\)\s*$/, '').trim();
@@ -454,62 +458,62 @@ const DriverDetailPage: React.FC = () => {
                      {/* Mobile: stacked cards, no horizontal scroll */}
                      <div className="sm:hidden space-y-2.5">
                         {races.map((race) => (
-                              <div
-                                 key={race.raceId}
-                                 className="telemetry-card p-3.5 relative overflow-hidden cursor-pointer active:bg-white/[0.03] transition-colors"
-                                 onClick={() => navigate(`/races/${race.raceId}`)}
-                              >
-                                 <div className="flex items-start justify-between gap-2 mb-3">
-                                    <div className="min-w-0">
-                                       <div className="flex items-center gap-2 mb-0.5">
-                                          <span className="text-[10px] font-mono text-f1-silver/50 shrink-0">
-                                             R{race.round.toString().padStart(2, '0')}
-                                          </span>
-                                          <h3 className="font-sans font-bold text-white text-sm truncate">
-                                             {race.raceName}
-                                          </h3>
-                                       </div>
-                                       <p className="text-[10px] text-f1-silver/50 font-mono truncate">
-                                          {race.circuitName}{race.country && ` · ${race.country}`}
-                                       </p>
-                                    </div>
-                                    <ChevronRight className="w-4 h-4 text-f1-silver/30 shrink-0 mt-0.5" />
-                                 </div>
-
-                                 <div className="grid grid-cols-4 gap-1.5">
-                                    <div className="flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-                                       <span className="text-[8px] font-mono uppercase tracking-wider text-f1-silver/40">Grid</span>
-                                       <span className="text-[11px] font-bold font-mono text-white">
-                                          {race.gridPosition > 0 ? `P${race.gridPosition}` : 'PL'}
+                           <div
+                              key={race.raceId}
+                              className="telemetry-card p-3.5 relative overflow-hidden cursor-pointer active:bg-white/[0.03] transition-colors"
+                              onClick={() => navigate(`/races/${race.raceId}`)}
+                           >
+                              <div className="flex items-start justify-between gap-2 mb-3">
+                                 <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                       <span className="text-[10px] font-mono text-f1-silver/50 shrink-0">
+                                          R{race.round.toString().padStart(2, '0')}
                                        </span>
+                                       <h3 className="font-sans font-bold text-white text-sm truncate">
+                                          {race.raceName}
+                                       </h3>
                                     </div>
+                                    <p className="text-[10px] text-f1-silver/50 font-mono truncate">
+                                       {race.circuitName}{race.country && ` · ${race.country}`}
+                                    </p>
+                                 </div>
+                                 <ChevronRight className="w-4 h-4 text-f1-silver/30 shrink-0 mt-0.5" />
+                              </div>
 
-                                    <div className="flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-                                       <span className="text-[8px] font-mono uppercase tracking-wider text-f1-silver/40">Finish</span>
-                                       <FinishBadge position={race.finishPosition} status={race.status} className="text-[11px] px-1.5" />
-                                    </div>
-
-                                    <div className="flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-                                       <span className="text-[8px] font-mono uppercase tracking-wider text-f1-silver/40">Delta</span>
-                                       <PositionDelta delta={race.positionsGained} />
-                                    </div>
-
-                                    <div className="flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-                                       <span className="text-[8px] font-mono uppercase tracking-wider text-f1-silver/40">Points</span>
-                                       {race.points > 0 ? (
-                                          <span className="font-display font-black text-amber-400 text-[11px]">+{race.points}</span>
-                                       ) : (
-                                          <span className="text-f1-silver/30 text-[11px] font-mono">0</span>
-                                       )}
-                                    </div>
+                              <div className="grid grid-cols-4 gap-1.5">
+                                 <div className="flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                                    <span className="text-[8px] font-mono uppercase tracking-wider text-f1-silver/40">Grid</span>
+                                    <span className="text-[11px] font-bold font-mono text-white">
+                                       {race.gridPosition > 0 ? `P${race.gridPosition}` : 'PL'}
+                                    </span>
                                  </div>
 
-                                 {race.fastestLap && (
-                                    <div className="mt-2 flex justify-end">
-                                       <FastestLapBadge show={race.fastestLap} variant="full" />
-                                    </div>
-                                 )}
+                                 <div className="flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                                    <span className="text-[8px] font-mono uppercase tracking-wider text-f1-silver/40">Finish</span>
+                                    <FinishBadge position={race.finishPosition} status={race.status} className="text-[11px] px-1.5" />
+                                 </div>
+
+                                 <div className="flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                                    <span className="text-[8px] font-mono uppercase tracking-wider text-f1-silver/40">Delta</span>
+                                    <PositionDelta delta={race.positionsGained} />
+                                 </div>
+
+                                 <div className="flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                                    <span className="text-[8px] font-mono uppercase tracking-wider text-f1-silver/40">Points</span>
+                                    {race.points > 0 ? (
+                                       <span className="font-display font-black text-amber-400 text-[11px]">+{race.points}</span>
+                                    ) : (
+                                       <span className="text-f1-silver/30 text-[11px] font-mono">0</span>
+                                    )}
+                                 </div>
                               </div>
+
+                              {race.fastestLap && (
+                                 <div className="mt-2 flex justify-end">
+                                    <FastestLapBadge show={race.fastestLap} variant="full" />
+                                 </div>
+                              )}
+                           </div>
                         ))}
                      </div>
 
@@ -531,61 +535,61 @@ const DriverDetailPage: React.FC = () => {
                               </thead>
                               <tbody className="divide-y divide-white/[0.04] text-xs font-mono">
                                  {races.map((race) => (
-                                       <tr
-                                          key={race.raceId}
-                                          className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
-                                          onClick={() => navigate(`/races/${race.raceId}`)}
-                                       >
-                                          <td className="py-3 px-4 text-f1-silver/60 font-mono">
-                                             R{race.round.toString().padStart(2, '0')}
-                                          </td>
-                                          <td className="py-3 px-4">
-                                             <div className="font-sans font-bold text-white group-hover:text-f1-red-light transition-colors">
-                                                {race.raceName}
-                                             </div>
-                                             <div className="text-[10px] text-f1-silver/50 font-mono flex items-center gap-1.5 mt-0.5">
-                                                <span>{race.circuitName}</span>
-                                                {race.country && <span>· {race.country}</span>}
-                                             </div>
-                                          </td>
-                                          <td className="py-3 px-3 text-center font-bold">
-                                             {race.gridPosition > 0 ? (
-                                                <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-white">
-                                                   P{race.gridPosition}
-                                                </span>
-                                             ) : (
-                                                <span className="text-f1-silver/40">PL</span>
-                                             )}
-                                          </td>
-                                          <td className="py-3 px-4 text-center">
-                                             <FinishBadge position={race.finishPosition} status={race.status} />
-                                          </td>
-                                          <td className="py-3 px-3 text-center font-bold">
-                                             <PositionDelta delta={race.positionsGained} sizeClass="text-xs" iconClass="w-3 h-3" />
-                                          </td>
-                                          <td className="py-3 px-4 text-center">
-                                             {race.points > 0 ? (
-                                                <span className="font-display font-black text-amber-400 text-sm">
-                                                   +{race.points}
-                                                </span>
-                                             ) : (
-                                                <span className="text-f1-silver/30">0</span>
-                                             )}
-                                          </td>
-                                          <td className="py-3 px-3 text-center">
-                                             {race.fastestLap ? (
-                                                <FastestLapBadge show={race.fastestLap} variant="short" />
-                                             ) : (
-                                                <span className="text-f1-silver/20">—</span>
-                                             )}
-                                          </td>
-                                          <td className="py-3 px-4 text-right">
-                                             <span className="inline-flex items-center gap-1 text-[10px] font-mono text-f1-silver/50 group-hover:text-amber-400 transition-colors">
-                                                Race Report
-                                                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                                    <tr
+                                       key={race.raceId}
+                                       className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                                       onClick={() => navigate(`/races/${race.raceId}`)}
+                                    >
+                                       <td className="py-3 px-4 text-f1-silver/60 font-mono">
+                                          R{race.round.toString().padStart(2, '0')}
+                                       </td>
+                                       <td className="py-3 px-4">
+                                          <div className="font-sans font-bold text-white group-hover:text-f1-red-light transition-colors">
+                                             {race.raceName}
+                                          </div>
+                                          <div className="text-[10px] text-f1-silver/50 font-mono flex items-center gap-1.5 mt-0.5">
+                                             <span>{race.circuitName}</span>
+                                             {race.country && <span>· {race.country}</span>}
+                                          </div>
+                                       </td>
+                                       <td className="py-3 px-3 text-center font-bold">
+                                          {race.gridPosition > 0 ? (
+                                             <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-white">
+                                                P{race.gridPosition}
                                              </span>
-                                          </td>
-                                       </tr>
+                                          ) : (
+                                             <span className="text-f1-silver/40">PL</span>
+                                          )}
+                                       </td>
+                                       <td className="py-3 px-4 text-center">
+                                          <FinishBadge position={race.finishPosition} status={race.status} />
+                                       </td>
+                                       <td className="py-3 px-3 text-center font-bold">
+                                          <PositionDelta delta={race.positionsGained} sizeClass="text-xs" iconClass="w-3 h-3" />
+                                       </td>
+                                       <td className="py-3 px-4 text-center">
+                                          {race.points > 0 ? (
+                                             <span className="font-display font-black text-amber-400 text-sm">
+                                                +{race.points}
+                                             </span>
+                                          ) : (
+                                             <span className="text-f1-silver/30">0</span>
+                                          )}
+                                       </td>
+                                       <td className="py-3 px-3 text-center">
+                                          {race.fastestLap ? (
+                                             <FastestLapBadge show={race.fastestLap} variant="short" />
+                                          ) : (
+                                             <span className="text-f1-silver/20">—</span>
+                                          )}
+                                       </td>
+                                       <td className="py-3 px-4 text-right">
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-f1-silver/50 group-hover:text-amber-400 transition-colors">
+                                             Race Report
+                                             <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                                          </span>
+                                       </td>
+                                    </tr>
                                  ))}
                               </tbody>
                            </table>

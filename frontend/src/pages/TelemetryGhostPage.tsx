@@ -261,29 +261,16 @@ const TelemetryGhostPage: React.FC = () => {
 
    // Auto-select P1 and P2 if drivers are not yet chosen or not in the active session
    useEffect(() => {
-      if (!currentRaceDetail || drivers.length === 0) return;
+      if (!currentRaceDetail) return;
 
       const results = lapMode === 'Q3'
          ? currentRaceDetail.qualifyingResults
          : currentRaceDetail.results;
+      if (!results) return;
 
-      if (!results || results.length < 2) return;
-
-      const hasA = driverA && results.some((r) => r.driverCode === driverA.code);
-      const hasB = driverB && results.some((r) => r.driverCode === driverB.code);
-
-      // If both drivers are set and distinct and participated in this session, keep them
-      if (hasA && hasB && driverA?.id !== driverB?.id) return;
-
-      const p1Result = results.find((r) => r.position === 1) ?? results[0];
-      const p2Result = results.find((r) => r.position === 2) ?? results[1];
-
-      const d1 = drivers.find((d) => d.code === p1Result?.driverCode) ?? null;
-      const d2 = drivers.find((d) => d.code === p2Result?.driverCode && d.id !== d1?.id) ?? null;
-
-      if (d1 && (!driverA || !hasA)) setDriverA(d1);
-      if (d2 && (!driverB || !hasB)) setDriverB(d2);
-   }, [currentRaceDetail, lapMode, drivers]);
+      if (driverA && !results.some((r) => r.driverCode === driverA.code)) setDriverA(null);
+      if (driverB && !results.some((r) => r.driverCode === driverB.code)) setDriverB(null);
+   }, [currentRaceDetail, lapMode]);
 
    const driverAResult = useMemo(() => {
       if (!currentRaceDetail || !driverA) return null;

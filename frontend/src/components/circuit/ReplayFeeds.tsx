@@ -242,8 +242,13 @@ export const ReplayFeeds: React.FC<ReplayFeedsProps> = ({ activeTab, circuit }) 
          const ahead = ranked[lastRunningIndex];
          lastRunningIndex = idx;
 
+         // Only show +N LAP when the driver is genuinely a full lap (or more) behind.
+         // We check the raw raceDistance difference as well as the floored one to avoid
+         // a false "+1 LAP" when the leader has just finished (raceDistance = exact integer,
+         // e.g. 5.0) while the driver immediately behind hasn't crossed yet (e.g. 4.97).
+         // Math.floor(5.0) - Math.floor(4.97) = 5 - 4 = 1, but the real gap is < 1 lap.
          const lapDiff = Math.floor(ahead.raceDistance) - Math.floor(drv.raceDistance);
-         if (lapDiff >= 1) {
+         if (lapDiff >= 1 && ahead.raceDistance - drv.raceDistance >= 1) {
             return { ...drv, gapLabel: `+${lapDiff} LAP${lapDiff > 1 ? 'S' : ''}` };
          }
 

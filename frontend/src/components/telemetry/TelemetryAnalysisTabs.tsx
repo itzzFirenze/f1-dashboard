@@ -38,11 +38,10 @@ export const TelemetryAnalysisTabs: React.FC<TelemetryAnalysisTabsProps> = ({
                <button
                   key={id}
                   onClick={() => setActiveTab(id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-                     activeTab === id
-                        ? 'bg-f1-red text-white shadow-lg shadow-f1-red/20'
-                        : 'text-f1-silver/70 hover:text-white hover:bg-white/[0.04]'
-                  }`}
+                  className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${activeTab === id
+                     ? 'bg-f1-red text-white shadow-lg shadow-f1-red/20'
+                     : 'text-f1-silver/70 bg-white/[0.05] hover:text-white hover:bg-white/[0.08]'
+                     }`}
                >
                   <Icon className="w-4 h-4" />
                   {label}
@@ -128,21 +127,20 @@ export const TelemetryAnalysisTabs: React.FC<TelemetryAnalysisTabsProps> = ({
                         <button
                            key={f}
                            onClick={() => setCornerFilter(f)}
-                           className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                              cornerFilter === f
-                                 ? f === 'ALL'
-                                    ? 'bg-f1-white text-f1-black'
-                                    : f === 'A'
+                           className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${cornerFilter === f
+                              ? f === 'ALL'
+                                 ? 'bg-f1-white text-f1-black'
+                                 : f === 'A'
                                     ? 'bg-emerald-500 text-white'
                                     : 'bg-sky-500 text-white'
-                                 : 'bg-white/[0.04] text-f1-silver/70 hover:text-white'
-                           }`}
+                              : 'bg-white/[0.04] text-f1-silver/70 hover:text-white'
+                              }`}
                         >
                            {f === 'ALL'
                               ? `All (${comparison.corners.length})`
                               : f === 'A'
-                              ? `${comparison.driverA.code} faster (${comparison.summary.sectorsFasterA})`
-                              : `${comparison.driverB.code} faster (${comparison.summary.sectorsFasterB})`}
+                                 ? `${comparison.driverA.code} faster (${comparison.summary.sectorsFasterA})`
+                                 : `${comparison.driverB.code} faster (${comparison.summary.sectorsFasterB})`}
                         </button>
                      ))}
                   </div>
@@ -158,9 +156,8 @@ export const TelemetryAnalysisTabs: React.FC<TelemetryAnalysisTabsProps> = ({
                      return (
                         <div
                            key={corner.cornerNumber}
-                           className={`telemetry-card p-4 hover:border-white/20 transition-all ${
-                              isAFaster ? 'border-l-4 border-l-emerald-500' : isBFaster ? 'border-l-4 border-l-sky-500' : ''
-                           }`}
+                           className={`telemetry-card p-4 hover:border-white/20 transition-all ${isAFaster ? 'border-l-4 border-l-emerald-500' : isBFaster ? 'border-l-4 border-l-sky-500' : ''
+                              }`}
                         >
                            <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-2">
@@ -175,19 +172,18 @@ export const TelemetryAnalysisTabs: React.FC<TelemetryAnalysisTabsProps> = ({
                                  </div>
                               </div>
                               <span
-                                 className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
-                                    isAFaster
-                                       ? 'bg-emerald-500/15 text-emerald-400'
-                                       : isBFaster
+                                 className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${isAFaster
+                                    ? 'bg-emerald-500/15 text-emerald-400'
+                                    : isBFaster
                                        ? 'bg-sky-500/15 text-sky-300'
                                        : 'bg-white/[0.05] text-f1-silver/70'
-                                 }`}
+                                    }`}
                               >
                                  {isAFaster
                                     ? `${comparison.driverA.code} +${Math.abs(corner.deltaApexSpeed)}`
                                     : isBFaster
-                                    ? `${comparison.driverB.code} +${Math.abs(corner.deltaApexSpeed)}`
-                                    : 'Equal'}{' '}
+                                       ? `${comparison.driverB.code} +${Math.abs(corner.deltaApexSpeed)}`
+                                       : 'Equal'}{' '}
                                  km/h
                               </span>
                            </div>

@@ -249,8 +249,16 @@ const getDriverRaceFraction = (
       , driverLaps[0]);
 
    const lapStartMs = new Date(activeLap.date_start!).getTime();
-   const lapDurationSec = activeLap.lap_duration && activeLap.lap_duration > 0 ? activeLap.lap_duration : 90;
+   const hasRealDuration = Boolean(activeLap.lap_duration && activeLap.lap_duration > 0);
    const elapsedSec = Math.max(0, (nowMs - lapStartMs) / 1000);
+
+   // If the lap has no recorded duration (e.g. driver DNF'd mid-lap), clamp the
+   // denominator to at least the actual elapsed time so the fraction never exceeds
+   // 1.0. This freezes the car marker at its last known position instead of
+   // extrapolating it around the track and back to the finish line.
+   const lapDurationSec = hasRealDuration
+      ? activeLap.lap_duration!
+      : Math.max(90, elapsedSec);
 
    return Math.min(99.5, Math.max(0, (elapsedSec / lapDurationSec) * 100));
 };

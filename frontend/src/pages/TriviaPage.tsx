@@ -126,6 +126,7 @@ const TriviaPage: React.FC = () => {
    // Active game state
    const [gameState, setGameState] = useState<'lobby' | 'starting' | 'playing' | 'finished'>('lobby');
    const [startLightCount, setStartLightCount] = useState<number>(0);
+   const [lightsGreen, setLightsGreen] = useState<boolean>(false);
    const [questions, setQuestions] = useState<TriviaQuestion[]>([]);
    const [currentIndex, setCurrentIndex] = useState<number>(0);
    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -138,6 +139,7 @@ const TriviaPage: React.FC = () => {
    const [loading, setLoading] = useState<boolean>(false);
    const [fetchError, setFetchError] = useState<string | null>(null);
    const [userAnswers, setUserAnswers] = useState<{ question: TriviaQuestion; selected: string; correct: boolean }[]>([]);
+
 
    // High score from local storage
    const [highScore, setHighScore] = useState<number>(() => {
@@ -261,6 +263,7 @@ const TriviaPage: React.FC = () => {
          // Launch Start Lights Animation
          setGameState('starting');
          setStartLightCount(0);
+         setLightsGreen(false);
 
          let light = 1;
          startLightsIntervalRef.current = setInterval(() => {
@@ -272,9 +275,13 @@ const TriviaPage: React.FC = () => {
                   startLightsIntervalRef.current = null;
                }
                startLightsTimeoutRef.current = setTimeout(() => {
-                  setStartLightCount(0);
-                  setGameState('playing');
-               }, 600);
+                  setLightsGreen(true);
+                  startLightsTimeoutRef.current = setTimeout(() => {
+                     setStartLightCount(0);
+                     setLightsGreen(false);
+                     setGameState('playing');
+                  }, 800);
+               }, 800);
             }
          }, 350);
       } catch (err: any) {
@@ -582,10 +589,13 @@ const TriviaPage: React.FC = () => {
                      return (
                         <div
                            key={lightIndex}
-                           className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full transition-all duration-150 ${isLit
-                              ? 'bg-f1-red shadow-[0_0_30px_#e10600] border-2 border-white'
+                           className={`w-10 h-10 sm:w-14 sm:h-14 rounded-full transition-all duration-100 ${isLit
+                              ? lightsGreen
+                                 ? 'border-2 border-white'
+                                 : 'bg-f1-red shadow-[0_0_30px_#e10600] border-2 border-white'
                               : 'bg-zinc-900 border border-white/10'
                               }`}
+                           style={isLit && lightsGreen ? { backgroundColor: '#22c55e', boxShadow: '0 0 30px #22c55e' } : undefined}
                         />
                      );
                   })}

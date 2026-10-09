@@ -68,6 +68,7 @@ const MomentumTrackerPage: React.FC = () => {
       return 'Neutral Form';
    };
 
+
    const waterfallData = data?.recentRaces.map(r => ({
       race: `R${r.round}`,
       delta: r.positionDelta,
@@ -96,6 +97,8 @@ const MomentumTrackerPage: React.FC = () => {
    const avgPoints = data
       ? (data.recentRaces.reduce((s, r) => s + r.points, 0) / data.recentRaces.length).toFixed(1)
       : '0.0';
+
+   const recentRacesDesc = data ? [...data.recentRaces].reverse() : [];
 
    // Gauge arc math
    const gaugeRadius = 70;
@@ -320,7 +323,7 @@ const MomentumTrackerPage: React.FC = () => {
 
                   {/* Mobile: stacked cards, one per race */}
                   <div className="sm:hidden space-y-2.5">
-                     {data.recentRaces.map((r) => (
+                     {recentRacesDesc.map((r) => (
                         <div key={r.round} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5">
                            <div className="flex items-center justify-between mb-2.5">
                               <span className="font-semibold font-mono text-sm text-f1-white truncate pr-2">{r.raceName}</span>
@@ -363,7 +366,7 @@ const MomentumTrackerPage: React.FC = () => {
                            </tr>
                         </thead>
                         <tbody>
-                           {data.recentRaces.map((r) => (
+                           {recentRacesDesc.map((r) => (
                               <tr key={r.round} className="border-b border-white/[0.04] hover:bg-white/[0.03] transition-colors">
                                  <td className="py-3 px-4 font-semibold font-mono text-f1-white">{r.raceName}</td>
                                  <td className="py-3 px-4 text-center font-mono text-f1-silver/70">P{r.gridPosition}</td>
