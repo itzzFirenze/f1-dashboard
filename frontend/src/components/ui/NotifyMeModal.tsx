@@ -93,24 +93,15 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
    useEffect(() => {
       if (!isOpen) return;
 
-      const scrollY = window.scrollY;
-      const { style } = document.body;
-      const prevPosition = style.position;
-      const prevTop = style.top;
-      const prevWidth = style.width;
-      const prevOverflow = style.overflow;
+      const prevBodyOverflow = document.body.style.overflow;
+      const prevHtmlOverflow = document.documentElement.style.overflow;
 
-      style.position = 'fixed';
-      style.top = `-${scrollY}px`;
-      style.width = '100%';
-      style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
 
       return () => {
-         style.position = prevPosition;
-         style.top = prevTop;
-         style.width = prevWidth;
-         style.overflow = prevOverflow;
-         window.scrollTo(0, scrollY);
+         document.body.style.overflow = prevBodyOverflow;
+         document.documentElement.style.overflow = prevHtmlOverflow;
       };
    }, [isOpen]);
 
@@ -179,12 +170,19 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
 
    return createPortal(
       <div
-         className="fixed inset-0 z-[999] flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overscroll-contain"
+         className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overscroll-contain"
+         style={{
+            paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+            paddingBottom: 'max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))',
+         }}
          onClick={onClose}
       >
          {/* Dialog Card */}
          <div
-            className="relative w-full sm:max-w-lg bg-[#12121c] border border-white/10 sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden text-f1-white h-[92vh] sm:h-auto sm:max-h-[92vh] mt-auto sm:mt-0 flex flex-col"
+            className="relative w-full sm:max-w-lg bg-[#12121c] border border-white/10 rounded-2xl shadow-2xl overflow-hidden text-f1-white max-h-[86vh] flex flex-col my-auto"
+            style={{
+               maxHeight: 'min(86vh, calc(100dvh - 3rem))',
+            }}
             onClick={(e) => e.stopPropagation()}
          >
             {/* Top Red Racing Stripe */}
@@ -244,9 +242,12 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
             </div>
 
             {/* Modal Body */}
-            <div className="overflow-y-auto flex-1 overscroll-contain">
+            <div
+               className="overflow-y-auto flex-1 overscroll-contain touch-pan-y"
+               style={{ WebkitOverflowScrolling: 'touch' }}
+            >
                {successData ? (
-                  <div className="p-4 sm:p-6 space-y-5">
+                  <div className="p-4 sm:p-6 pb-6 sm:pb-8 space-y-5">
                      <div className="flex flex-col items-center text-center p-4 sm:p-5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                         <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-3 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                            <CheckCircle2 className="w-7 h-7" />
@@ -302,7 +303,7 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
                      </div>
                   </div>
                ) : (
-                  <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+                  <form onSubmit={handleSubmit} className="p-4 sm:p-6 pb-6 sm:pb-8 space-y-4">
                      {error && (
                         <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-2.5 text-red-400 text-xs">
                            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -465,7 +466,7 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({
 
 
                      {/* Actions */}
-                     <div className="pt-2 flex flex-col gap-2">
+                     <div className="pt-2 pb-2 flex flex-col gap-2">
                         <button
                            type="submit"
                            disabled={loading}
