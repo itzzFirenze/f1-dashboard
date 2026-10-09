@@ -64,20 +64,11 @@ const getCarData = async (
    endDate?: string
 ): Promise<OpenF1CarData[]> => {
    return enqueue(async () => {
-      const params: Record<string, string | number> = {
-         session_key: sessionKey,
-         driver_number: driverNumber,
-      };
+      let url = `/telemetry/car_data?session_key=${sessionKey}&driver_number=${driverNumber}`;
+      if (startDate) url += `&date>=${startDate}`;
+      if (endDate) url += `&date<${endDate}`;
 
-      if (startDate) {
-         params['date>='] = startDate;
-      }
-
-      if (endDate) {
-         params['date<'] = endDate;
-      }
-
-      const { data } = await api.get<OpenF1CarData[]>('/telemetry/car_data', { params });
+      const { data } = await api.get<OpenF1CarData[]>(url);
       return data;
    });
 };
@@ -192,9 +183,8 @@ export const telemetryService = {
 
    getLocations: async (sessionKey: number, dateStart: string, dateEnd: string): Promise<OpenF1Location[]> => {
       return enqueue(async () => {
-         const { data } = await api.get<OpenF1Location[]>('/telemetry/location', {
-            params: { session_key: sessionKey, 'date>=': dateStart, 'date<=': dateEnd },
-         });
+         const url = `/telemetry/location?session_key=${sessionKey}&date>=${dateStart}&date<=${dateEnd}`;
+         const { data } = await api.get<OpenF1Location[]>(url);
          return data;
       });
    },
