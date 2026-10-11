@@ -1,5 +1,5 @@
 import api from './api';
-import type { ApiResponse, DashboardData, Race, RaceDetail } from '../types';
+import type { ApiResponse, DashboardData, Race, RaceDetail, RecentSessionResult } from '../types';
 
 export const dashboardService = {
    getData: async () => {
@@ -7,17 +7,130 @@ export const dashboardService = {
       return data.data;
    },
 
-   getLastRaceResults: async (season: number = 2026): Promise<RaceDetail | null> => {
+   /**
+    * Returns the most recent session results (Race or Sprint) for the dashboard.
+    * If a Grand Prix race has finished, its results are shown.
+    * If a sprint has completed more recently (e.g., Saturday of a sprint weekend before Sunday's race),
+    * sprint results are shown.
+    */
+   getLastRaceResults: async (season: number = 2026): Promise<RecentSessionResult | null> => {
       const { data: racesRes } = await api.get<ApiResponse<Race[]>>('/races', {
-         params: { season, status: 'COMPLETED' },
+         params: { season },
       });
-      const completed = racesRes.data;
-      if (!completed || completed.length === 0) return null;
+      const allRaces = racesRes.data;
+      if (!allRaces || allRaces.length === 0) return null;
 
-      // Pick the race with the highest round number
-      const lastRace = completed.reduce((prev, cur) => (cur.round > prev.round ? cur : prev));
+      // Sort races chronologically by round
+      const sortedRaces = [...allRaces].sort((a, b) => a.round - b.round);
 
-      const { data: detailRes } = await api.get<ApiResponse<RaceDetail>>(`/races/${lastRace.id}`);
-      return detailRes.data;
+      // Identify last completed race
+      const completedRaces = sortedRaces.filter((r) => r.status === 'COMPLETED');
+      const lastCompletedRace = completedRaces.length > 0 ? completedRaces[completedRaces.length - 1] : null;
+
+      // Identify the immediate next or in-progress race (candidate for a recent sprint or race)
+      const nextRaces = sortedRaces.filter((r) => !lastCompletedRace || r.round > lastCompletedRace.round);
+      const nextRace = nextRaces.length > 0 ? nextRaces[0] : null;
+
+      // Check nextRace first (it is in a higher round than lastCompletedRace)
+      if (nextRace) {
+         try {
+            const { data: nextRes } = await api.get<ApiResponse<RaceDetail>>(`/races/${nextRace.id}`);
+            const nextDetail = nextRes.data;
+            if (nextDetail) {
+               const hasRaceResults = nextDetail.results && nextDetail.results.length > 0;
+               const hasSprintResults = nextDetail.sprintResults && nextDetail.sprintResults.length > 0;
+
+               // If the Grand Prix race has finished for nextRace:
+               if (hasRaceResults) {
+                  return {
+                     id: nextDetail.id,
+                     raceId: nextDetail.id,
+                     round: nextDetail.round,
+                     season: nextDetail.season,
+                     name: nextDetail.name,
+                     circuitName: nextDetail.circuit?.name,
+                     country: nextDetail.circuit?.country,
+                     sessionType: 'RACE',
+                     sessionDate: nextDetail.raceDate,
+                     sessionTime: nextDetail.raceTime,
+                     results: nextDetail.results,
+                     sprintResults: nextDetail.sprintResults || [],
+                     raceResults: nextDetail.results,
+                  };
+               }
+
+               // If the sprint has finished for nextRace, but Grand Prix has not yet:
+               // This sprint is the most recent completed event in the championship!
+               if (hasSprintResults) {
+                  const sprintSession = nextDetail.sessions?.find((s) => s.sessionType === 'SPRINT');
+                  return {
+                     id: nextDetail.id,
+                     raceId: nextDetail.id,
+                     round: nextDetail.round,
+                     season: nextDetail.season,
+                     name: nextDetail.name,
+                     circuitName: nextDetail.circuit?.name,
+                     country: nextDetail.circuit?.country,
+                     sessionType: 'SPRINT',
+                     sessionDate: sprintSession?.sessionDate || nextDetail.raceDate,
+                     sessionTime: sprintSession?.sessionTime || nextDetail.raceTime,
+                     results: nextDetail.sprintResults,
+                     sprintResults: nextDetail.sprintResults,
+                     raceResults: nextDetail.results || [],
+                  };
+               }
+            }
+         } catch (e) {
+            console.error('Failed to fetch next race detail for latest results:', e);
+         }
+      }
+
+      // If nextRace had no results, fall back to last completed race
+      if (!lastCompletedRace) return null;
+
+      const { data: detailRes } = await api.get<ApiResponse<RaceDetail>>(`/races/${lastCompletedRace.id}`);
+      const lastCompletedDetail = detailRes.data;
+      if (!lastCompletedDetail) return null;
+
+      const hasRaceResults = lastCompletedDetail.results && lastCompletedDetail.results.length > 0;
+      const hasSprintResults = lastCompletedDetail.sprintResults && lastCompletedDetail.sprintResults.length > 0;
+
+      // In a completed race weekend, Race (Sunday) is newer than Sprint (Saturday)
+      if (hasRaceResults) {
+         return {
+            id: lastCompletedDetail.id,
+            raceId: lastCompletedDetail.id,
+            round: lastCompletedDetail.round,
+            season: lastCompletedDetail.season,
+            name: lastCompletedDetail.name,
+            circuitName: lastCompletedDetail.circuit?.name,
+            country: lastCompletedDetail.circuit?.country,
+            sessionType: 'RACE',
+            sessionDate: lastCompletedDetail.raceDate,
+            sessionTime: lastCompletedDetail.raceTime,
+            results: lastCompletedDetail.results,
+            sprintResults: lastCompletedDetail.sprintResults || [],
+            raceResults: lastCompletedDetail.results,
+         };
+      } else if (hasSprintResults) {
+         const sprintSession = lastCompletedDetail.sessions?.find((s) => s.sessionType === 'SPRINT');
+         return {
+            id: lastCompletedDetail.id,
+            raceId: lastCompletedDetail.id,
+            round: lastCompletedDetail.round,
+            season: lastCompletedDetail.season,
+            name: lastCompletedDetail.name,
+            circuitName: lastCompletedDetail.circuit?.name,
+            country: lastCompletedDetail.circuit?.country,
+            sessionType: 'SPRINT',
+            sessionDate: sprintSession?.sessionDate || lastCompletedDetail.raceDate,
+            sessionTime: sprintSession?.sessionTime || lastCompletedDetail.raceTime,
+            results: lastCompletedDetail.sprintResults,
+            sprintResults: lastCompletedDetail.sprintResults,
+            raceResults: [],
+         };
+      }
+
+      return null;
    },
 };

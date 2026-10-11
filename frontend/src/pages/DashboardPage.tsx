@@ -234,12 +234,16 @@ const DashboardPage: React.FC = () => {
             />
          )}
 
-         {/* ─── Last Race Results: Podium & Full Grid ─── */}
+         {/* ─── Recent Race / Sprint Results: Podium & Full Grid ─── */}
          {lastRaceDetail && lastRaceDetail.results && lastRaceDetail.results.length > 0 && (
             <LastRaceResults
                raceId={lastRaceDetail.id}
                raceName={lastRaceDetail.name}
+               sessionType={lastRaceDetail.sessionType}
+               sessionDate={lastRaceDetail.sessionDate}
                results={lastRaceDetail.results}
+               sprintResults={lastRaceDetail.sprintResults}
+               raceResults={lastRaceDetail.raceResults}
             />
          )}
 

@@ -190,6 +190,24 @@ export interface Weather {
    lastUpdated: string;
 }
 
+export type SessionResultType = 'RACE' | 'SPRINT';
+
+export interface RecentSessionResult {
+   id: number;
+   raceId: number;
+   round: number;
+   season: number;
+   name: string;
+   circuitName?: string;
+   country?: string;
+   sessionType: SessionResultType;
+   sessionDate?: string;
+   sessionTime?: string;
+   results: RaceResult[];
+   sprintResults?: RaceResult[];
+   raceResults?: RaceResult[];
+}
+
 /** Dashboard aggregated data */
 export interface DashboardData {
    currentSeason: number;

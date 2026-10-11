@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import {
    Clock, Ruler, CornerDownRight, Timer, Zap, Trophy,
    Compass, Radio, Flag, ChevronUp, ChevronDown
@@ -15,6 +15,7 @@ type ResultTab = 'race' | 'qualifying' | 'sprint' | 'sprint_qualifying';
 
 const RaceDetailPage: React.FC = () => {
    const { id } = useParams<{ id: string }>();
+   const [searchParams] = useSearchParams();
    const [race, setRace] = useState<RaceDetail | null>(null);
    const [loading, setLoading] = useState(true);
    const [activeTab, setActiveTab] = useState<ResultTab>('race');
@@ -25,15 +26,23 @@ const RaceDetailPage: React.FC = () => {
          raceService.getById(Number(id))
             .then((data) => {
                setRace(data);
-               if (data.results.length > 0) setActiveTab('race');
-               else if (data.qualifyingResults.length > 0) setActiveTab('qualifying');
-               else if (data.sprintResults.length > 0) setActiveTab('sprint');
-               else if (data.sprintQualifyingResults && data.sprintQualifyingResults.length > 0) setActiveTab('sprint_qualifying');
+               const tabParam = searchParams.get('tab') as ResultTab | null;
+               if (tabParam && ['race', 'qualifying', 'sprint', 'sprint_qualifying'].includes(tabParam)) {
+                  setActiveTab(tabParam);
+               } else if (data.results.length > 0) {
+                  setActiveTab('race');
+               } else if (data.qualifyingResults.length > 0) {
+                  setActiveTab('qualifying');
+               } else if (data.sprintResults.length > 0) {
+                  setActiveTab('sprint');
+               } else if (data.sprintQualifyingResults && data.sprintQualifyingResults.length > 0) {
+                  setActiveTab('sprint_qualifying');
+               }
             })
             .catch(console.error)
             .finally(() => setLoading(false));
       }
-   }, [id]);
+   }, [id, searchParams]);
 
    if (loading) return <PageSkeleton />;
    if (!race) return null;
@@ -61,6 +70,15 @@ const RaceDetailPage: React.FC = () => {
          case 'sprint': return 'Sprint';
          case 'qualifying': return 'Qualifying';
          case 'sprint_qualifying': return 'Sprint Qualifying';
+      }
+   };
+
+   const getTabShortLabel = (tab: ResultTab): string => {
+      switch (tab) {
+         case 'race': return 'Race';
+         case 'sprint': return 'Sprint';
+         case 'qualifying': return 'Quali';
+         case 'sprint_qualifying': return 'Sprint Quali';
       }
    };
 
@@ -188,19 +206,21 @@ const RaceDetailPage: React.FC = () => {
                      />
 
                      {/* Tab Bar */}
-                     <div className="flex items-center gap-1 mb-4 sm:mb-5 border-b border-white/[0.06] pb-3 sm:pb-4">
+                     <div className="flex items-center gap-1.5 mb-4 sm:mb-5 border-b border-white/[0.06] pb-3 sm:pb-4 overflow-x-auto no-scrollbar scroll-smooth">
                         {tabs.map((tab) => (
                            <button
                               key={tab}
                               onClick={() => setActiveTab(tab)}
-                              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider sm:tracking-widest transition-all ${activeTab === tab
+                              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider sm:tracking-widest transition-all whitespace-nowrap shrink-0 flex items-center gap-1 sm:gap-1.5 ${activeTab === tab
                                  ? 'bg-f1-red text-white shadow-lg shadow-f1-red/20'
                                  : 'text-f1-silver/70 hover:text-f1-white hover:bg-white/[0.04]'
                                  }`}
                            >
-                              {tab === 'race' && <Trophy className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />}
-                              {(tab === 'sprint' || tab === 'sprint_qualifying') && <Zap className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />}
-                              {getTabLabel(tab)}
+                              {tab === 'race' && <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />}
+                              {tab === 'qualifying' && <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />}
+                              {(tab === 'sprint' || tab === 'sprint_qualifying') && <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />}
+                              <span className="sm:hidden">{getTabShortLabel(tab)}</span>
+                              <span className="hidden sm:inline">{getTabLabel(tab)}</span>
                            </button>
                         ))}
                      </div>

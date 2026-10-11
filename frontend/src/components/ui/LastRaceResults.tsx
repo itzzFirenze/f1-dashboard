@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Medal } from 'lucide-react';
+import { ArrowUpRight, Medal, Zap, Flag } from 'lucide-react';
 import { resolveTheme, getDriverImage } from '../../config/teamThemes';
-import type { RaceResult } from '../../types';
+import type { RaceResult, SessionResultType } from '../../types';
 
 /* ─── FitText: shrinks text to fit its container width ─── */
 interface FitTextProps {
@@ -111,6 +111,11 @@ const PodiumCard: React.FC<PodiumCardProps> = ({ result, position, elevated }) =
             />
 
             <div className="absolute bottom-1.5 right-1.5 sm:bottom-2.5 sm:right-2.5 flex flex-col items-end z-30">
+               {result.fastestLap && (
+                  <span className="text-[7px] sm:text-[8px] font-mono font-bold text-purple-300 bg-purple-900/60 px-1 py-0.5 rounded border border-purple-400/40 mb-0.5 backdrop-blur-sm">
+                     FL
+                  </span>
+               )}
                <span className="font-display font-black text-base sm:text-2xl text-white leading-none">
                   {result.points}
                </span>
@@ -148,10 +153,15 @@ const DriverGridRow: React.FC<{ result: RaceResult; index: number }> = ({ result
 
          <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: result.constructorColor }} />
 
-         <div className="flex-1 min-w-0">
+         <div className="flex-1 min-w-0 flex items-center gap-1.5">
             <span className="text-xs sm:text-sm font-display font-black text-f1-white uppercase tracking-wide truncate block">
                {result.driverFirstName} {result.driverLastName}
             </span>
+            {result.fastestLap && (
+               <span className="text-[8px] font-mono font-bold text-purple-300 bg-purple-900/50 px-1 py-0.2 rounded border border-purple-400/30 shrink-0">
+                  FL
+               </span>
+            )}
          </div>
 
          <div className="hidden sm:flex items-center gap-1.5 flex-1 min-w-0 justify-end">
@@ -189,16 +199,51 @@ const DriverGridRow: React.FC<{ result: RaceResult; index: number }> = ({ result
    );
 };
 
-/* ─── Section: Last Race Results (podium + P4–P10 grid) ─── */
-interface LastRaceResultsProps {
+/* ─── Section: Recent Race / Sprint Results (podium + P4–P10 grid) ─── */
+export interface LastRaceResultsProps {
    raceId: string | number;
    raceName: string;
+   sessionType?: SessionResultType;
+   sessionDate?: string;
    results: RaceResult[];
+   sprintResults?: RaceResult[];
+   raceResults?: RaceResult[];
 }
 
-const LastRaceResults: React.FC<LastRaceResultsProps> = ({ raceId, raceName, results }) => {
+const LastRaceResults: React.FC<LastRaceResultsProps> = ({
+   raceId,
+   raceName,
+   sessionType = 'RACE',
+   sessionDate,
+   results,
+   sprintResults,
+   raceResults,
+}) => {
+   const [viewMode, setViewMode] = useState<SessionResultType>(sessionType);
+
+   // Sync viewMode if sessionType changes from query refetch
+   React.useEffect(() => {
+      setViewMode(sessionType);
+   }, [sessionType]);
+
+   const hasBothSessions =
+      sprintResults && sprintResults.length > 0 && raceResults && raceResults.length > 0;
+
+   const activeResults =
+      viewMode === 'SPRINT'
+         ? sprintResults && sprintResults.length > 0
+            ? sprintResults
+            : results
+         : raceResults && raceResults.length > 0
+         ? raceResults
+         : results;
+
+   const isSprint = viewMode === 'SPRINT';
+
    // Show only positions 1–10 directly (lapped/non-scoring drivers are always P11+)
-   const top10 = [...results].sort((a, b) => a.position - b.position).filter((r) => r.position >= 1 && r.position <= 10);
+   const top10 = [...activeResults]
+      .sort((a, b) => a.position - b.position)
+      .filter((r) => r.position >= 1 && r.position <= 10);
 
    const p1 = top10.find((r) => r.position === 1);
    const p2 = top10.find((r) => r.position === 2);
@@ -210,26 +255,89 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({ raceId, raceName, res
    return (
       <div className="space-y-3">
          {/* Section header */}
-         <div className="flex items-center justify-between gap-2">
+         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-               <div className="p-1.5 rounded-lg bg-amber-400/10 border border-amber-400/20 shrink-0">
-                  <Medal className="w-4 h-4 text-amber-400" />
+               <div
+                  className={`p-1.5 rounded-lg border shrink-0 transition-colors ${
+                     isSprint
+                        ? 'bg-amber-400/15 border-amber-400/30 text-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.2)]'
+                        : 'bg-red-500/15 border-red-500/30 text-f1-red-light'
+                  }`}
+               >
+                  {isSprint ? <Zap className="w-4 h-4 fill-amber-400" /> : <Medal className="w-4 h-4" />}
                </div>
                <div className="min-w-0">
-                  <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50">Last Race Results</p>
-                  <h3 className="text-base sm:text-lg font-display font-black text-f1-white leading-tight truncate">
-                     {raceName}
+                  <div className="flex items-center gap-2">
+                     <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50">
+                        {isSprint ? 'Latest Sprint Results' : 'Last Race Results'}
+                        {sessionDate && <span className="ml-1.5 text-f1-silver/40">• {sessionDate}</span>}
+                     </p>
+                     {/* Session Type Pill Badge */}
+                     <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-wider uppercase border ${
+                           isSprint
+                              ? 'bg-amber-400/15 text-amber-400 border-amber-400/30'
+                              : 'bg-f1-red/15 text-f1-red-light border-f1-red/30'
+                        }`}
+                     >
+                        {isSprint ? (
+                           <>
+                              <Zap className="w-2.5 h-2.5 fill-current" />
+                              SPRINT
+                           </>
+                        ) : (
+                           <>
+                              <Flag className="w-2.5 h-2.5" />
+                              GRAND PRIX
+                           </>
+                        )}
+                     </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-display font-black text-f1-white leading-tight truncate mt-0.5">
+                     {raceName} {isSprint && <span className="text-amber-400 font-sans font-semibold text-xs ml-1 px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/20">Sprint</span>}
                   </h3>
                </div>
             </div>
-            <Link
-               to={`/races/${raceId}`}
-               className="flex items-center gap-1 text-xs font-mono text-f1-silver/60 hover:text-f1-red-light transition-colors bg-white/[0.04] hover:bg-white/[0.07] px-3 py-1.5 rounded-lg border border-white/[0.06] group shrink-0"
-            >
-               <span className="hidden xs:inline">Full Results</span>
-               <span className="xs:hidden">Results</span>
-               <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </Link>
+
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+               {/* Quick toggle if both sessions exist for this round */}
+               {hasBothSessions && (
+                  <div className="inline-flex items-center bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.08]">
+                     <button
+                        type="button"
+                        onClick={() => setViewMode('RACE')}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold transition-all ${
+                           viewMode === 'RACE'
+                              ? 'bg-f1-red text-white shadow-sm font-bold'
+                              : 'text-f1-silver/60 hover:text-white'
+                        }`}
+                     >
+                        Grand Prix {sessionType === 'RACE' && <span className="text-[9px] opacity-75">★</span>}
+                     </button>
+                     <button
+                        type="button"
+                        onClick={() => setViewMode('SPRINT')}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold transition-all flex items-center gap-1 ${
+                           viewMode === 'SPRINT'
+                              ? 'bg-amber-400 text-black shadow-sm font-bold'
+                              : 'text-f1-silver/60 hover:text-white'
+                        }`}
+                     >
+                        <Zap className="w-3 h-3 fill-current" />
+                        Sprint {sessionType === 'SPRINT' && <span className="text-[9px] opacity-75">★</span>}
+                     </button>
+                  </div>
+               )}
+
+               <Link
+                  to={`/races/${raceId}?tab=${isSprint ? 'sprint' : 'race'}`}
+                  className="flex items-center gap-1 text-xs font-mono text-f1-silver/60 hover:text-f1-red-light transition-colors bg-white/[0.04] hover:bg-white/[0.07] px-3 py-1.5 rounded-lg border border-white/[0.06] group shrink-0"
+               >
+                  <span className="hidden xs:inline">Full Results</span>
+                  <span className="xs:hidden">Results</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+               </Link>
+            </div>
          </div>
 
          {/* Podium — P2 | P1 (elevated) | P3 */}
