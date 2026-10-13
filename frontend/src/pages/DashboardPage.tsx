@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-   Trophy, Flag, Users, Calendar, ChevronRight, TrendingUp,
+   Trophy, Flag, Users, Calendar, ChevronRight,
    Activity, Shield,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -9,7 +9,7 @@ import { dashboardService } from '../services/dashboardService';
 import NotifyMeModal from '../components/ui/NotifyMeModal';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
-import { resolveTheme, getDriverImage } from '../config/teamThemes';
+import { resolveTheme } from '../config/teamThemes';
 import NextRaceCard from '../components/ui/NextRaceCard';
 import LastRaceResults from '../components/ui/LastRaceResults';
 import type { DashboardData } from '../types';
@@ -23,6 +23,7 @@ interface StatGaugeCardProps {
    percent: number;
    colorHex: string;
    badgeText?: string;
+   to?: string;
 }
 
 const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
@@ -32,14 +33,15 @@ const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
    icon: Icon,
    percent,
    colorHex,
-   badgeText
+   badgeText,
+   to,
 }) => {
    const radius = 36;
    const circumference = 2 * Math.PI * radius;
    const strokeDashoffset = circumference - (Math.min(Math.max(percent, 0), 100) / 100) * circumference;
 
-   return (
-      <div className="telemetry-card p-3.5 sm:p-5 group flex flex-col justify-between relative overflow-hidden">
+   const card = (
+      <div className={`telemetry-card p-3.5 sm:p-5 group flex flex-col justify-between relative overflow-hidden h-full ${to ? 'cursor-pointer' : ''}`}>
          {/* Subtle top indicator bar */}
          <div
             className="absolute top-0 inset-x-0 h-[2px] opacity-75 transition-opacity group-hover:opacity-100"
@@ -59,11 +61,19 @@ const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
                   {title}
                </span>
             </div>
-            {badgeText && (
-               <span className="hidden sm:inline-block text-[9px] sm:text-[10px] font-mono font-semibold px-1.5 sm:px-2 py-0.5 rounded bg-white/[0.04] text-f1-silver/60 border border-white/[0.06] shrink-0">
-                  {badgeText}
-               </span>
-            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+               {badgeText && (
+                  <span className="hidden sm:inline-block text-[9px] sm:text-[10px] font-mono font-semibold px-1.5 sm:px-2 py-0.5 rounded bg-white/[0.04] text-f1-silver/60 border border-white/[0.06] shrink-0">
+                     {badgeText}
+                  </span>
+               )}
+               {to && (
+                  <ChevronRight
+                     className="w-3.5 h-3.5 text-f1-silver/40 group-hover:translate-x-0.5 transition-all group-hover:[color:var(--icon-color)]"
+                     style={{ '--icon-color': colorHex } as React.CSSProperties}
+                  />
+               )}
+            </div>
          </div>
 
          {/* Center Gauge & Value */}
@@ -108,10 +118,19 @@ const StatGaugeCard: React.FC<StatGaugeCardProps> = ({
          </div>
       </div>
    );
+
+   if (to) {
+      return (
+         <Link to={to} className="group block outline-none h-full">
+            {card}
+         </Link>
+      );
+   }
+
+   return card;
 };
 
 const DashboardPage: React.FC = () => {
-   const [driverImgError, setDriverImgError] = useState(false);
    const [logoError, setLogoError] = useState(false);
    const [showNotifyModal, setShowNotifyModal] = useState(false);
 
@@ -130,17 +149,6 @@ const DashboardPage: React.FC = () => {
 
    if (isLoading) return <PageSkeleton />;
    if (!data) return null;
-
-   const driverTheme = data.driverChampionshipLeader
-      ? resolveTheme(data.driverChampionshipLeader.constructorName)
-      : null;
-   const driverImgUrl = driverTheme && data.driverChampionshipLeader
-      ? getDriverImage(
-         driverTheme,
-         data.driverChampionshipLeader.firstName,
-         data.driverChampionshipLeader.lastName
-      )
-      : null;
 
    const constructorTheme = data.constructorChampionshipLeader
       ? resolveTheme(data.constructorChampionshipLeader.name)
@@ -187,7 +195,7 @@ const DashboardPage: React.FC = () => {
                icon={Flag}
                percent={seasonProgress}
                colorHex="#10b981"
-               badgeText="PASSED"
+               to="/races?status=COMPLETED"
             />
             <StatGaugeCard
                title="Rounds Remaining"
@@ -196,26 +204,183 @@ const DashboardPage: React.FC = () => {
                icon={Calendar}
                percent={100 - seasonProgress}
                colorHex="#E10600"
-               badgeText="PENDING"
+               to="/races?status=UPCOMING"
             />
-            <StatGaugeCard
-               title="Total Calendar"
-               value={data.totalRaces}
-               unit="Championship Stages"
-               icon={Trophy}
-               percent={100}
-               colorHex="#f59e0b"
-               badgeText="OFFICIAL"
-            />
-            <StatGaugeCard
-               title="Season Trajectory"
-               value={`${seasonProgress}%`}
-               unit="Campaign Elapsed"
-               icon={TrendingUp}
-               percent={seasonProgress}
-               colorHex="#38bdf8"
-               badgeText="LIVE RATIO"
-            />
+            {/* Driver Championship Leader */}
+            {data.driverChampionshipLeader && (
+               <Link
+                  to={`/drivers/${data.driverChampionshipLeader.id}`}
+                  className="group block outline-none col-span-2 sm:col-span-1 lg:col-span-1"
+               >
+                  <div className="telemetry-card p-3.5 sm:p-5 h-full relative group cursor-pointer transition-all duration-300 flex flex-col justify-between">
+                     {/* Subtle top indicator bar */}
+                     <div
+                        className="absolute top-0 inset-x-0 h-[2px] opacity-75 transition-opacity group-hover:opacity-100"
+                        style={{
+                           background: `linear-gradient(90deg, transparent, ${data.driverChampionshipLeader.constructorColor || '#f59e0b'}, transparent)`,
+                        }}
+                     />
+
+                     {/* Header */}
+                     <div className="flex items-center justify-between mb-2 sm:mb-3">
+                        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                           <div
+                              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center border border-white/[0.06] transition-transform group-hover:scale-105 shrink-0"
+                              style={{ backgroundColor: `${data.driverChampionshipLeader.constructorColor || '#f59e0b'}15` }}
+                           >
+                              <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 " style={{
+                                 color: data.driverChampionshipLeader.constructorColor || '#f59e0b'
+                              }} />
+                           </div>
+                           <span className="text-[10px] sm:text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase truncate">
+                              Driver Leaderboard
+                           </span>
+                        </div>
+                        <ChevronRight
+                           className="w-3.5 h-3.5 text-f1-silver/40 group-hover:[color:var(--team-color)] group-hover:translate-x-0.5 transition-all shrink-0"
+                           style={{
+                              '--team-color': data.driverChampionshipLeader.constructorColor || '#f59e0b',
+                           } as React.CSSProperties}
+                        />
+                     </div>
+
+                     {/* Center Content & Points */}
+                     <div className="flex items-center justify-between mt-1 sm:mt-2 gap-2 min-w-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                           {/* Driver Acronym Frame */}
+                           <div
+                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden flex items-center justify-center font-mono font-bold text-xs sm:text-sm text-white shrink-0 border border-white/[0.08] shadow-lg relative group-hover:scale-105 transition-transform"
+                              style={{ backgroundColor: `${data.driverChampionshipLeader.constructorColor}30` }}
+                           >
+                              <span className="font-mono font-bold tracking-wider text-white">
+                                 {data.driverChampionshipLeader.code}
+                              </span>
+                           </div>
+
+                           {/* Driver Meta */}
+                           <div className="min-w-0">
+                              <h3 className="text-sm sm:text-base font-black font-display text-f1-white truncate">
+                                 {data.driverChampionshipLeader.firstName} {data.driverChampionshipLeader.lastName}
+                              </h3>
+                              <p
+                                 className="text-[10px] sm:text-xs font-mono font-medium truncate mt-0.5"
+                                 style={{ color: data.driverChampionshipLeader.constructorColor }}
+                              >
+                                 {data.driverChampionshipLeader.constructorName}
+                              </p>
+                           </div>
+                        </div>
+
+                        {/* Points Scoreboard */}
+                        <div className="text-right shrink-0 pl-1">
+                           <div className="text-xl sm:text-2xl lg:text-3xl font-display font-black leading-none"
+                              style={{
+                                 color: data.driverChampionshipLeader.constructorColor || '#f59e0b'
+                              }}>
+                              {data.driverChampionshipLeader.points}
+                           </div>
+                           <span className="text-[9px] sm:text-[10px] font-mono tracking-widest text-f1-silver/50 uppercase block mt-1">
+                              PTS
+                           </span>
+                        </div>
+                     </div>
+                  </div>
+               </Link>
+            )}
+
+            {/* Constructor Championship Leader */}
+            {data.constructorChampionshipLeader && (
+               <Link
+                  to={`/constructors/${data.constructorChampionshipLeader.id}`}
+                  className="group block outline-none col-span-2 sm:col-span-1 lg:col-span-1"
+               >
+                  <div className="telemetry-card p-3.5 sm:p-5 h-full relative group cursor-pointer transition-all duration-300 flex flex-col justify-between">
+                     {/* Subtle top indicator bar */}
+                     <div
+                        className="absolute top-0 inset-x-0 h-[2px] opacity-75 transition-opacity group-hover:opacity-100"
+                        style={{
+                           background: `linear-gradient(90deg, transparent, ${data.constructorChampionshipLeader.color || '#f59e0b'}, transparent)`,
+                        }}
+                     />
+
+                     {/* Header */}
+                     <div className="flex items-center justify-between mb-2 sm:mb-3">
+                        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                           <div
+                              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center border border-white/[0.06] transition-transform group-hover:scale-105 shrink-0"
+                              style={{ backgroundColor: `${data.constructorChampionshipLeader.color || '#f59e0b'}15` }}
+                           >
+                              <Shield
+                                 className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                                 style={{
+                                    color: data.constructorChampionshipLeader.color || '#f59e0b'
+                                 }}
+                              />
+                           </div>
+                           <span className="text-[10px] sm:text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase truncate">
+                              Constructor Leaderboard
+                           </span>
+                        </div>
+                        <ChevronRight
+                           className="w-3.5 h-3.5 text-f1-silver/40 group-hover:[color:var(--team-color)] group-hover:translate-x-0.5 transition-all shrink-0"
+                           style={{
+                              '--team-color': data.constructorChampionshipLeader.color || '#f59e0b',
+                           } as React.CSSProperties}
+                        />
+                     </div>
+
+                     {/* Center Content & Points */}
+                     <div className="flex items-center justify-between mt-1 sm:mt-2 gap-2 min-w-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                           {/* Constructor Logo Frame */}
+                           <div
+                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-white/[0.08] shadow-lg relative group-hover:scale-105 transition-transform bg-f1-abyss/80 p-2"
+                           >
+                              {constructorTheme?.teamLogoUrl && !logoError ? (
+                                 <img
+                                    src={constructorTheme.teamLogoUrl}
+                                    alt={data.constructorChampionshipLeader.name}
+                                    className="w-full h-full object-contain"
+                                    onError={() => setLogoError(true)}
+                                 />
+                              ) : (
+                                 <Trophy
+                                    className="w-3.5 h-3.5 sm:w-4 sm:h-4"
+                                    style={{
+                                       color:
+                                          data.constructorChampionshipLeader.color || '#f59e0b',
+                                    }}
+                                 />
+                              )}
+                           </div>
+
+                           {/* Constructor Meta */}
+                           <div className="min-w-0">
+                              <h3 className="text-sm sm:text-base font-black font-display text-f1-white truncate">
+                                 {data.constructorChampionshipLeader.name}
+                              </h3>
+                              <p className="text-[10px] sm:text-xs font-mono text-f1-silver/60 truncate mt-0.5">
+                                 {data.constructorChampionshipLeader.nationality} Heritage
+                              </p>
+                           </div>
+                        </div>
+
+                        {/* Points Scoreboard */}
+                        <div className="text-right shrink-0 pl-1">
+                           <div className="text-xl sm:text-2xl lg:text-3xl font-display font-black leading-none"
+                              style={{
+                                 color: data.constructorChampionshipLeader.color || '#f59e0b'
+                              }}>
+                              {data.constructorChampionshipLeader.points}
+                           </div>
+                           <span className="text-[9px] sm:text-[10px] font-mono tracking-widest text-f1-silver/50 uppercase block mt-1">
+                              PTS
+                           </span>
+                        </div>
+                     </div>
+                  </div>
+               </Link>
+            )}
          </div>
 
          {/* ─── Next Grand Prix Telemetry Strip ─── */}
@@ -247,158 +412,6 @@ const DashboardPage: React.FC = () => {
             />
          )}
 
-         {/* ─── Championship Leaders: Telemetry Standings ─── */}
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Driver Championship Leader */}
-            {data.driverChampionshipLeader && (
-               <Link
-                  to={`/drivers/${data.driverChampionshipLeader.id}`}
-                  className="group block outline-none"
-               >
-                  <div className="diagonal-card p-4 sm:p-6 relative group cursor-pointer transition-all duration-300">
-                     {/* Dynamic Team Color Accent Line */}
-                     <div
-                        className="absolute left-0 top-0 bottom-0 w-1.5 transition-all group-hover:w-2"
-                        style={{ backgroundColor: data.driverChampionshipLeader.constructorColor || '#E10600' }}
-                     />
-
-                     <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/[0.04]">
-                        <div className="flex items-center gap-2.5">
-                           <div className="p-1.5 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-400">
-                              <Trophy className="w-4 h-4" />
-                           </div>
-                           <span className="text-xs font-mono font-bold text-f1-silver/80 uppercase tracking-widest">
-                              Driver Leaderboard #01
-                           </span>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-f1-silver/40 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
-                     </div>
-
-                     <div className="flex items-center gap-3 sm:gap-5">
-                        {/* Driver Portrait Frame */}
-                        <div
-                           className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl overflow-hidden flex items-center justify-center font-display font-black text-2xl text-white shrink-0 border border-white/[0.08] shadow-lg relative group-hover:scale-105 transition-transform"
-                           style={{ backgroundColor: `${data.driverChampionshipLeader.constructorColor}30` }}
-                        >
-                           {driverImgUrl && !driverImgError ? (
-                              <img
-                                 src={driverImgUrl}
-                                 alt={`${data.driverChampionshipLeader.firstName} ${data.driverChampionshipLeader.lastName}`}
-                                 className="w-full h-full object-cover object-top"
-                                 onError={() => setDriverImgError(true)}
-                              />
-                           ) : (
-                              <span className="font-mono">{data.driverChampionshipLeader.code}</span>
-                           )}
-                           <div
-                              className="absolute bottom-0 inset-x-0 h-1"
-                              style={{ backgroundColor: data.driverChampionshipLeader.constructorColor }}
-                           />
-                        </div>
-
-                        {/* Driver Meta */}
-                        <div className="flex-1 min-w-0">
-                           <div className="text-xs font-mono font-semibold text-f1-silver/60 uppercase tracking-wider">
-                              P1 Standings Leader
-                           </div>
-                           <h3 className="text-lg sm:text-2xl font-black font-display text-f1-white truncate mt-0.5">
-                              {data.driverChampionshipLeader.firstName} {data.driverChampionshipLeader.lastName}
-                           </h3>
-                           <p
-                              className="text-xs sm:text-sm font-mono font-medium truncate mt-0.5"
-                              style={{ color: data.driverChampionshipLeader.constructorColor }}
-                           >
-                              {data.driverChampionshipLeader.constructorName}
-                           </p>
-                        </div>
-
-                        {/* Points Scoreboard */}
-                        <div className="text-right shrink-0 pl-2">
-                           <div className="text-2xl sm:text-4xl font-display font-black text-amber-400 leading-none">
-                              {data.driverChampionshipLeader.points}
-                           </div>
-                           <span className="text-[10px] font-mono tracking-widest text-f1-silver/50 uppercase block mt-1">
-                              POINTS
-                           </span>
-                        </div>
-                     </div>
-                  </div>
-               </Link>
-            )}
-
-            {/* Constructor Championship Leader */}
-            {data.constructorChampionshipLeader && (
-               <Link
-                  to={`/constructors/${data.constructorChampionshipLeader.id}`}
-                  className="group block outline-none"
-               >
-                  <div className="diagonal-card p-4 sm:p-6 relative group cursor-pointer transition-all duration-300">
-                     {/* Dynamic Team Color Accent Line */}
-                     <div
-                        className="absolute left-0 top-0 bottom-0 w-1.5 transition-all group-hover:w-2"
-                        style={{ backgroundColor: data.constructorChampionshipLeader.color || '#E10600' }}
-                     />
-
-                     <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/[0.04]">
-                        <div className="flex items-center gap-2.5">
-                           <div className="p-1.5 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-400">
-                              <Shield className="w-4 h-4" />
-                           </div>
-                           <span className="text-xs font-mono font-bold text-f1-silver/80 uppercase tracking-widest">
-                              Constructor Leaderboard #01
-                           </span>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-f1-silver/40 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
-                     </div>
-
-                     <div className="flex items-center gap-3 sm:gap-5">
-                        {/* Constructor Logo Frame */}
-                        <div
-                           className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 border border-white/[0.08] shadow-lg relative group-hover:scale-105 transition-transform bg-f1-abyss/80 p-2.5"
-                        >
-                           {constructorTheme?.teamLogoUrl && !logoError ? (
-                              <img
-                                 src={constructorTheme.teamLogoUrl}
-                                 alt={data.constructorChampionshipLeader.name}
-                                 className="w-full h-full object-contain"
-                                 onError={() => setLogoError(true)}
-                              />
-                           ) : (
-                              <Trophy className="w-8 h-8 text-amber-400" />
-                           )}
-                           <div
-                              className="absolute bottom-0 inset-x-0 h-1"
-                              style={{ backgroundColor: data.constructorChampionshipLeader.color }}
-                           />
-                        </div>
-
-                        {/* Constructor Meta */}
-                        <div className="flex-1 min-w-0">
-                           <div className="text-xs font-mono font-semibold text-f1-silver/60 uppercase tracking-wider">
-                              World Champions Leading
-                           </div>
-                           <h3 className="text-lg sm:text-2xl font-black font-display text-f1-white truncate mt-0.5">
-                              {data.constructorChampionshipLeader.name}
-                           </h3>
-                           <p className="text-xs sm:text-sm font-mono text-f1-silver/60 truncate mt-0.5">
-                              {data.constructorChampionshipLeader.nationality} Heritage
-                           </p>
-                        </div>
-
-                        {/* Points Scoreboard */}
-                        <div className="text-right shrink-0 pl-2">
-                           <div className="text-2xl sm:text-4xl font-display font-black text-amber-400 leading-none">
-                              {data.constructorChampionshipLeader.points}
-                           </div>
-                           <span className="text-[10px] font-mono tracking-widest text-f1-silver/50 uppercase block mt-1">
-                              POINTS
-                           </span>
-                        </div>
-                     </div>
-                  </div>
-               </Link>
-            )}
-         </div>
 
          {/* ─── Fast Telemetry Navigation Quick Links ─── */}
          <div className="pt-2">

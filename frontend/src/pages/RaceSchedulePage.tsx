@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Calendar, MapPin, ChevronRight, Zap, Flag, Radio } from 'lucide-react';
 import { raceService } from '../services/raceService';
@@ -11,8 +11,35 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import type { Race } from '../types';
 
 const RaceSchedulePage: React.FC = () => {
+   const [searchParams, setSearchParams] = useSearchParams();
    const [search, setSearch] = useState('');
-   const [statusFilter, setStatusFilter] = useState<string>('');
+   const urlStatus = (searchParams.get('status') || '').toUpperCase();
+   const [statusFilter, setStatusFilter] = useState<string>(
+      ['COMPLETED', 'UPCOMING'].includes(urlStatus) ? urlStatus : ''
+   );
+
+   React.useEffect(() => {
+      const currentParam = (searchParams.get('status') || '').toUpperCase();
+      if (['COMPLETED', 'UPCOMING'].includes(currentParam)) {
+         setStatusFilter(currentParam);
+      } else if (!currentParam) {
+         setStatusFilter('');
+      }
+   }, [searchParams]);
+
+   const handleStatusChange = (newStatus: string) => {
+      setStatusFilter(newStatus);
+      setSearchParams((prev) => {
+         const next = new URLSearchParams(prev);
+         if (newStatus) {
+            next.set('status', newStatus);
+         } else {
+            next.delete('status');
+         }
+         return next;
+      });
+   };
+
    const debouncedSearch = useDebouncedValue(search, search ? 300 : 0);
 
    const { data: allRaces = [], isLoading } = useQuery<Race[]>({
@@ -70,7 +97,7 @@ const RaceSchedulePage: React.FC = () => {
                      {(['', 'COMPLETED', 'UPCOMING'] as const).map((s) => (
                         <button
                            key={s}
-                           onClick={() => setStatusFilter(s)}
+                           onClick={() => handleStatusChange(s)}
                            className={`flex-1 sm:flex-initial px-2 sm:px-3.5 py-1.5 rounded-lg text-[10px] sm:text-xs font-mono font-semibold uppercase tracking-wider transition-all truncate text-center ${statusFilter === s
                               ? 'bg-f1-red text-white shadow-lg shadow-f1-red/20'
                               : 'text-f1-silver/60 hover:text-f1-white'

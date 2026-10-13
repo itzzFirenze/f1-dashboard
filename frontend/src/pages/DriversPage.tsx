@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Trophy, Users, User } from 'lucide-react';
 import { driverService } from '../services/driverService';
-import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import SearchInput from '../components/ui/SearchInput';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
@@ -31,12 +30,41 @@ const PositionBadge: React.FC<{ position: number }> = ({ position }) => {
 
 const DriversPage: React.FC = () => {
    const [search, setSearch] = useState('');
-   const debouncedSearch = useDebouncedValue(search, search ? 300 : 0);
 
-   const { data: drivers = [], isLoading } = useQuery<Driver[]>({
-      queryKey: ['drivers', debouncedSearch, 2026],
-      queryFn: () => driverService.getAll(debouncedSearch || undefined, 2026),
+   const { data: allDrivers = [], isLoading } = useQuery<Driver[]>({
+      queryKey: ['drivers', 2026],
+      queryFn: () => driverService.getAll(undefined, 2026),
    });
+
+   const drivers = React.useMemo(() => {
+      const term = search.trim().toLowerCase();
+      if (!term) return allDrivers;
+
+      return allDrivers.filter((driver) => {
+         const fullName = `${driver.firstName} ${driver.lastName}`.toLowerCase();
+         const firstName = driver.firstName.toLowerCase();
+         const lastName = driver.lastName.toLowerCase();
+         const code = driver.code.toLowerCase();
+         const numberStr = String(driver.number);
+
+         // First name, last name, or full name starts with search term
+         if (firstName.startsWith(term) || lastName.startsWith(term) || fullName.startsWith(term)) {
+            return true;
+         }
+
+         // Driver acronym / code prefix (e.g. "HAM", "VER", "LEC")
+         if (code.startsWith(term)) {
+            return true;
+         }
+
+         // Driver car number exact match (e.g. "44", "1", "16")
+         if (numberStr === term) {
+            return true;
+         }
+
+         return false;
+      });
+   }, [allDrivers, search]);
 
    if (isLoading) return <PageSkeleton />;
 
@@ -86,9 +114,6 @@ const DriversPage: React.FC = () => {
 
          {/* ─── Search Strip ─── */}
          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 px-1">
-               Engineering Search
-            </div>
             <div className="w-full sm:w-72">
                <SearchInput
                   value={search}
