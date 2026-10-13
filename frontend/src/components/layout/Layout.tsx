@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import EasterEggPlayer from '../ui/EasterEggPlayer';
+
+import { PageSkeleton } from '../ui/LoadingSkeleton';
 
 const Layout: React.FC = () => {
    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -25,7 +27,9 @@ const Layout: React.FC = () => {
          <div className={`flex-1 ${sidebarCollapsed ? 'md:ml-[72px]' : 'md:ml-64'} flex flex-col min-h-screen max-w-[100vw] overflow-x-hidden transition-[margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]`}>
             <main className="flex-1 pt-14 md:pt-0">
                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-8">
-                  <Outlet />
+                  <Suspense fallback={<PageSkeleton />}>
+                     <Outlet />
+                  </Suspense>
                </div>
             </main>
             {/* Easter Egg Audio Player */}
