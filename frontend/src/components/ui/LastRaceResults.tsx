@@ -205,6 +205,8 @@ export interface LastRaceResultsProps {
    raceName: string;
    sessionType?: SessionResultType;
    sessionDate?: string;
+   sprintDate?: string;
+   raceDate?: string;
    results: RaceResult[];
    sprintResults?: RaceResult[];
    raceResults?: RaceResult[];
@@ -215,6 +217,8 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
    raceName,
    sessionType = 'RACE',
    sessionDate,
+   sprintDate,
+   raceDate,
    results,
    sprintResults,
    raceResults,
@@ -235,10 +239,35 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
             ? sprintResults
             : results
          : raceResults && raceResults.length > 0
-         ? raceResults
-         : results;
+            ? raceResults
+            : results;
 
    const isSprint = viewMode === 'SPRINT';
+
+   // Compute distinct date based on active view mode (Sprint vs Grand Prix Race)
+   const activeDate = isSprint
+      ? sprintDate || (sessionType === 'SPRINT' ? sessionDate : undefined)
+      : raceDate || (sessionType === 'RACE' ? sessionDate : undefined);
+
+   const resolvedDate = (() => {
+      if (activeDate) return activeDate;
+      if (isSprint) {
+         const baseDate = raceDate || sessionDate;
+         if (baseDate) {
+            try {
+               const [y, m, d] = baseDate.split('-').map(Number);
+               if (y && m && d) {
+                  const dt = new Date(Date.UTC(y, m - 1, d));
+                  dt.setUTCDate(dt.getUTCDate() - 1);
+                  return dt.toISOString().split('T')[0];
+               }
+            } catch {
+               // ignore
+            }
+         }
+      }
+      return sessionDate;
+   })();
 
    // Show only positions 1–10 directly (lapped/non-scoring drivers are always P11+)
    const top10 = [...activeResults]
@@ -258,27 +287,25 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
                <div
-                  className={`p-1.5 rounded-lg border shrink-0 transition-colors ${
-                     isSprint
-                        ? 'bg-amber-400/15 border-amber-400/30 text-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.2)]'
-                        : 'bg-red-500/15 border-red-500/30 text-f1-red-light'
-                  }`}
+                  className={`p-1.5 rounded-lg border shrink-0 transition-colors ${isSprint
+                     ? 'bg-amber-400/15 border-amber-400/30 text-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.2)]'
+                     : 'bg-red-500/15 border-red-500/30 text-f1-red-light'
+                     }`}
                >
                   {isSprint ? <Zap className="w-4 h-4 fill-amber-400" /> : <Medal className="w-4 h-4" />}
                </div>
                <div className="min-w-0">
                   <div className="flex items-center gap-2">
                      <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50">
-                        {isSprint ? 'Latest Sprint Results' : 'Last Race Results'}
-                        {sessionDate && <span className="ml-1.5 text-f1-silver/40">• {sessionDate}</span>}
+                        {isSprint ? 'Last Sprint Results' : 'Last Race Results'}
+                        {resolvedDate && <span className="ml-1.5 text-f1-silver/40">• {resolvedDate}</span>}
                      </p>
                      {/* Session Type Pill Badge */}
                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-wider uppercase border ${
-                           isSprint
-                              ? 'bg-amber-400/15 text-amber-400 border-amber-400/30'
-                              : 'bg-f1-red/15 text-f1-red-light border-f1-red/30'
-                        }`}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-wider uppercase border ${isSprint
+                           ? 'bg-amber-400/15 text-amber-400 border-amber-400/30'
+                           : 'bg-f1-red/15 text-f1-red-light border-f1-red/30'
+                           }`}
                      >
                         {isSprint ? (
                            <>
@@ -294,7 +321,7 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
                      </span>
                   </div>
                   <h3 className="text-base sm:text-lg font-display font-black text-f1-white leading-tight truncate mt-0.5">
-                     {raceName} {isSprint && <span className="text-amber-400 font-sans font-semibold text-xs ml-1 px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/20">Sprint</span>}
+                     {raceName}
                   </h3>
                </div>
             </div>
@@ -306,22 +333,20 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
                      <button
                         type="button"
                         onClick={() => setViewMode('RACE')}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold transition-all ${
-                           viewMode === 'RACE'
-                              ? 'bg-f1-red text-white shadow-sm font-bold'
-                              : 'text-f1-silver/60 hover:text-white'
-                        }`}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold transition-all ${viewMode === 'RACE'
+                           ? 'bg-f1-red text-white shadow-sm font-bold'
+                           : 'text-f1-silver/60 hover:text-white'
+                           }`}
                      >
                         Grand Prix {sessionType === 'RACE' && <span className="text-[9px] opacity-75">★</span>}
                      </button>
                      <button
                         type="button"
                         onClick={() => setViewMode('SPRINT')}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold transition-all flex items-center gap-1 ${
-                           viewMode === 'SPRINT'
-                              ? 'bg-amber-400 text-black shadow-sm font-bold'
-                              : 'text-f1-silver/60 hover:text-white'
-                        }`}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold transition-all flex items-center gap-1 ${viewMode === 'SPRINT'
+                           ? 'bg-amber-400 text-black shadow-sm font-bold'
+                           : 'text-f1-silver/60 hover:text-white'
+                           }`}
                      >
                         <Zap className="w-3 h-3 fill-current" />
                         Sprint {sessionType === 'SPRINT' && <span className="text-[9px] opacity-75">★</span>}

@@ -406,6 +406,8 @@ const DashboardPage: React.FC = () => {
                raceName={lastRaceDetail.name}
                sessionType={lastRaceDetail.sessionType}
                sessionDate={lastRaceDetail.sessionDate}
+               sprintDate={lastRaceDetail.sprintDate}
+               raceDate={lastRaceDetail.raceDate}
                results={lastRaceDetail.results}
                sprintResults={lastRaceDetail.sprintResults}
                raceResults={lastRaceDetail.raceResults}

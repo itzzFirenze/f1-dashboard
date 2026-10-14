@@ -32,6 +32,38 @@ export const dashboardService = {
       const nextRace = nextRaces.length > 0 ? nextRaces[0] : null;
 
       // Check nextRace first (it is in a higher round than lastCompletedRace)
+const extractSessionDates = (detail: RaceDetail) => {
+   const sprintSession = detail.sessions?.find(
+      (s) => s.sessionType?.toUpperCase() === 'SPRINT'
+   );
+   const raceSession = detail.sessions?.find(
+      (s) => s.sessionType?.toUpperCase() === 'RACE'
+   );
+
+   const raceDate = raceSession?.sessionDate || detail.raceDate;
+   const raceTime = raceSession?.sessionTime || detail.raceTime;
+
+   let sprintDate = sprintSession?.sessionDate;
+   const sprintTime = sprintSession?.sessionTime;
+
+   // If sprintDate is not explicitly present in sessions, but sprint results exist
+   // and raceDate is known, derive sprint date as 1 day prior to the main race
+   if (!sprintDate && (detail.sprintResults?.length || detail.sprintWeekend) && raceDate) {
+      try {
+         const [y, m, d] = raceDate.split('-').map(Number);
+         if (y && m && d) {
+            const date = new Date(Date.UTC(y, m - 1, d));
+            date.setUTCDate(date.getUTCDate() - 1);
+            sprintDate = date.toISOString().split('T')[0];
+         }
+      } catch {
+         // ignore
+      }
+   }
+
+   return { sprintDate, sprintTime, raceDate, raceTime };
+};
+
       if (nextRace) {
          try {
             const { data: nextRes } = await api.get<ApiResponse<RaceDetail>>(`/races/${nextRace.id}`);
@@ -39,6 +71,7 @@ export const dashboardService = {
             if (nextDetail) {
                const hasRaceResults = nextDetail.results && nextDetail.results.length > 0;
                const hasSprintResults = nextDetail.sprintResults && nextDetail.sprintResults.length > 0;
+               const { sprintDate, sprintTime, raceDate, raceTime } = extractSessionDates(nextDetail);
 
                // If the Grand Prix race has finished for nextRace:
                if (hasRaceResults) {
@@ -51,8 +84,12 @@ export const dashboardService = {
                      circuitName: nextDetail.circuit?.name,
                      country: nextDetail.circuit?.country,
                      sessionType: 'RACE',
-                     sessionDate: nextDetail.raceDate,
-                     sessionTime: nextDetail.raceTime,
+                     sessionDate: raceDate,
+                     sessionTime: raceTime,
+                     sprintDate,
+                     sprintTime,
+                     raceDate,
+                     raceTime,
                      results: nextDetail.results,
                      sprintResults: nextDetail.sprintResults || [],
                      raceResults: nextDetail.results,
@@ -62,7 +99,6 @@ export const dashboardService = {
                // If the sprint has finished for nextRace, but Grand Prix has not yet:
                // This sprint is the most recent completed event in the championship!
                if (hasSprintResults) {
-                  const sprintSession = nextDetail.sessions?.find((s) => s.sessionType === 'SPRINT');
                   return {
                      id: nextDetail.id,
                      raceId: nextDetail.id,
@@ -72,8 +108,12 @@ export const dashboardService = {
                      circuitName: nextDetail.circuit?.name,
                      country: nextDetail.circuit?.country,
                      sessionType: 'SPRINT',
-                     sessionDate: sprintSession?.sessionDate || nextDetail.raceDate,
-                     sessionTime: sprintSession?.sessionTime || nextDetail.raceTime,
+                     sessionDate: sprintDate || raceDate,
+                     sessionTime: sprintTime || raceTime,
+                     sprintDate,
+                     sprintTime,
+                     raceDate,
+                     raceTime,
                      results: nextDetail.sprintResults,
                      sprintResults: nextDetail.sprintResults,
                      raceResults: nextDetail.results || [],
@@ -94,6 +134,7 @@ export const dashboardService = {
 
       const hasRaceResults = lastCompletedDetail.results && lastCompletedDetail.results.length > 0;
       const hasSprintResults = lastCompletedDetail.sprintResults && lastCompletedDetail.sprintResults.length > 0;
+      const { sprintDate, sprintTime, raceDate, raceTime } = extractSessionDates(lastCompletedDetail);
 
       // In a completed race weekend, Race (Sunday) is newer than Sprint (Saturday)
       if (hasRaceResults) {
@@ -106,14 +147,17 @@ export const dashboardService = {
             circuitName: lastCompletedDetail.circuit?.name,
             country: lastCompletedDetail.circuit?.country,
             sessionType: 'RACE',
-            sessionDate: lastCompletedDetail.raceDate,
-            sessionTime: lastCompletedDetail.raceTime,
+            sessionDate: raceDate,
+            sessionTime: raceTime,
+            sprintDate,
+            sprintTime,
+            raceDate,
+            raceTime,
             results: lastCompletedDetail.results,
             sprintResults: lastCompletedDetail.sprintResults || [],
             raceResults: lastCompletedDetail.results,
          };
       } else if (hasSprintResults) {
-         const sprintSession = lastCompletedDetail.sessions?.find((s) => s.sessionType === 'SPRINT');
          return {
             id: lastCompletedDetail.id,
             raceId: lastCompletedDetail.id,
@@ -123,8 +167,12 @@ export const dashboardService = {
             circuitName: lastCompletedDetail.circuit?.name,
             country: lastCompletedDetail.circuit?.country,
             sessionType: 'SPRINT',
-            sessionDate: sprintSession?.sessionDate || lastCompletedDetail.raceDate,
-            sessionTime: sprintSession?.sessionTime || lastCompletedDetail.raceTime,
+            sessionDate: sprintDate || raceDate,
+            sessionTime: sprintTime || raceTime,
+            sprintDate,
+            sprintTime,
+            raceDate,
+            raceTime,
             results: lastCompletedDetail.sprintResults,
             sprintResults: lastCompletedDetail.sprintResults,
             raceResults: [],

@@ -203,6 +203,10 @@ export interface RecentSessionResult {
    sessionType: SessionResultType;
    sessionDate?: string;
    sessionTime?: string;
+   sprintDate?: string;
+   sprintTime?: string;
+   raceDate?: string;
+   raceTime?: string;
    results: RaceResult[];
    sprintResults?: RaceResult[];
    raceResults?: RaceResult[];
