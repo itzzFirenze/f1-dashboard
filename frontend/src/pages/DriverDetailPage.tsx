@@ -150,6 +150,11 @@ const DriverDetailPage: React.FC = () => {
                      bestGrid: bestGrid ?? 0,
                   };
 
+                  const fallbackPodiums = raceEntries.filter(
+                     (r) => r.finishPosition >= 1 && r.finishPosition <= 3 && r.status !== 'Retired' && r.status !== 'DNF'
+                  ).length;
+                  setDriver((prev) => (prev ? { ...prev, podiums: fallbackPodiums } : prev));
+
                   setHistory({
                      driverId: driverData.id,
                      driverCode: driverData.code,
@@ -180,11 +185,26 @@ const DriverDetailPage: React.FC = () => {
    const driverImgUrl = driver.imageUrl ?? getDriverImage(theme, driver.firstName, driver.lastName);
    const showDriverImg = driverImgUrl && !imgError;
 
+   // Calculate accurate podiums from race history (P1-P3 finishes in Grand Prix races)
+   const podiumCount =
+      history?.races && history.races.length > 0
+         ? history.races.filter(
+            (r) =>
+               r.finishPosition != null &&
+               r.finishPosition >= 1 &&
+               r.finishPosition <= 3 &&
+               r.status !== 'DNF' &&
+               r.status !== 'Retired' &&
+               r.status !== 'Disqualified' &&
+               r.status !== 'Excluded'
+         ).length
+         : (driver.podiums ?? 0);
+
    const stats = [
       { label: 'Championship', value: `P${driver.championshipPosition}`, icon: Trophy, color: '#fbbf24', accent: 'via-amber-400' },
       { label: 'Points', value: driver.points, icon: Hash, color: '#fb6f6f', accent: 'via-f1-red' },
       { label: 'Wins', value: driver.wins, icon: Trophy, color: '#34d399', accent: 'via-emerald-400' },
-      { label: 'Podiums', value: driver.podiums, icon: Medal, color: '#60a5fa', accent: 'via-blue-400' },
+      { label: 'Podiums', value: podiumCount, icon: Medal, color: '#60a5fa', accent: 'via-blue-400' },
    ];
 
    const perf = history?.stats;

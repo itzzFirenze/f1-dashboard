@@ -40,6 +40,7 @@ public class DriverService {
    private final DriverRepository driverRepository;
    private final RaceResultRepository raceResultRepository;
    private final RestTemplate restTemplate;
+   private final com.f1dashboard.config.SeasonConfig seasonConfig;
 
    private static final String OPENF1_BASE_URL = "https://api.openf1.org/v1";
 
@@ -555,6 +556,28 @@ public class DriverService {
 
    // ---- Mapping methods ----
 
+   public int calculateDriverPodiums(Driver d) {
+      if (d == null || d.getId() == null) return 0;
+      int currentSeason = (seasonConfig != null) ? seasonConfig.getCurrentSeason() : 2026;
+      List<RaceResult> seasonResults = raceResultRepository
+            .findByDriverIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(d.getId(), currentSeason, SessionType.RACE);
+      if (seasonResults != null && !seasonResults.isEmpty()) {
+         return (int) seasonResults.stream()
+               .filter(r -> r.getPosition() != null && r.getPosition() >= 1 && r.getPosition() <= 3)
+               .filter(r -> r.getStatus() == null || (!"DNF".equalsIgnoreCase(r.getStatus()) && !"Retired".equalsIgnoreCase(r.getStatus()) && !"Disqualified".equalsIgnoreCase(r.getStatus())))
+               .count();
+      }
+      List<RaceResult> allResults = raceResultRepository.findByDriverIdOrderByRaceRaceDateDesc(d.getId());
+      if (allResults != null && !allResults.isEmpty()) {
+         return (int) allResults.stream()
+               .filter(r -> r.getSessionType() == SessionType.RACE)
+               .filter(r -> r.getPosition() != null && r.getPosition() >= 1 && r.getPosition() <= 3)
+               .filter(r -> r.getStatus() == null || (!"DNF".equalsIgnoreCase(r.getStatus()) && !"Retired".equalsIgnoreCase(r.getStatus()) && !"Disqualified".equalsIgnoreCase(r.getStatus())))
+               .count();
+      }
+      return d.getPodiums() != null ? d.getPodiums() : 0;
+   }
+
    public DriverDto toDto(Driver d) {
       return new DriverDto(
             d.getId(),
@@ -566,7 +589,7 @@ public class DriverService {
             d.getImageUrl(),
             d.getPoints(),
             d.getWins(),
-            d.getPodiums(),
+            calculateDriverPodiums(d),
             d.getChampionshipPosition(),
             d.getConstructor() != null ? d.getConstructor().getName() : null,
             d.getConstructor() != null ? d.getConstructor().getColor() : null);
@@ -584,7 +607,7 @@ public class DriverService {
             d.getImageUrl(),
             d.getPoints(),
             d.getWins(),
-            d.getPodiums(),
+            calculateDriverPodiums(d),
             d.getChampionshipPosition(),
             d.getConstructor() != null ? d.getConstructor().getName() : null,
             d.getConstructor() != null ? d.getConstructor().getColor() : null,

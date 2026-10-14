@@ -49,6 +49,7 @@ public class DataSyncService {
    private final CircuitSyncHelper circuitSyncHelper;
    private final CacheManager cacheManager;
    private final CacheWarmupService cacheWarmupService;
+   private final com.f1dashboard.config.SeasonConfig seasonConfig;
 
    private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -554,6 +555,7 @@ public class DataSyncService {
                }
             }
          }
+         updatePodiums();
       } catch (Exception e) {
          log.error("Failed to sync driver standings: {}", e.getMessage(), e);
          throw new RuntimeException(e);
@@ -692,10 +694,15 @@ public class DataSyncService {
 
    public void updatePodiums() {
       log.info("Calculating podiums for all drivers...");
+      int currentSeason = (seasonConfig != null) ? seasonConfig.getCurrentSeason() : 2026;
       List<Driver> drivers = driverRepository.findAll();
       for (Driver driver : drivers) {
-         int podiums = raceResultRepository.countByDriverIdAndPositionLessThanEqualAndSessionType(
-               driver.getId(), 3, com.f1dashboard.enums.SessionType.RACE);
+         List<RaceResult> results = raceResultRepository
+               .findByDriverIdAndRaceSeasonAndSessionTypeOrderByRaceRoundAsc(driver.getId(), currentSeason, com.f1dashboard.enums.SessionType.RACE);
+         int podiums = (int) results.stream()
+               .filter(r -> r.getPosition() != null && r.getPosition() >= 1 && r.getPosition() <= 3)
+               .filter(r -> r.getStatus() == null || (!"DNF".equalsIgnoreCase(r.getStatus()) && !"Retired".equalsIgnoreCase(r.getStatus()) && !"Disqualified".equalsIgnoreCase(r.getStatus())))
+               .count();
          driver.setPodiums(podiums);
          driverRepository.save(driver);
       }
