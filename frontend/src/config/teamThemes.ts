@@ -129,7 +129,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       bgFrom: '#1a1600',
       bgTo: '#FFD700',
       carImageUrl: `${BASE}/cars/cadillac-2026.avif`,
-      teamLogoUrl: `${BASE}/teams/cadillac.avif`,
+      teamLogoUrl: `${BASE}/teams/cadillac.svg`,
       driverImages: {
          valtteri_bottas: `${BASE}/drivers/valtteri_bottas.avif`,
          sergio_perez: `${BASE}/drivers/sergio_perez.avif`,

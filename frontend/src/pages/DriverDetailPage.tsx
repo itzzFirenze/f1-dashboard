@@ -182,6 +182,7 @@ const DriverDetailPage: React.FC = () => {
    if (!driver) return null;
 
    const theme = resolveTheme(driver.constructorName);
+   const teamColor = driver.constructorColor || theme.primary || '#e10600';
    const driverImgUrl = driver.imageUrl ?? getDriverImage(theme, driver.firstName, driver.lastName);
    const showDriverImg = driverImgUrl && !imgError;
 
@@ -353,13 +354,30 @@ const DriverDetailPage: React.FC = () => {
          {/* ─── Team Info Banner ─── */}
          {driver.constructorId && (
             <Link to={`/constructors/${driver.constructorId}`} className="block shrink-0 group outline-none">
-               <div className="telemetry-card p-4 cursor-pointer group-hover:border-amber-500/30 transition-all duration-300 relative overflow-hidden">
-                  <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
-                  <div className="flex items-center justify-between">
+               <div
+                  className="telemetry-card p-4 cursor-pointer group-hover:border-[var(--team-accent-border)] transition-all duration-300 relative overflow-hidden"
+                  style={{
+                     '--team-color': teamColor,
+                     '--team-accent-border': `${teamColor}4D`,
+                  } as React.CSSProperties}
+               >
+                  {/* Team color accent line */}
+                  <div
+                     className="absolute top-0 inset-x-0 h-[2px] opacity-80"
+                     style={{
+                        background: `linear-gradient(to right, transparent, ${teamColor}, transparent)`,
+                     }}
+                  />
+                  {/* Subtle ambient corner glow using team color */}
+                  <div
+                     className="absolute -right-8 -top-8 w-32 h-32 rounded-full blur-2xl opacity-10 group-hover:opacity-25 transition-opacity pointer-events-none"
+                     style={{ backgroundColor: teamColor }}
+                  />
+                  <div className="flex items-center justify-between relative z-10">
                      <div className="flex items-center gap-4">
                         <div
                            className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-white/[0.06]"
-                           style={{ backgroundColor: driver.constructorColor }}
+                           style={{ backgroundColor: teamColor }}
                         >
                            {theme.teamLogoUrl && !logoError ? (
                               <img
@@ -374,12 +392,12 @@ const DriverDetailPage: React.FC = () => {
                         </div>
                         <div>
                            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50">Constructor Affiliation</p>
-                           <p className="text-lg font-bold text-f1-white group-hover:text-amber-400 transition-colors">{driver.constructorName}</p>
+                           <p className="text-lg font-bold text-f1-white group-hover:text-[var(--team-color)] transition-colors">{driver.constructorName}</p>
                         </div>
                      </div>
                      <div className="flex items-center gap-2">
                         <span className="text-xs font-mono text-f1-silver/50 group-hover:text-f1-silver transition-colors">Team Telemetry</span>
-                        <ChevronRight className="w-4 h-4 text-f1-silver/30 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
+                        <ChevronRight className="w-4 h-4 text-f1-silver/30 group-hover:text-[var(--team-color)] group-hover:translate-x-1 transition-all" />
                      </div>
                   </div>
                </div>
