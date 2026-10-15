@@ -16,7 +16,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       bgFrom: '#001a18',
       bgTo: '#00D2BE',
       carImageUrl: `${BASE}/cars/mercedes-2026.avif`,
-      teamLogoUrl: `${BASE}/teams/mercedes.avif`,
+      teamLogoUrl: `${BASE}/teams/mercedes.svg`,
       driverImages: {
          george_russell: `${BASE}/drivers/george_russell.avif`,
          andrea_kimi_antonelli: `${BASE}/drivers/kimi_antonelli.avif`,
@@ -27,7 +27,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       bgFrom: '#060d2e',
       bgTo: '#3671C6',
       carImageUrl: `${BASE}/cars/red_bull-2026.avif`,
-      teamLogoUrl: `${BASE}/teams/red_bull.avif`,
+      teamLogoUrl: `${BASE}/teams/red_bull.svg`,
       driverImages: {
          max_verstappen: `${BASE}/drivers/max_verstappen.avif`,
          isack_hadjar: `${BASE}/drivers/isack_hadjar.avif`,
@@ -40,7 +40,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       bgFrom: '#1a0004',
       bgTo: '#E8002D',
       carImageUrl: `${BASE}/cars/ferrari-2026.avif`,
-      teamLogoUrl: `${BASE}/teams/ferrari.avif`,
+      teamLogoUrl: `${BASE}/teams/ferrari.svg`,
       driverImages: {
          charles_leclerc: `${BASE}/drivers/charles_leclrec.avif`,
          lewis_hamilton: `${BASE}/drivers/lewis_hamilton.avif`,
@@ -51,7 +51,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       bgFrom: '#1a0d00',
       bgTo: '#FF8000',
       carImageUrl: `${BASE}/cars/mclaren-2026.avif`,
-      teamLogoUrl: `${BASE}/teams/mclaren.avif`,
+      teamLogoUrl: `${BASE}/teams/mclaren.svg`,
       driverImages: {
          lando_norris: `${BASE}/drivers/lando_norris.avif`,
          oscar_piastri: `${BASE}/drivers/oscar_piastri.avif`,
@@ -62,7 +62,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       bgFrom: '#001a10',
       bgTo: '#229971',
       carImageUrl: `${BASE}/cars/aston_martin-2026.avif`,
-      teamLogoUrl: `${BASE}/teams/aston_martin.avif`,
+      teamLogoUrl: `${BASE}/teams/aston_martin.svg`,
       driverImages: {
          fernando_alonso: `${BASE}/drivers/fernando_alonso.avif`,
          lance_stroll: `${BASE}/drivers/lance_stroll.avif`,
@@ -73,7 +73,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       bgFrom: '#001420',
       bgTo: '#0093CC',
       carImageUrl: `${BASE}/cars/alpine-2026.avif`,
-      teamLogoUrl: `${BASE}/teams/alpine.avif`,
+      teamLogoUrl: `${BASE}/teams/alpine.svg`,
       driverImages: {
          pierre_gasly: `${BASE}/drivers/pierre_gasly.avif`,
          franco_colapinto: `${BASE}/drivers/franco_colapinto.avif`,
@@ -84,7 +84,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       bgFrom: '#001428',
       bgTo: '#64C4FF',
       carImageUrl: `${BASE}/cars/williams-2026.avif`,
-      teamLogoUrl: `${BASE}/teams/williams.avif`,
+      teamLogoUrl: `${BASE}/teams/williams.svg`,
       driverImages: {
          alexander_albon: `${BASE}/drivers/alexander_albon.avif`,
          carlos_sainz: `${BASE}/drivers/carloz_sainz.avif`,
@@ -95,7 +95,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       bgFrom: '#141414',
       bgTo: '#B6BABD',
       carImageUrl: `${BASE}/cars/haas-2026.avif`,
-      teamLogoUrl: `${BASE}/teams/haas.avif`,
+      teamLogoUrl: `${BASE}/teams/haas.svg`,
       driverImages: {
          esteban_ocon: `${BASE}/drivers/esteban_ocon.avif`,
          oliver_bearman: `${BASE}/drivers/oliver_bearman.avif`,
@@ -106,7 +106,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       bgFrom: '#070d2a',
       bgTo: '#6692FF',
       carImageUrl: `${BASE}/cars/racing_bulls-2026.avif`,
-      teamLogoUrl: `${BASE}/teams/racing_bulls.avif`,
+      teamLogoUrl: `${BASE}/teams/racing_bulls.svg`,
       driverImages: {
          yuki_tsunoda: `${BASE}/drivers/yuki_tsunoda.avif`,
          liam_lawson: `${BASE}/drivers/liam_lawson.avif`,
@@ -118,7 +118,7 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       bgFrom: '#1a0004',
       bgTo: '#F3092A',
       carImageUrl: `${BASE}/cars/audi-2026.avif`,
-      teamLogoUrl: `${BASE}/teams/audi.avif`,
+      teamLogoUrl: `${BASE}/teams/audi.svg`,
       driverImages: {
          nico_hulkenberg: `${BASE}/drivers/nico_hulkenberg.avif`,
          gabriel_bortoleto: `${BASE}/drivers/gabriel_bortoleto.avif`,
