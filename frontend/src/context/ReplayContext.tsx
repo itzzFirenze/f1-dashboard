@@ -41,6 +41,7 @@ interface ReplayContextProps {
    cancelledSessions: Set<number>;
    progressPercent: number;
    driverLocations: Record<number, OpenF1Location>;
+   trackReferenceLocations: OpenF1Location[];
    selectedDrivers: number[];
    telemetryData: Record<number, OpenF1CarData>;
    isDriverOutAt: (driverNumber: number, time: Date | null) => boolean;
@@ -92,6 +93,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
    const [driverLocations, setDriverLocations] = useState<
       Record<number, OpenF1Location>
    >({});
+   const [trackReferenceLocations, setTrackReferenceLocations] = useState<OpenF1Location[]>([]);
    const [telemetryData, setTelemetryData] = useState<
       Record<number, OpenF1CarData>
    >({});
@@ -111,11 +113,48 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
    const carChunkFailedAt = useRef<Record<string, number>>({});
    const RETRY_COOLDOWN_MS = 4000;
 
+   // Fetch one representative lap as an ordered reference trace. This trace is
+   // used to register OpenF1 coordinates to the SVG path once per session.
+   useEffect(() => {
+      if (!activeSession || drivers.length === 0 || laps.length === 0) return;
+      let cancelled = false;
+      const referenceLap = laps.find((lap) =>
+         drivers.some((driver) => driver.driver_number === lap.driver_number) &&
+         lap.lap_number >= 2 &&
+         Boolean(lap.date_start) &&
+         Boolean(lap.lap_duration && lap.lap_duration >= 60 && lap.lap_duration <= 180)
+      );
+      if (!referenceLap?.date_start || !referenceLap.lap_duration) return;
+
+      const driverNumber = referenceLap.driver_number;
+      const startMs = new Date(referenceLap.date_start).getTime();
+      const endMs = startMs + referenceLap.lap_duration * 1000;
+      void telemetryService.getLocations(
+         activeSession.session_key,
+         new Date(startMs - 1500).toISOString(),
+         new Date(endMs + 1500).toISOString(),
+      ).then((rows) => {
+         if (cancelled) return;
+         const trace = rows
+            .filter((row) => {
+               const time = new Date(row.date).getTime();
+               return row.driver_number === driverNumber && time >= startMs && time <= endMs && Number.isFinite(row.x) && Number.isFinite(row.y);
+            })
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+         const stride = Math.max(1, Math.ceil(trace.length / 180));
+         setTrackReferenceLocations(trace.filter((_, index) => index % stride === 0));
+      }).catch((error) => {
+         console.warn('[Replay] Could not load track reference lap', error);
+      });
+      return () => { cancelled = true; };
+   }, [activeSession, drivers, laps]);
+
    const timerRef = useRef<number | null>(null);
    const lastTickRef = useRef(0);
    const lastSyncRef = useRef(0);
    const SYNC_INTERVAL_MS = 500;
    const syncRequestIdRef = useRef(0);
+   const lastUiPlaybackUpdateRef = useRef(0);
 
    const sessionStart = useMemo(() => {
       if (!activeSession) return null;
@@ -301,11 +340,13 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       if (latestLapEndAcrossField <= 0) return sessionEnd;
 
       const lapsBasedEnd = new Date(latestLapEndAcrossField);
-      // Never extend past the official end, just in case a lap_duration
-      // fallback overestimates.
+      // Some sessions have a scheduled/metadata end that falls before the
+      // delayed race actually finishes (Spa 2025 is one example). Completed
+      // lap timestamps are observed race data, so don't truncate the replay
+      // when that data extends beyond the session metadata.
       return lapsBasedEnd.getTime() > sessionEnd.getTime()
-         ? sessionEnd
-         : lapsBasedEnd;
+         ? lapsBasedEnd
+         : sessionEnd;
    }, [latestLapEndAcrossField, sessionEnd]);
 
    const durationMs = useMemo(() => {
@@ -455,6 +496,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       selectedDriversRef.current = [];
 
       setDriverLocations({});
+      setTrackReferenceLocations([]);
       setTelemetryData({});
       setStalledSinceByDriver({});
 
@@ -574,6 +616,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
                if (keys.length > 60) {
                   delete locationCache.current[Number(keys[0])];
                }
+               data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
                locationCache.current[chunkIndex] = data;
                delete locationChunkFailedAt.current[chunkIndex];
             })
@@ -660,32 +703,53 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       timeMs: number,
       fallbackLocations?: OpenF1Location[],
    ): OpenF1Location | undefined => {
-      let best: OpenF1Location | undefined;
-      let bestTime = -Infinity;
-
-      for (const location of locations) {
-         if (location.driver_number !== driverNumber) continue;
-
-         const locationTime = new Date(location.date).getTime();
-         if (locationTime <= timeMs && locationTime > bestTime) {
-            bestTime = locationTime;
-            best = location;
+      const findNeighborsInSortedChunk = (chunk: OpenF1Location[]) => {
+         let low = 0;
+         let high = chunk.length;
+         while (low < high) {
+            const middle = (low + high) >>> 1;
+            if (new Date(chunk[middle].date).getTime() <= timeMs) low = middle + 1;
+            else high = middle;
          }
-      }
-
-      if (!best && fallbackLocations) {
-         for (const location of fallbackLocations) {
-            if (location.driver_number !== driverNumber) continue;
-
-            const locationTime = new Date(location.date).getTime();
-            if (locationTime <= timeMs && locationTime > bestTime) {
-               bestTime = locationTime;
-               best = location;
+         let before: OpenF1Location | undefined;
+         for (let i = low - 1; i >= 0; i--) {
+            const sample = chunk[i];
+            if (sample.driver_number === driverNumber) {
+               before = sample;
+               break;
             }
+            if (timeMs - new Date(sample.date).getTime() > 5000) break;
          }
-      }
+         let after: OpenF1Location | undefined;
+         for (let i = low; i < chunk.length; i++) {
+            const sample = chunk[i];
+            if (sample.driver_number === driverNumber) {
+               after = sample;
+               break;
+            }
+            if (new Date(sample.date).getTime() - timeMs > 5000) break;
+         }
+         return { before, after };
+      };
 
-      return best;
+      let { before, after } = findNeighborsInSortedChunk(locations);
+      if (!before && fallbackLocations) {
+         before = findNeighborsInSortedChunk(fallbackLocations).before;
+      }
+      if (!before) return after;
+      if (!after) return before;
+
+      const beforeMs = new Date(before.date).getTime();
+      const afterMs = new Date(after.date).getTime();
+      if (afterMs <= beforeMs) return before;
+      const fraction = Math.min(1, Math.max(0, (timeMs - beforeMs) / (afterMs - beforeMs)));
+      return {
+         ...before,
+         date: new Date(timeMs).toISOString(),
+         x: before.x + (after.x - before.x) * fraction,
+         y: before.y + (after.y - before.y) * fraction,
+         z: before.z + (after.z - before.z) * fraction,
+      };
    };
 
    const findClosestTelemetry = (
@@ -788,8 +852,16 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
             }
          }
 
-         driverLocationsRef.current = nextLocations;
-         setDriverLocations(nextLocations);
+         const previousLocations = driverLocationsRef.current;
+         const locationsChanged =
+            Object.keys(previousLocations).length !== Object.keys(nextLocations).length ||
+            Object.keys(nextLocations).some(
+               (driverNumber) => previousLocations[Number(driverNumber)] !== nextLocations[Number(driverNumber)],
+            );
+         if (locationsChanged) {
+            driverLocationsRef.current = nextLocations;
+            setDriverLocations(nextLocations);
+         }
 
          // --- Selected driver telemetry ---
          const nextTelemetry: Record<number, OpenF1CarData> = {};
@@ -904,21 +976,23 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       (now: number) => {
          const delta = now - lastTickRef.current;
          lastTickRef.current = now;
-
-         setCurrentTime((previous) => {
-            if (!previous || !playbackEnd) return previous;
-
-            const nextTime = new Date(previous.getTime() + delta * playbackSpeed);
-
-            if (nextTime >= playbackEnd) {
-               setIsPlaying(false);
-               currentTimeRef.current = playbackEnd;
-               return playbackEnd;
-            }
-
+         const current = currentTimeRef.current;
+         if (!current || !playbackEnd) return;
+         const nextTime = new Date(current.getTime() + delta * playbackSpeed);
+         if (nextTime >= playbackEnd) {
+            setIsPlaying(false);
+            currentTimeRef.current = playbackEnd;
+            setCurrentTime(playbackEnd);
+         } else {
             currentTimeRef.current = nextTime;
-            return nextTime;
-         });
+            // Location samples arrive a few times per second. Updating React at
+            // 20 Hz keeps the playback clock smooth without rerendering the full
+            // replay UI on every animation frame.
+            if (now - lastUiPlaybackUpdateRef.current >= 50) {
+               lastUiPlaybackUpdateRef.current = now;
+               setCurrentTime(nextTime);
+            }
+         }
 
          timerRef.current = requestAnimationFrame(tick);
       },
@@ -936,6 +1010,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       lastTickRef.current = performance.now();
+      lastUiPlaybackUpdateRef.current = lastTickRef.current;
       timerRef.current = requestAnimationFrame(tick);
 
       return () => {
@@ -1121,6 +1196,7 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
             cancelledSessions,
 
             driverLocations,
+            trackReferenceLocations,
             selectedDrivers,
             telemetryData,
             isDriverOutAt,

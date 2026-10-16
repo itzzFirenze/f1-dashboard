@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Play, Pause, Square, SkipBack, SkipForward } from 'lucide-react';
 import { useReplay } from '../../context/ReplayContext';
 import { CircuitData, CircuitCornerMarker } from '../../data/circuits';
-import { OpenF1Driver, OpenF1Lap, OpenF1Pit } from '../../services/telemetryService';
+import { OpenF1Driver, OpenF1Lap, OpenF1Location, OpenF1Pit } from '../../services/telemetryService';
 import CornerMarker from './CornerMarker';
 import ActiveAeroZone from './ActiveAeroZone';
 import SectorPath from './SectorPath';
@@ -28,33 +28,29 @@ const DetectionPoint: React.FC<{ pathId: string; point: { id: string; label: str
 
 const DEFAULT_PIT_BOX_SEC = 25;
 
-const DriverMarkerOnTrack: React.FC<{
-   pathId: string;
+const DriverMarkerOnTrack = React.memo(({
+   driver,
+   isSelected,
+   location,
+   projectLocation,
+   onSelect,
+   onHover,
+}: {
    driver: OpenF1Driver;
-   percent: number;
-   pitLaneOffsetPx: number;
-   isReversed: boolean;
    isSelected: boolean;
-   isPitting: boolean;
+   location?: OpenF1Location;
+   projectLocation: (location?: OpenF1Location) => TrackPoint | null;
    onSelect: () => void;
    onHover: (driverNo: number | null) => void;
-}> = ({ pathId, driver, percent, pitLaneOffsetPx, isReversed, isSelected, isPitting, onHover, onSelect }) => {
-   const pos = usePathPoint(pathId, percent);
-   const aheadPercent = isReversed ? (percent + 99.5) % 100 : (percent + 0.5) % 100;
-   const posAhead = usePathPoint(pathId, aheadPercent);
+}) => {
+   const locationPos = projectLocation(location);
    const teamColor = `#${driver.team_colour || 'ffffff'}`;
 
-   let drawX = pos.x;
-   let drawY = pos.y;
-   if (isPitting) {
-      const dx = posAhead.x - pos.x;
-      const dy = posAhead.y - pos.y;
-      const len = Math.hypot(dx, dy) || 1;
-      const nx = -dy / len;
-      const ny = dx / len;
-      drawX = pos.x + nx * pitLaneOffsetPx;
-      drawY = pos.y + ny * pitLaneOffsetPx;
-   }
+   // Never animate a car from lap time. If an x/y sample is not available yet,
+   // keep its marker hidden until the location feed supplies one.
+   if (!locationPos) return null;
+   const drawX = locationPos.x;
+   const drawY = locationPos.y;
 
    return (
       <g
@@ -63,16 +59,12 @@ const DriverMarkerOnTrack: React.FC<{
          onMouseLeave={() => onHover(null)}
          className="cursor-pointer group"
       >
-         {isPitting && (
-            <line x1={pos.x} y1={pos.y} x2={drawX} y2={drawY} stroke="#f59e0b" strokeWidth="1" strokeDasharray="2 2" opacity={0.6} />
-         )}
          {isSelected && (
             <circle cx={drawX} cy={drawY} r="14" fill="transparent" stroke={teamColor} strokeWidth="2"
                className="animate-ping opacity-75 [transform-box:fill-box] [transform-origin:center]" />
          )}
          <circle cx={drawX} cy={drawY} r="9" fill="#0f172a"
-            stroke={isPitting ? '#f59e0b' : teamColor} strokeWidth="2"
-            strokeDasharray={isPitting ? '2 2' : undefined}
+            stroke={teamColor} strokeWidth="2"
             className="transition-transform duration-300 group-hover:scale-125 [transform-box:fill-box] [transform-origin:center]" />
          <circle cx={drawX} cy={drawY} r="5.5" fill={teamColor}
             className="transition-transform duration-300 group-hover:scale-125 [transform-box:fill-box] [transform-origin:center]" />
@@ -80,13 +72,123 @@ const DriverMarkerOnTrack: React.FC<{
             className="select-none font-mono filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
             {driver.name_acronym}
          </text>
-         {isPitting && (
-            <text x={drawX} y={drawY + 17} textAnchor="middle" fontSize="6" fontWeight="800" fill="#f59e0b" className="select-none font-mono">
-               PIT
-            </text>
-         )}
       </g>
    );
+}, (previous, next) =>
+   previous.driver === next.driver &&
+   previous.isSelected === next.isSelected &&
+   previous.location === next.location &&
+   previous.projectLocation === next.projectLocation
+);
+
+type TrackPoint = { x: number; y: number };
+type LocationProjector = (location?: OpenF1Location) => TrackPoint | null;
+
+/** Calibrate from one ordered, full-lap location trace. Matching lap progress
+ * to SVG progress avoids the expensive and unstable fit against a whole race's
+ * mixed driver cloud. The resulting transform is calculated once per circuit
+ * and each frame maps a car with a few arithmetic operations. */
+const useTrackProjection = (pathId: string, locations: OpenF1Location[]): LocationProjector => {
+   const [trackSamples, setTrackSamples] = React.useState<TrackPoint[] | null>(null);
+   useEffect(() => {
+      const path = document.getElementById(pathId) as SVGPathElement | null;
+      if (!path) return;
+      const length = path.getTotalLength();
+      if (!Number.isFinite(length) || length <= 0) return;
+      const steps = 1000;
+      const samples: TrackPoint[] = [];
+      for (let i = 0; i < steps; i++) {
+         const p = path.getPointAtLength((i / steps) * length);
+         samples.push({ x: p.x, y: p.y });
+      }
+      setTrackSamples(samples);
+   }, [pathId]);
+
+   const transform = useMemo(() => {
+      if (!trackSamples || locations.length < 30) return null;
+      // The API reports locations at roughly even time intervals, while the
+      // SVG path is sampled at even distances. Pairing by array index therefore
+      // overweights straights and underweights slow corners, which can shift the
+      // fitted track sideways. Build progress from the measured x/y distance.
+      const cumulativeDistance = new Array<number>(locations.length).fill(0);
+      for (let index = 1; index < locations.length; index++) {
+         cumulativeDistance[index] = cumulativeDistance[index - 1] + Math.hypot(
+            locations[index].x - locations[index - 1].x,
+            locations[index].y - locations[index - 1].y,
+         );
+      }
+      const totalDistance = cumulativeDistance[cumulativeDistance.length - 1];
+      if (!Number.isFinite(totalDistance) || totalDistance <= 0) return null;
+      const sourceStride = Math.max(1, Math.ceil(locations.length / 180));
+      const source = locations.map(({ x, y }, index) => ({
+            x,
+            y,
+            progress: cumulativeDistance[index] / totalDistance,
+         }))
+         .filter((_, index) => index % sourceStride === 0 || index === locations.length - 1);
+      if (source.length < 30) return null;
+      const sourceCenter = source.reduce((sum, p) => ({ x: sum.x + p.x / source.length, y: sum.y + p.y / source.length }), { x: 0, y: 0 });
+      let sourceVariance = 0;
+      for (const p of source) sourceVariance += (p.x - sourceCenter.x) ** 2 + (p.y - sourceCenter.y) ** 2;
+      if (sourceVariance < 1) return null;
+
+      const fit = (target: TrackPoint[], mirror: number) => {
+         const targetCenter = target.reduce((sum, p) => ({ x: sum.x + p.x / target.length, y: sum.y + p.y / target.length }), { x: 0, y: 0 });
+         let dot = 0, cross = 0;
+         for (let i = 0; i < source.length; i++) {
+            const sx = source[i].x - sourceCenter.x;
+            const sy = (source[i].y - sourceCenter.y) * mirror;
+            const tx = target[i].x - targetCenter.x;
+            const ty = target[i].y - targetCenter.y;
+            dot += sx * tx + sy * ty;
+            cross += sx * ty - sy * tx;
+         }
+         const angle = Math.atan2(cross, dot);
+         const scale = Math.hypot(dot, cross) / sourceVariance;
+         const cos = Math.cos(angle), sin = Math.sin(angle);
+         let error = 0;
+         for (let i = 0; i < source.length; i++) {
+            const sx = source[i].x - sourceCenter.x;
+            const sy = (source[i].y - sourceCenter.y) * mirror;
+            const x = targetCenter.x + scale * (sx * cos - sy * sin);
+            const y = targetCenter.y + scale * (sx * sin + sy * cos);
+            error += (x - target[i].x) ** 2 + (y - target[i].y) ** 2;
+         }
+         return { sourceCenter, targetCenter, angle, scale, mirror, error };
+      };
+
+      let best: ReturnType<typeof fit> | null = null;
+      const targetCount = trackSamples.length;
+      // Try both driving directions and reflections, searching the lap start
+      // in half-percent increments. This is a one-time, small calibration.
+      const phaseStep = 5;
+      for (const direction of [1, -1]) {
+         for (const mirror of [1, -1]) {
+            for (let phase = 0; phase < targetCount; phase += phaseStep) {
+               const target = source.map((_, index) => {
+               const progress = source[index].progress;
+                  const sampleIndex = ((Math.round(phase + direction * progress * targetCount) % targetCount) + targetCount) % targetCount;
+                  return trackSamples[sampleIndex];
+               });
+               const candidate = fit(target, mirror);
+               if (!best || candidate.error < best.error) best = candidate;
+            }
+         }
+      }
+      return best && best.scale > 0 ? best : null;
+   }, [locations, trackSamples]);
+
+   return useMemo(() => (location?: OpenF1Location): TrackPoint | null => {
+      if (!location || !transform) return null;
+      const { sourceCenter, targetCenter, angle, scale, mirror } = transform;
+      const dx = location.x - sourceCenter.x;
+      const dy = (location.y - sourceCenter.y) * mirror;
+      const cos = Math.cos(angle), sin = Math.sin(angle);
+      return {
+         x: targetCenter.x + scale * (dx * cos - dy * sin),
+         y: targetCenter.y + scale * (dx * sin + dy * cos),
+      };
+   }, [transform]);
 };
 
 const formatElapsed = (ms: number): string => {
@@ -263,36 +365,6 @@ const getDriverRaceFraction = (
    return Math.min(99.5, Math.max(0, (elapsedSec / lapDurationSec) * 100));
 };
 
-const getDriverLapPercent = (
-   driverNumber: number,
-   index: number,
-   currentTime: Date | null,
-   laps: OpenF1Lap[],
-   startPercent: number,
-   isReversed: boolean
-): number => {
-   const step = (fraction: number) =>
-      isReversed ? (startPercent - fraction + 100) % 100 : (startPercent + fraction) % 100;
-
-   const driverLaps = currentTime
-      ? laps.filter(
-         (l) => l.driver_number === driverNumber && l.date_start && new Date(l.date_start).getTime() <= currentTime.getTime()
-      )
-      : [];
-
-   if (!currentTime || !laps || laps.length === 0) {
-      return step((index * 2.2) % 100);
-   }
-
-   if (driverLaps.length === 0) {
-      return startPercent;
-   }
-
-   const raceFraction = getDriverRaceFraction(driverNumber, index, currentTime, laps);
-   return step(raceFraction);
-};
-
-
 const getDriverLapElapsed = (
    driverNumber: number,
    currentTime: Date | null,
@@ -325,9 +397,14 @@ const formatLapTime = (seconds: number): string => {
 
 export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circuit }) => {
    const mapId = useId();
-   const pathId = useMemo(() => `replay-track-${mapId.replace(/:/g, '')}`, [mapId]);
+   // Keep path-dependent geometry and location registration isolated per circuit.
+   // The replay map can switch circuits without unmounting, so mapId alone is not
+   // enough to invalidate cached SVG points.
+   const pathId = useMemo(() => `replay-track-${mapId.replace(/:/g, '')}-${circuit.id}`, [mapId, circuit.id]);
    const {
       drivers,
+      driverLocations,
+      trackReferenceLocations,
       selectedDrivers,
       toggleDriverSelection,
       laps,
@@ -352,6 +429,7 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
    const [hoveredDriver, setHoveredDriver] = useState<number | null>(null);
    const [selectedCorner, setSelectedCorner] = useState<CircuitCornerMarker | null>(null);
    const [selectedLap, setSelectedLap] = useState<string>('');
+   const projectLocation = useTrackProjection(pathId, trackReferenceLocations);
 
    useEffect(() => {
       setSelectedCorner(null);
@@ -492,30 +570,15 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
 
                {drivers
                   .filter((driver) => !isDriverOutAt(driver.driver_number, currentTime))
-                  .map((driver, index) => {
+                  .map((driver) => {
                      const isSelected = selectedDrivers.includes(driver.driver_number);
-                     const pitReplayPosition = getPitReplayPosition(
-                        driver.driver_number,
-                        currentTime,
-                        pits,
-                        laps,
-                        circuit
-                     );
-                     const percent = pitReplayPosition?.percent ??
-                        getDriverLapPercent(
-                           driver.driver_number, index, currentTime, laps,
-                           circuit.sectors[0].startPercent, circuit.isReversed
-                        );
                      return (
                         <DriverMarkerOnTrack
                            key={driver.driver_number}
-                           pathId={pathId}
                            driver={driver}
-                           percent={percent}
-                           pitLaneOffsetPx={circuit.pitLane.offsetPx}
-                           isReversed={circuit.isReversed}
                            isSelected={isSelected}
-                           isPitting={pitReplayPosition?.isPitting ?? false}
+                           location={driverLocations[driver.driver_number]}
+                           projectLocation={projectLocation}
                            onSelect={() => toggleDriverSelection(driver.driver_number)}
                            onHover={handleHover}
                         />
