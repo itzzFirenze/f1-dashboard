@@ -199,7 +199,7 @@ export interface Weather {
    lastUpdated: string;
 }
 
-export type SessionResultType = 'RACE' | 'SPRINT';
+export type SessionResultType = 'RACE' | 'SPRINT' | 'QUALIFYING' | 'SPRINT_QUALIFYING' | 'FP1' | 'FP2' | 'FP3';
 
 export interface RecentSessionResult {
    id: number;
@@ -219,6 +219,11 @@ export interface RecentSessionResult {
    results: RaceResult[];
    sprintResults?: RaceResult[];
    raceResults?: RaceResult[];
+   qualifyingResults?: RaceResult[];
+   sprintQualifyingResults?: RaceResult[];
+   fp1Results?: RaceResult[];
+   fp2Results?: RaceResult[];
+   fp3Results?: RaceResult[];
 }
 
 /** Dashboard aggregated data */

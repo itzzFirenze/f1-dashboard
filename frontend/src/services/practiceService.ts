@@ -51,6 +51,15 @@ function formatLapTime(seconds: number): string {
    return `${minutes}:${paddedSeconds}`;
 }
 
+export function hasValidPracticeResults(results: RaceResult[] | null | undefined): boolean {
+   if (!results || results.length === 0) return false;
+   return results.some((r) => {
+      const hasTime = !!(r.lapTime || r.q1 || (r.status && r.status !== 'NO TIME' && r.status !== 'DNS' && r.status !== 'DNQ'));
+      const hasLaps = typeof r.lapsCompleted === 'number' ? r.lapsCompleted > 0 : true;
+      return hasTime && hasLaps;
+   });
+}
+
 export const practiceService = {
    getCachedPracticeResults: (
       raceId: number,
@@ -58,15 +67,26 @@ export const practiceService = {
    ): RaceResult[] | null => {
       const cacheKey = `${raceId}-${sessionType}`;
       if (practiceCache.has(cacheKey)) {
-         return practiceCache.get(cacheKey)!;
+         const cached = practiceCache.get(cacheKey)!;
+         if (hasValidPracticeResults(cached)) {
+            return cached;
+         }
+         practiceCache.delete(cacheKey);
       }
       try {
-         const raw = localStorage.getItem(getStorageKey(raceId, sessionType));
+         const storageKey = getStorageKey(raceId, sessionType);
+         const raw = localStorage.getItem(storageKey);
          if (raw) {
             const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-               practiceCache.set(cacheKey, parsed);
-               return parsed;
+            if (Array.isArray(parsed) && hasValidPracticeResults(parsed)) {
+               const sanitized = parsed.map((r) => ({
+                  ...r,
+                  q3: r.q3 && r.q3.toUpperCase().includes('LAP') ? null : r.q3,
+               }));
+               practiceCache.set(cacheKey, sanitized);
+               return sanitized;
+            } else {
+               localStorage.removeItem(storageKey);
             }
          }
       } catch {}
@@ -79,34 +99,41 @@ export const practiceService = {
    ): Promise<RaceResult[]> => {
       const cacheKey = `${race.id}-${sessionType}`;
       if (practiceCache.has(cacheKey)) {
-         return practiceCache.get(cacheKey)!;
+         const cached = practiceCache.get(cacheKey)!;
+         if (hasValidPracticeResults(cached)) {
+            return cached;
+         }
+         practiceCache.delete(cacheKey);
       }
 
       // Check if already embedded on race object
-      if (sessionType === 'fp1' && race.fp1Results && race.fp1Results.length > 0) {
-         practiceCache.set(cacheKey, race.fp1Results);
+      if (sessionType === 'fp1' && hasValidPracticeResults(race.fp1Results)) {
+         practiceCache.set(cacheKey, race.fp1Results!);
          try { localStorage.setItem(getStorageKey(race.id, sessionType), JSON.stringify(race.fp1Results)); } catch {}
-         return race.fp1Results;
+         return race.fp1Results!;
       }
-      if (sessionType === 'fp2' && race.fp2Results && race.fp2Results.length > 0) {
-         practiceCache.set(cacheKey, race.fp2Results);
+      if (sessionType === 'fp2' && hasValidPracticeResults(race.fp2Results)) {
+         practiceCache.set(cacheKey, race.fp2Results!);
          try { localStorage.setItem(getStorageKey(race.id, sessionType), JSON.stringify(race.fp2Results)); } catch {}
-         return race.fp2Results;
+         return race.fp2Results!;
       }
-      if (sessionType === 'fp3' && race.fp3Results && race.fp3Results.length > 0) {
-         practiceCache.set(cacheKey, race.fp3Results);
+      if (sessionType === 'fp3' && hasValidPracticeResults(race.fp3Results)) {
+         practiceCache.set(cacheKey, race.fp3Results!);
          try { localStorage.setItem(getStorageKey(race.id, sessionType), JSON.stringify(race.fp3Results)); } catch {}
-         return race.fp3Results;
+         return race.fp3Results!;
       }
 
       // Check localStorage for instant zero-wait retrieval
       try {
-         const raw = localStorage.getItem(getStorageKey(race.id, sessionType));
+         const storageKey = getStorageKey(race.id, sessionType);
+         const raw = localStorage.getItem(storageKey);
          if (raw) {
             const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length > 0) {
+            if (Array.isArray(parsed) && hasValidPracticeResults(parsed)) {
                practiceCache.set(cacheKey, parsed);
                return parsed;
+            } else {
+               localStorage.removeItem(storageKey);
             }
          }
       } catch {}
@@ -114,7 +141,7 @@ export const practiceService = {
       // Try backend endpoint first
       try {
          const backendResults = await raceService.getPracticeResults(race.id, sessionType);
-         if (backendResults && backendResults.length > 0) {
+         if (hasValidPracticeResults(backendResults)) {
             practiceCache.set(cacheKey, backendResults);
             try { localStorage.setItem(getStorageKey(race.id, sessionType), JSON.stringify(backendResults)); } catch {}
             return backendResults;
@@ -238,6 +265,10 @@ export const practiceService = {
                ? classifiedDrivers[0].stats.bestDuration
                : null;
 
+         if (!p1Best) {
+            return [];
+         }
+
          const formattedResults: RaceResult[] = classifiedDrivers.map((item, idx) => {
             const pos = idx + 1;
             const duration = item.stats.bestDuration;
@@ -271,7 +302,7 @@ export const practiceService = {
                gridPosition: 0,
                q1: lapTime,
                q2: gapStr,
-               q3: `${item.stats.totalLaps} LAPS`,
+               q3: null,
                lapTime,
                gap: gapStr,
                lapsCompleted: item.stats.totalLaps,

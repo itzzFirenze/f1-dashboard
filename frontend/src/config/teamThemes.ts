@@ -19,7 +19,9 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
       teamLogoUrl: `${BASE}/teams/mercedes.svg`,
       driverImages: {
          george_russell: `${BASE}/drivers/george_russell.avif`,
+         kimi_antonelli: `${BASE}/drivers/kimi_antonelli.avif`,
          andrea_kimi_antonelli: `${BASE}/drivers/kimi_antonelli.avif`,
+         andrea_antonelli: `${BASE}/drivers/kimi_antonelli.avif`,
       },
    },
    red_bull: {
@@ -171,6 +173,16 @@ export function resolveTheme(constructorName: string): TeamTheme {
 
 /** Get driver image URL, returns null if not configured */
 export function getDriverImage(theme: TeamTheme, firstName: string, lastName: string): string | null {
+   if (!theme || !theme.driverImages) return null;
    const slug = getDriverSlug(firstName, lastName);
-   return theme.driverImages[slug] ?? null;
+   if (theme.driverImages[slug]) return theme.driverImages[slug];
+
+   // Try matching without middle names or by last name alone if unique in team
+   const cleanLast = lastName.toLowerCase().replace(/[^a-z]/g, '');
+   for (const [key, url] of Object.entries(theme.driverImages)) {
+      if (key === slug || key.endsWith(`_${cleanLast}`) || key.includes(cleanLast)) {
+         return url;
+      }
+   }
+   return null;
 }

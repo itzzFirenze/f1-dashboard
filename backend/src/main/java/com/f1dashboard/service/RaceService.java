@@ -108,23 +108,17 @@ public class RaceService {
             .map(this::toResultDto)
             .toList();
 
-      List<RaceResultDto> fp1Results = resultRepository
-            .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.FP1)
-            .stream()
-            .map(this::toResultDto)
-            .toList();
+      List<RaceResultDto> fp1Results = filterValidPractice(
+            resultRepository.findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.FP1)
+      );
 
-      List<RaceResultDto> fp2Results = resultRepository
-            .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.FP2)
-            .stream()
-            .map(this::toResultDto)
-            .toList();
+      List<RaceResultDto> fp2Results = filterValidPractice(
+            resultRepository.findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.FP2)
+      );
 
-      List<RaceResultDto> fp3Results = resultRepository
-            .findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.FP3)
-            .stream()
-            .map(this::toResultDto)
-            .toList();
+      List<RaceResultDto> fp3Results = filterValidPractice(
+            resultRepository.findByRaceIdAndSessionTypeOrderByPositionAsc(id, com.f1dashboard.enums.SessionType.FP3)
+      );
 
       WeatherDto weather = weatherRepository.findByRaceId(id)
             .map(this::toWeatherDto)
@@ -139,6 +133,13 @@ public class RaceService {
             fp1Results, fp2Results, fp3Results, weather);
    }
 
+   private List<RaceResultDto> filterValidPractice(List<RaceResult> list) {
+      if (list == null || list.isEmpty()) return List.of();
+      boolean anyValid = list.stream().anyMatch(r -> r.getQ1Time() != null || (r.getStatus() != null && !"NO TIME".equalsIgnoreCase(r.getStatus())));
+      if (!anyValid) return List.of();
+      return list.stream().map(this::toResultDto).toList();
+   }
+
    /** Get practice classification (FP1, FP2, FP3) */
    @Transactional
    @Cacheable(cacheNames = CacheConfig.RACES, key = "'practice:' + #raceId + ':' + #sessionType")
@@ -149,8 +150,17 @@ public class RaceService {
             .map(this::toResultDto)
             .toList();
 
-      if (!existing.isEmpty()) {
+      boolean hasValidExisting = existing.stream().anyMatch(dto -> dto.q1() != null && !"NO TIME".equalsIgnoreCase(dto.status()));
+      if (hasValidExisting) {
          return existing;
+      } else if (!existing.isEmpty()) {
+         try {
+            resultRepository.deleteAll(
+               resultRepository.findByRaceIdAndSessionTypeOrderByPositionAsc(raceId, sessionType)
+            );
+         } catch (Exception ex) {
+            log.warn("Could not purge invalid practice records: {}", ex.getMessage());
+         }
       }
 
       List<RaceResultDto> fetched = fetchOpenF1PracticeResults(raceId, sessionType);
@@ -307,6 +317,9 @@ public class RaceService {
          });
 
          Double p1Best = !driverList.isEmpty() && driverList.get(0).stats.bestLap != null ? driverList.get(0).stats.bestLap : null;
+         if (p1Best == null) {
+            return List.of();
+         }
 
          List<RaceResultDto> results = new java.util.ArrayList<>();
          for (int i = 0; i < driverList.size(); i++) {
@@ -339,7 +352,7 @@ public class RaceService {
                   0,
                   lapTimeStr,
                   gapStr,
-                  d.stats.totalLaps + " Laps",
+                  null,
                   lapTimeStr,
                   gapStr,
                   d.stats.totalLaps,

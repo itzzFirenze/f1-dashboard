@@ -5,7 +5,7 @@ import {
    Compass, Radio, Flag, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { raceService } from '../services/raceService';
-import { practiceService } from '../services/practiceService';
+import { practiceService, hasValidPracticeResults } from '../services/practiceService';
 import WeatherCard from '../components/ui/WeatherCard';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import { useTimezone } from '../context/TimezoneContext';
@@ -58,20 +58,40 @@ const RaceDetailPage: React.FC = () => {
                });
 
                // Silent background prefetching so practice tabs load instantly with 0 wait
+               const hasMainResults = data.results.length > 0 ||
+                  data.qualifyingResults.length > 0 ||
+                  data.sprintResults.length > 0 ||
+                  (data.sprintQualifyingResults && data.sprintQualifyingResults.length > 0);
+
                if (!cachedFp1) {
                   practiceService.getPracticeResults(data, 'fp1')
-                     .then((res) => setPracticeData((prev) => ({ ...prev, fp1: res })))
+                     .then((res) => {
+                        setPracticeData((prev) => ({ ...prev, fp1: res }));
+                        if (hasValidPracticeResults(res) && !searchParams.get('tab')) {
+                           setActiveTab((current) => (!hasMainResults && current === 'race' ? 'fp1' : current));
+                        }
+                     })
                      .catch(() => {});
                }
                if (!data.sprintWeekend) {
                   if (!cachedFp2) {
                      practiceService.getPracticeResults(data, 'fp2')
-                        .then((res) => setPracticeData((prev) => ({ ...prev, fp2: res })))
+                        .then((res) => {
+                           setPracticeData((prev) => ({ ...prev, fp2: res }));
+                           if (hasValidPracticeResults(res) && !searchParams.get('tab')) {
+                              setActiveTab((current) => (!hasMainResults && (current === 'race' || current === 'fp1') ? 'fp2' : current));
+                           }
+                        })
                         .catch(() => {});
                   }
                   if (!cachedFp3) {
                      practiceService.getPracticeResults(data, 'fp3')
-                        .then((res) => setPracticeData((prev) => ({ ...prev, fp3: res })))
+                        .then((res) => {
+                           setPracticeData((prev) => ({ ...prev, fp3: res }));
+                           if (hasValidPracticeResults(res) && !searchParams.get('tab')) {
+                              setActiveTab((current) => (!hasMainResults && (current === 'race' || current === 'fp1' || current === 'fp2') ? 'fp3' : current));
+                           }
+                        })
                         .catch(() => {});
                   }
                }
@@ -87,7 +107,11 @@ const RaceDetailPage: React.FC = () => {
                   setActiveTab('sprint');
                } else if (data.sprintQualifyingResults && data.sprintQualifyingResults.length > 0) {
                   setActiveTab('sprint_qualifying');
-               } else if (data.fp1Results && data.fp1Results.length > 0) {
+               } else if (hasValidPracticeResults(data.fp3Results) || hasValidPracticeResults(cachedFp3)) {
+                  setActiveTab('fp3');
+               } else if (hasValidPracticeResults(data.fp2Results) || hasValidPracticeResults(cachedFp2)) {
+                  setActiveTab('fp2');
+               } else if (hasValidPracticeResults(data.fp1Results) || hasValidPracticeResults(cachedFp1)) {
                   setActiveTab('fp1');
                }
             })
