@@ -5,13 +5,14 @@ import {
    Compass, Radio, Flag, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { raceService } from '../services/raceService';
+import { practiceService } from '../services/practiceService';
 import WeatherCard from '../components/ui/WeatherCard';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import { useTimezone } from '../context/TimezoneContext';
 import BackButton from '../components/ui/BackButton';
 import type { RaceDetail, RaceResult } from '../types';
 
-type ResultTab = 'race' | 'qualifying' | 'sprint' | 'sprint_qualifying';
+type ResultTab = 'race' | 'qualifying' | 'sprint' | 'sprint_qualifying' | 'fp1' | 'fp2' | 'fp3';
 
 const RaceDetailPage: React.FC = () => {
    const { id } = useParams<{ id: string }>();
@@ -19,6 +20,16 @@ const RaceDetailPage: React.FC = () => {
    const [race, setRace] = useState<RaceDetail | null>(null);
    const [loading, setLoading] = useState(true);
    const [activeTab, setActiveTab] = useState<ResultTab>('race');
+   const [practiceData, setPracticeData] = useState<{
+      fp1: RaceResult[] | null;
+      fp2: RaceResult[] | null;
+      fp3: RaceResult[] | null;
+   }>({
+      fp1: null,
+      fp2: null,
+      fp3: null,
+   });
+   const [practiceLoading, setPracticeLoading] = useState<boolean>(false);
    const { formatSession, resolvedTimeZone, tzAbbr, tzOffset } = useTimezone();
 
    useEffect(() => {
@@ -26,8 +37,47 @@ const RaceDetailPage: React.FC = () => {
          raceService.getById(Number(id))
             .then((data) => {
                setRace(data);
+
+               const cachedFp1 =
+                  data.fp1Results && data.fp1Results.length > 0
+                     ? data.fp1Results
+                     : practiceService.getCachedPracticeResults(data.id, 'fp1');
+               const cachedFp2 =
+                  data.fp2Results && data.fp2Results.length > 0
+                     ? data.fp2Results
+                     : practiceService.getCachedPracticeResults(data.id, 'fp2');
+               const cachedFp3 =
+                  data.fp3Results && data.fp3Results.length > 0
+                     ? data.fp3Results
+                     : practiceService.getCachedPracticeResults(data.id, 'fp3');
+
+               setPracticeData({
+                  fp1: cachedFp1,
+                  fp2: cachedFp2,
+                  fp3: cachedFp3,
+               });
+
+               // Silent background prefetching so practice tabs load instantly with 0 wait
+               if (!cachedFp1) {
+                  practiceService.getPracticeResults(data, 'fp1')
+                     .then((res) => setPracticeData((prev) => ({ ...prev, fp1: res })))
+                     .catch(() => {});
+               }
+               if (!data.sprintWeekend) {
+                  if (!cachedFp2) {
+                     practiceService.getPracticeResults(data, 'fp2')
+                        .then((res) => setPracticeData((prev) => ({ ...prev, fp2: res })))
+                        .catch(() => {});
+                  }
+                  if (!cachedFp3) {
+                     practiceService.getPracticeResults(data, 'fp3')
+                        .then((res) => setPracticeData((prev) => ({ ...prev, fp3: res })))
+                        .catch(() => {});
+                  }
+               }
+
                const tabParam = searchParams.get('tab') as ResultTab | null;
-               if (tabParam && ['race', 'qualifying', 'sprint', 'sprint_qualifying'].includes(tabParam)) {
+               if (tabParam && ['race', 'qualifying', 'sprint', 'sprint_qualifying', 'fp1', 'fp2', 'fp3'].includes(tabParam)) {
                   setActiveTab(tabParam);
                } else if (data.results.length > 0) {
                   setActiveTab('race');
@@ -37,12 +87,34 @@ const RaceDetailPage: React.FC = () => {
                   setActiveTab('sprint');
                } else if (data.sprintQualifyingResults && data.sprintQualifyingResults.length > 0) {
                   setActiveTab('sprint_qualifying');
+               } else if (data.fp1Results && data.fp1Results.length > 0) {
+                  setActiveTab('fp1');
                }
             })
             .catch(console.error)
             .finally(() => setLoading(false));
       }
    }, [id, searchParams]);
+
+   // Fetch practice results on-demand if not yet available
+   useEffect(() => {
+      if (!race) return;
+      if (activeTab === 'fp1' || activeTab === 'fp2' || activeTab === 'fp3') {
+         if (practiceData[activeTab] === null) {
+            setPracticeLoading(true);
+            practiceService
+               .getPracticeResults(race, activeTab)
+               .then((results) => {
+                  setPracticeData((prev) => ({ ...prev, [activeTab]: results }));
+               })
+               .catch((err) => {
+                  console.error(`Failed to load ${activeTab} results:`, err);
+                  setPracticeData((prev) => ({ ...prev, [activeTab]: [] }));
+               })
+               .finally(() => setPracticeLoading(false));
+         }
+      }
+   }, [activeTab, race, practiceData]);
 
    if (loading) return <PageSkeleton />;
    if (!race) return null;
@@ -52,7 +124,7 @@ const RaceDetailPage: React.FC = () => {
    const hasQuali = race.qualifyingResults && race.qualifyingResults.length > 0;
    const hasSprintQuali = !!(race.sprintQualifyingResults && race.sprintQualifyingResults.length > 0);
    const isSprintWeekend = !!race.sprintWeekend;
-   const hasAnyResults = hasRace || hasSprint || hasQuali || hasSprintQuali || isSprintWeekend;
+   const hasAnyResults = hasRace || hasSprint || hasQuali || hasSprintQuali || isSprintWeekend || true;
 
    const getActiveResults = (): RaceResult[] => {
       switch (activeTab) {
@@ -60,6 +132,9 @@ const RaceDetailPage: React.FC = () => {
          case 'sprint': return race.sprintResults;
          case 'qualifying': return race.qualifyingResults;
          case 'sprint_qualifying': return race.sprintQualifyingResults || [];
+         case 'fp1': return practiceData.fp1 || [];
+         case 'fp2': return practiceData.fp2 || [];
+         case 'fp3': return practiceData.fp3 || [];
          default: return [];
       }
    };
@@ -70,6 +145,9 @@ const RaceDetailPage: React.FC = () => {
          case 'sprint': return 'Sprint';
          case 'qualifying': return 'Qualifying';
          case 'sprint_qualifying': return 'Sprint Qualifying';
+         case 'fp1': return 'Practice 1';
+         case 'fp2': return 'Practice 2';
+         case 'fp3': return 'Practice 3';
       }
    };
 
@@ -79,6 +157,9 @@ const RaceDetailPage: React.FC = () => {
          case 'sprint': return 'Sprint';
          case 'qualifying': return 'Quali';
          case 'sprint_qualifying': return 'Sprint Quali';
+         case 'fp1': return 'FP1';
+         case 'fp2': return 'FP2';
+         case 'fp3': return 'FP3';
       }
    };
 
@@ -87,8 +168,22 @@ const RaceDetailPage: React.FC = () => {
    if (hasQuali) tabs.push('qualifying');
    if (hasSprint || isSprintWeekend) tabs.push('sprint');
    if (hasSprintQuali || isSprintWeekend) tabs.push('sprint_qualifying');
+   tabs.push('fp1');
+   if (!isSprintWeekend) {
+      tabs.push('fp2');
+      tabs.push('fp3');
+   }
 
    const isCompleted = race.status === 'COMPLETED';
+
+   const currentPracticeSession =
+      activeTab === 'fp1'
+         ? race.sessions?.find((s) => s.sessionType === 'FP1' || s.sessionDisplayName?.toLowerCase().includes('practice 1'))
+         : activeTab === 'fp2'
+         ? race.sessions?.find((s) => s.sessionType === 'FP2' || s.sessionDisplayName?.toLowerCase().includes('practice 2'))
+         : activeTab === 'fp3'
+         ? race.sessions?.find((s) => s.sessionType === 'FP3' || s.sessionDisplayName?.toLowerCase().includes('practice 3'))
+         : null;
 
    return (
       <div className="space-y-7 animate-fade-in">
@@ -153,53 +248,52 @@ const RaceDetailPage: React.FC = () => {
                   />
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06]" style={{ backgroundColor: '#38bdf815' }}>
-                           <Clock className="w-4 h-4" style={{ color: '#38bdf8' }} />
+                        <div className="p-1.5 rounded-lg bg-sky-400/10 border border-sky-400/20 text-sky-400">
+                           <Clock className="w-4 h-4" />
                         </div>
-                        <span className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">
-                           Session Schedule
-                        </span>
+                        <h3 className="font-display font-black text-sm uppercase tracking-widest text-f1-white">
+                           Weekend Schedule
+                        </h3>
                      </div>
-                     <span
-                        className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-sky-200"
-                        title={`Showing times in ${resolvedTimeZone} ${tzOffset}`}
-                     >
-                        <Clock className="w-3 h-3" />
-                        {tzAbbr || resolvedTimeZone}
-                        {tzOffset && <span className="text-sky-200/60">{tzOffset}</span>}
+                     <span className="text-[10px] font-mono text-f1-silver/50 tracking-wider">
+                        {resolvedTimeZone} ({tzAbbr}, {tzOffset})
                      </span>
                   </div>
-                  <div className="space-y-2">
-                     {race.sessions.map((session) => {
-                        const localSession = formatSession(session.sessionDate, session.sessionTime);
 
-                        return (
-                           <div
-                              key={session.id}
-                              className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] transition-colors"
-                           >
-                              <div className="flex items-center gap-3 min-w-0">
-                                 <div className={`w-2 h-2 rounded-full shrink-0 ${session.status === 'COMPLETED' ? 'bg-emerald-400' : 'bg-f1-red'
-                                    }`} />
-                                 <span className="font-medium text-sm truncate">{session.sessionDisplayName}</span>
-                              </div>
-                              <div className="text-right text-xs font-mono text-f1-silver shrink-0">
-                                 <span className="uppercase tracking-wider">{localSession.dateStr}</span>
-                                 {localSession.timeStr && (
-                                    <span className="ml-3 font-bold text-f1-white">
-                                       {localSession.timeStr}
-                                    </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                     {race.sessions && race.sessions.length > 0 ? (
+                        race.sessions.map((session) => {
+                           const formatted = formatSession(session.sessionDate, session.sessionTime);
+                           return (
+                              <div
+                                 key={session.id}
+                                 className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] transition-all"
+                              >
+                                 <p className="text-xs font-mono font-semibold text-f1-silver uppercase tracking-wider mb-1">
+                                    {session.sessionDisplayName}
+                                 </p>
+                                 <p className="text-sm font-display font-bold text-f1-white">
+                                    {formatted.dateStr}
+                                 </p>
+                                 {session.sessionTime && (
+                                    <p className="text-xs font-mono text-f1-silver/70 mt-0.5">
+                                       {formatted.timeStr}
+                                    </p>
                                  )}
                               </div>
-                           </div>
-                        );
-                     })}
+                           );
+                        })
+                     ) : (
+                        <p className="text-sm font-mono text-f1-silver/50 col-span-full py-4 text-center">
+                           No session timings scheduled
+                        </p>
+                     )}
                   </div>
                </div>
 
-               {/* Results with Tabs */}
+               {/* Classification Results Card */}
                {hasAnyResults && (
-                  <div className="telemetry-card p-3.5 sm:p-6 relative overflow-hidden">
+                  <div className="telemetry-card p-4 sm:p-6 relative overflow-hidden">
                      <div
                         className="absolute top-0 inset-x-0 h-[2px] opacity-75"
                         style={{ background: 'linear-gradient(90deg, transparent, #E10600, transparent)' }}
@@ -211,21 +305,26 @@ const RaceDetailPage: React.FC = () => {
                            <button
                               key={tab}
                               onClick={() => setActiveTab(tab)}
-                              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider sm:tracking-widest transition-all whitespace-nowrap shrink-0 flex items-center gap-1 sm:gap-1.5 ${activeTab === tab
-                                 ? 'bg-f1-red text-white shadow-lg shadow-f1-red/20'
-                                 : 'text-f1-silver/70 hover:text-f1-white hover:bg-white/[0.04]'
-                                 }`}
+                              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider sm:tracking-widest transition-all whitespace-nowrap shrink-0 flex items-center gap-1 sm:gap-1.5 ${
+                                 activeTab === tab
+                                    ? 'bg-f1-red text-white shadow-lg shadow-f1-red/20'
+                                    : 'text-f1-silver/70 hover:text-f1-white hover:bg-white/[0.04]'
+                              }`}
                            >
                               {tab === 'race' && <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />}
-                              {tab === 'qualifying' && <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />}
-                              {(tab === 'sprint' || tab === 'sprint_qualifying') && <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />}
+                              {(tab === 'qualifying' || tab === 'fp1' || tab === 'fp2' || tab === 'fp3') && (
+                                 <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                              )}
+                              {(tab === 'sprint' || tab === 'sprint_qualifying') && (
+                                 <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                              )}
                               <span className="sm:hidden">{getTabShortLabel(tab)}</span>
                               <span className="hidden sm:inline">{getTabLabel(tab)}</span>
                            </button>
                         ))}
                      </div>
 
-                     {/* Qualifying / Sprint Qualifying Sub-header (Q1/Q2/Q3 or SQ1/SQ2/SQ3 column labels) */}
+                     {/* Qualifying / Sprint Qualifying Sub-header */}
                      {(activeTab === 'qualifying' || activeTab === 'sprint_qualifying') && (
                         <div className="hidden sm:flex items-center justify-end gap-2 sm:gap-6 px-2 sm:px-3 pb-2 text-[9px] sm:text-[10px] font-mono font-semibold text-f1-silver/50 uppercase tracking-[0.2em]">
                            <span className="w-20 sm:w-24 text-center">{activeTab === 'sprint_qualifying' ? 'SQ1' : 'Q1'}</span>
@@ -234,22 +333,166 @@ const RaceDetailPage: React.FC = () => {
                         </div>
                      )}
 
+                     {/* Practice (FP1 / FP2 / FP3) Sub-header */}
+                     {(activeTab === 'fp1' || activeTab === 'fp2' || activeTab === 'fp3') && (
+                        <div className="hidden sm:flex items-center justify-end gap-2 sm:gap-6 px-2 sm:px-3 pb-2 text-[9px] sm:text-[10px] font-mono font-semibold text-f1-silver/50 uppercase tracking-[0.2em]">
+                           <span className="w-20 sm:w-24 text-center">Time</span>
+                           <span className="w-20 sm:w-24 text-center">Gap</span>
+                           <span className="w-20 sm:w-24 text-center">Laps</span>
+                        </div>
+                     )}
+
                      {/* Results List */}
                      <div className="space-y-1">
-                        {getActiveResults().length === 0 ? (
-                           <div className="py-10 text-center text-f1-silver/50 font-mono text-xs uppercase tracking-wider bg-white/[0.01] rounded-xl border border-white/[0.03]">
-                              No {getTabLabel(activeTab).toLowerCase()} times available for this round
+                        {practiceLoading && (activeTab === 'fp1' || activeTab === 'fp2' || activeTab === 'fp3') && getActiveResults().length === 0 ? (
+                           <div className="space-y-2 py-2">
+                              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                                 <div
+                                    key={i}
+                                    className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] animate-pulse"
+                                 >
+                                    <div className="flex items-center gap-3">
+                                       <div className="w-7 h-7 rounded-lg bg-white/[0.05]" />
+                                       <div className="w-1 h-5 rounded-full bg-white/[0.08]" />
+                                       <div className="space-y-1.5">
+                                          <div className="w-32 h-3.5 rounded bg-white/[0.07]" />
+                                          <div className="w-20 h-2.5 rounded bg-white/[0.04]" />
+                                       </div>
+                                    </div>
+                                    <div className="flex items-center gap-6">
+                                       <div className="w-20 sm:w-24 h-4 rounded bg-white/[0.07]" />
+                                       <div className="w-20 sm:w-24 h-4 rounded bg-white/[0.05]" />
+                                       <div className="w-20 sm:w-24 h-4 rounded bg-white/[0.05]" />
+                                    </div>
+                                 </div>
+                              ))}
+                           </div>
+                        ) : getActiveResults().length === 0 ? (
+                           <div className="py-12 px-6 text-center bg-white/[0.01] rounded-2xl border border-white/[0.04] space-y-3">
+                              <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-f1-silver/60 mx-auto flex items-center justify-center">
+                                 <Timer className="w-6 h-6 text-f1-silver/60" />
+                              </div>
+                              <div>
+                                 <h4 className="text-sm sm:text-base font-display font-bold text-f1-white uppercase tracking-wider mb-1">
+                                    No {getTabLabel(activeTab)} Classification Available
+                                 </h4>
+                                 <p className="text-f1-silver/60 font-mono text-xs max-w-md mx-auto">
+                                    {currentPracticeSession ? (
+                                       <>
+                                          Scheduled for{' '}
+                                          <span className="text-f1-white font-semibold">
+                                             {formatSession(currentPracticeSession.sessionDate, currentPracticeSession.sessionTime).dateStr}
+                                          </span>
+                                          {currentPracticeSession.sessionTime && (
+                                             <>
+                                                {' '}
+                                                at{' '}
+                                                <span className="text-f1-white font-semibold">
+                                                   {formatSession(currentPracticeSession.sessionDate, currentPracticeSession.sessionTime).timeStr}
+                                                </span>
+                                             </>
+                                          )}
+                                       </>
+                                    ) : (
+                                       `Timing classification is not available for this session.`
+                                    )}
+                                 </p>
+                              </div>
                            </div>
                         ) : (
                            getActiveResults().map((result) => {
                               const isQualiType = activeTab === 'qualifying' || activeTab === 'sprint_qualifying';
+                              const isPracticeType = activeTab === 'fp1' || activeTab === 'fp2' || activeTab === 'fp3';
+
+                              if (isPracticeType) {
+                                 const bestLapStr =
+                                    result.lapTime ||
+                                    result.q1 ||
+                                    (result.status && result.status !== 'NO TIME' ? result.status : null);
+                                 const isLeader = result.position === 1;
+
+                                 return (
+                                    <div
+                                       key={result.id || `${result.driverCode}-${result.position}`}
+                                       className="flex items-center justify-between p-2 sm:p-3 rounded-xl hover:bg-white/[0.03] transition-colors group gap-2"
+                                    >
+                                       {/* Left: Position badge, team color bar, driver name */}
+                                       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                          <span
+                                             className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-[11px] sm:text-xs font-mono font-bold shrink-0 ${
+                                                result.position === 1
+                                                   ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                                                   : result.position === 2
+                                                   ? 'bg-gray-400/20 text-gray-300 border border-gray-400/30'
+                                                   : result.position === 3
+                                                   ? 'bg-orange-700/20 text-orange-400 border border-orange-700/30'
+                                                   : 'bg-white/[0.04] text-f1-silver border border-white/[0.04]'
+                                             }`}
+                                          >
+                                             {result.position}
+                                          </span>
+
+                                          <div
+                                             className="w-1 h-4 sm:h-5 rounded-full shrink-0"
+                                             style={{ backgroundColor: result.constructorColor || '#94a3b8' }}
+                                          />
+
+                                          <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
+                                             <span className="font-semibold text-xs sm:text-sm text-f1-white truncate">
+                                                {result.driverFirstName} {result.driverLastName}
+                                             </span>
+                                             <span className="text-f1-silver/70 text-xs font-mono hidden sm:inline">
+                                                {result.constructorName}
+                                             </span>
+
+                                             {/* Mobile-only timing info */}
+                                             <div className="w-full flex sm:hidden items-center gap-3 mt-1 font-mono text-[10px] text-f1-silver/60">
+                                                <span>
+                                                   <span className="text-f1-silver/40">TIME:</span>{' '}
+                                                   <span className="text-f1-white font-bold">{bestLapStr || '—'}</span>
+                                                </span>
+                                                <span>
+                                                   <span className="text-f1-silver/40">GAP:</span> {result.gap || (isLeader ? 'LEADER' : '—')}
+                                                </span>
+                                                <span>
+                                                   <span className="text-f1-silver/40">LAPS:</span>{' '}
+                                                   {result.lapsCompleted !== undefined && result.lapsCompleted !== null ? result.lapsCompleted : '—'}
+                                                </span>
+                                             </div>
+                                          </div>
+
+                                          {/* Fastest Lap Badge */}
+                                          {result.fastestLap && (
+                                             <span className="text-[9px] sm:text-[10px] font-mono font-bold text-purple-400 bg-purple-400/10 border border-purple-400/20 rounded px-1.5 py-0.5 shrink-0 hidden xs:inline-block">
+                                                FL
+                                             </span>
+                                          )}
+                                       </div>
+
+                                       {/* Right on Desktop/Tablet: Time, Gap, Laps (matching Q1, Q2, Q3 layout) */}
+                                       <div className="hidden sm:flex items-center gap-2 sm:gap-6 font-mono text-xs sm:text-sm shrink-0">
+                                          <span className="w-20 sm:w-24 text-center font-bold text-f1-white">
+                                             {bestLapStr || '—'}
+                                          </span>
+                                          <span className="w-20 sm:w-24 text-center text-f1-silver/70">
+                                             {result.gap || (isLeader ? 'LEADER' : '—')}
+                                          </span>
+                                          <span className="w-20 sm:w-24 text-center text-f1-silver/70">
+                                             {result.lapsCompleted !== undefined && result.lapsCompleted !== null
+                                                ? result.lapsCompleted
+                                                : (result.q3 || '—').replace(/ laps/i, '')}
+                                          </span>
+                                       </div>
+                                    </div>
+                                 );
+                              }
+
                               const hasGridPos = typeof result.gridPosition === 'number' && result.gridPosition > 0;
                               const delta = hasGridPos ? result.gridPosition - result.position : null;
 
                               const isDnf = !isQualiType && (() => {
                                  if (!result.status) return false;
                                  const s = result.status.trim().toLowerCase();
-                                 // Finished, qualified, classified, time deltas (+...), and lapped (+1 Lap, Lapped, 1 Lap) are NOT DNF
                                  if (
                                     s === 'finished' ||
                                     s === 'qualified' ||

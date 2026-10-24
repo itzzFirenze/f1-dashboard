@@ -134,6 +134,9 @@ export interface RaceDetail {
    sprintResults: RaceResult[];
    qualifyingResults: RaceResult[];
    sprintQualifyingResults?: RaceResult[];
+   fp1Results?: RaceResult[];
+   fp2Results?: RaceResult[];
+   fp3Results?: RaceResult[];
    weather: Weather | null;
 }
 
@@ -178,6 +181,12 @@ export interface RaceResult {
    q1: string | null;
    q2: string | null;
    q3: string | null;
+   lapTime?: string | null;
+   gap?: string | null;
+   lapsCompleted?: number | null;
+   durationSector1?: number | null;
+   durationSector2?: number | null;
+   durationSector3?: number | null;
 }
 
 /** Weather data */

@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import com.f1dashboard.dto.RaceResultDto;
+import com.f1dashboard.enums.SessionType;
+
 @RestController
 @RequestMapping("/api/races")
 @RequiredArgsConstructor
@@ -43,5 +46,18 @@ public class RaceController {
    @Operation(summary = "Get race details", description = "Returns race detail with sessions, results, and weather")
    public ResponseEntity<ApiResponse<RaceDetailDto>> getRaceById(@PathVariable Long id) {
       return ResponseEntity.ok(ApiResponse.success(raceService.getRaceById(id)));
+   }
+
+   @GetMapping("/{id}/practice/{sessionType}")
+   @Operation(summary = "Get practice results", description = "Returns practice classification (FP1, FP2, FP3)")
+   public ResponseEntity<ApiResponse<List<RaceResultDto>>> getPracticeResults(
+         @PathVariable Long id,
+         @PathVariable String sessionType) {
+      try {
+         SessionType type = SessionType.valueOf(sessionType.toUpperCase());
+         return ResponseEntity.ok(ApiResponse.success(raceService.getPracticeResults(id, type)));
+      } catch (IllegalArgumentException e) {
+         return ResponseEntity.badRequest().body(ApiResponse.error("Invalid session type: " + sessionType));
+      }
    }
 }
