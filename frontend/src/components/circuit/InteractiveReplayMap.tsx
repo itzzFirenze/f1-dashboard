@@ -482,6 +482,12 @@ export const InteractiveReplayMap: React.FC<InteractiveReplayMapProps> = ({ circ
 
             {/* HUD Badges */}
             <div className="absolute right-3 top-3 z-10 flex flex-wrap justify-end gap-1 max-w-[55%]">
+               {trackReferenceLocations.length === 0 && drivers.length > 0 && (
+                  <span className="rounded-md border border-f1-red/40 bg-black/70 px-1.5 py-0.5 text-[9px] font-mono text-f1-silver/80 flex items-center gap-1 backdrop-blur-sm">
+                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                     Calibrating GPS...
+                  </span>
+               )}
                {safetyCarStatus.active && (
                   <span className="rounded-md border border-yellow-300 bg-yellow-400 px-1.5 py-0.5 text-[9px] font-mono font-bold text-black animate-pulse">
                      {safetyCarStatus.isVirtual ? 'VSC' : 'Safety Car'}

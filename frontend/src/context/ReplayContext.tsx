@@ -118,34 +118,71 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
    useEffect(() => {
       if (!activeSession || drivers.length === 0 || laps.length === 0) return;
       let cancelled = false;
-      const referenceLap = laps.find((lap) =>
+
+      // Find candidate laps in priority order:
+      // 1. Clean flying racing lap (lap >= 2, duration 50s-240s)
+      let candidates = laps.filter((lap) =>
          drivers.some((driver) => driver.driver_number === lap.driver_number) &&
          lap.lap_number >= 2 &&
          Boolean(lap.date_start) &&
-         Boolean(lap.lap_duration && lap.lap_duration >= 60 && lap.lap_duration <= 180)
+         Boolean(lap.lap_duration && lap.lap_duration >= 50 && lap.lap_duration <= 240)
       );
-      if (!referenceLap?.date_start || !referenceLap.lap_duration) return;
 
-      const driverNumber = referenceLap.driver_number;
-      const startMs = new Date(referenceLap.date_start).getTime();
-      const endMs = startMs + referenceLap.lap_duration * 1000;
-      void telemetryService.getLocations(
-         activeSession.session_key,
-         new Date(startMs - 1500).toISOString(),
-         new Date(endMs + 1500).toISOString(),
-      ).then((rows) => {
-         if (cancelled) return;
-         const trace = rows
-            .filter((row) => {
-               const time = new Date(row.date).getTime();
-               return row.driver_number === driverNumber && time >= startMs && time <= endMs && Number.isFinite(row.x) && Number.isFinite(row.y);
-            })
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-         const stride = Math.max(1, Math.ceil(trace.length / 180));
-         setTrackReferenceLocations(trace.filter((_, index) => index % stride === 0));
-      }).catch((error) => {
-         console.warn('[Replay] Could not load track reference lap', error);
-      });
+      // 2. Any lap with valid duration
+      if (candidates.length === 0) {
+         candidates = laps.filter((lap) =>
+            drivers.some((driver) => driver.driver_number === lap.driver_number) &&
+            Boolean(lap.date_start) &&
+            Boolean(lap.lap_duration && lap.lap_duration >= 40 && lap.lap_duration <= 300)
+         );
+      }
+
+      // 3. Any lap with start time
+      if (candidates.length === 0) {
+         candidates = laps.filter((lap) => Boolean(lap.date_start));
+      }
+
+      if (candidates.length === 0) return;
+
+      const tryCandidate = async (index: number) => {
+         if (cancelled || index >= candidates.length) return;
+         const candidate = candidates[index];
+         const driverNumber = candidate.driver_number;
+         const startMs = new Date(candidate.date_start).getTime();
+         const durationSec = candidate.lap_duration && candidate.lap_duration > 0 ? candidate.lap_duration : 95;
+         const endMs = startMs + durationSec * 1000;
+
+         try {
+            const rows = await telemetryService.getLocations(
+               activeSession.session_key,
+               new Date(startMs - 1500).toISOString(),
+               new Date(endMs + 1500).toISOString(),
+            );
+            if (cancelled) return;
+            const trace = rows
+               .filter((row) => {
+                  const time = new Date(row.date).getTime();
+                  return row.driver_number === driverNumber && time >= startMs && time <= endMs && Number.isFinite(row.x) && Number.isFinite(row.y);
+               })
+               .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+            if (trace.length >= 30) {
+               const stride = Math.max(1, Math.ceil(trace.length / 180));
+               setTrackReferenceLocations(trace.filter((_, idx) => idx % stride === 0));
+            } else if (index < Math.min(candidates.length - 1, 3)) {
+               // Try next candidate if not enough points in this trace
+               await tryCandidate(index + 1);
+            }
+         } catch (error) {
+            console.warn('[Replay] Could not load track reference lap for candidate', index, error);
+            if (index < Math.min(candidates.length - 1, 3)) {
+               await tryCandidate(index + 1);
+            }
+         }
+      };
+
+      void tryCandidate(0);
+
       return () => { cancelled = true; };
    }, [activeSession, drivers, laps]);
 
@@ -519,14 +556,41 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
          setIsLoading(true);
 
-         const loadedDrivers = await telemetryService.getDrivers(
-            session.session_key,
-         );
+         const [loadedDrivers, loadedLaps, loadedStints, loadedPits, loadedRaceControl, loadedTeamRadio] =
+            await Promise.all([
+               telemetryService.getDrivers(session.session_key).catch((err) => {
+                  console.warn("[Replay] Failed to load drivers:", err);
+                  return [] as OpenF1Driver[];
+               }),
+               telemetryService.getLaps(session.session_key).catch((err) => {
+                  console.warn("[Replay] Failed to load laps:", err);
+                  return [] as OpenF1Lap[];
+               }),
+               telemetryService.getStints(session.session_key).catch((err) => {
+                  console.warn("[Replay] Failed to load stints:", err);
+                  return [] as OpenF1Stint[];
+               }),
+               telemetryService.getPits(session.session_key).catch((err) => {
+                  console.warn("[Replay] Failed to load pits:", err);
+                  return [] as OpenF1Pit[];
+               }),
+               telemetryService.getRaceControl(session.session_key).catch((err) => {
+                  console.warn("[Replay] Failed to load race control:", err);
+                  return [] as OpenF1RaceControl[];
+               }),
+               telemetryService.getTeamRadio(session.session_key).catch((err) => {
+                  console.warn("[Replay] Failed to load team radio:", err);
+                  return [] as OpenF1TeamRadio[];
+               }),
+            ]);
+
          setDrivers(loadedDrivers);
          driversRef.current = loadedDrivers;
-
-         const loadedLaps = await telemetryService.getLaps(session.session_key);
          setLaps(loadedLaps);
+         setStints(loadedStints);
+         setPits(loadedPits);
+         setRaceControl(loadedRaceControl);
+         setTeamRadios(loadedTeamRadio);
 
          if (loadedDrivers.length === 0 && loadedLaps.length === 0) {
             setCancelledSessions((prev) => new Set(prev).add(session.session_key));
@@ -538,24 +602,6 @@ export const ReplayProvider: React.FC<{ children: React.ReactNode }> = ({
                return next;
             });
          }
-
-         const loadedStints = await telemetryService.getStints(
-            session.session_key,
-         );
-         setStints(loadedStints);
-
-         const loadedPits = await telemetryService.getPits(session.session_key);
-         setPits(loadedPits);
-
-         const loadedRaceControl = await telemetryService.getRaceControl(
-            session.session_key,
-         );
-         setRaceControl(loadedRaceControl);
-
-         const loadedTeamRadio = await telemetryService.getTeamRadio(
-            session.session_key,
-         );
-         setTeamRadios(loadedTeamRadio);
 
          const validLaps = loadedLaps.filter((lap) => Boolean(lap.date_start));
 
