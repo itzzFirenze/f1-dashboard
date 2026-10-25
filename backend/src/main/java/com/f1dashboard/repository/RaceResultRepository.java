@@ -27,6 +27,9 @@ public interface RaceResultRepository extends JpaRepository<RaceResult, Long> {
    @Transactional
    void deleteByRaceIdAndSessionType(Long raceId, SessionType sessionType);
 
+   @Transactional
+   void deleteBySessionTypeIn(List<SessionType> sessionTypes);
+
    boolean existsByRaceIdAndSessionType(Long raceId, SessionType sessionType);
 
    @EntityGraph(attributePaths = { "race", "race.circuit", "driver", "driver.constructor", "constructor" })

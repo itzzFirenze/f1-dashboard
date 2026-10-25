@@ -134,9 +134,6 @@ export interface RaceDetail {
    sprintResults: RaceResult[];
    qualifyingResults: RaceResult[];
    sprintQualifyingResults?: RaceResult[];
-   fp1Results?: RaceResult[];
-   fp2Results?: RaceResult[];
-   fp3Results?: RaceResult[];
    weather: Weather | null;
 }
 
@@ -181,12 +178,6 @@ export interface RaceResult {
    q1: string | null;
    q2: string | null;
    q3: string | null;
-   lapTime?: string | null;
-   gap?: string | null;
-   lapsCompleted?: number | null;
-   durationSector1?: number | null;
-   durationSector2?: number | null;
-   durationSector3?: number | null;
 }
 
 /** Weather data */
@@ -199,7 +190,7 @@ export interface Weather {
    lastUpdated: string;
 }
 
-export type SessionResultType = 'RACE' | 'SPRINT' | 'QUALIFYING' | 'SPRINT_QUALIFYING' | 'FP1' | 'FP2' | 'FP3';
+export type SessionResultType = 'RACE' | 'SPRINT' | 'QUALIFYING' | 'SPRINT_QUALIFYING';
 
 export interface RecentSessionResult {
    id: number;
@@ -221,9 +212,6 @@ export interface RecentSessionResult {
    raceResults?: RaceResult[];
    qualifyingResults?: RaceResult[];
    sprintQualifyingResults?: RaceResult[];
-   fp1Results?: RaceResult[];
-   fp2Results?: RaceResult[];
-   fp3Results?: RaceResult[];
 }
 
 /** Dashboard aggregated data */

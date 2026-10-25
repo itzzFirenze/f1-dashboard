@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Medal, Zap, Flag, Timer } from 'lucide-react';
 import { resolveTheme, getDriverImage } from '../../config/teamThemes';
-import { hasValidPracticeResults } from '../../services/practiceService';
 import type { RaceResult, SessionResultType } from '../../types';
 
 /* ─── FitText: shrinks text to fit its container width ─── */
@@ -49,7 +48,7 @@ const FitText: React.FC<FitTextProps> = ({ text, maxPx, minPx, className }) => {
    );
 };
 
-function getSessionDisplayTime(result: RaceResult, isPractice?: boolean): string {
+function getSessionDisplayTime(result: RaceResult): string {
    const isValidTime = (val?: string | null): boolean => {
       if (!val) return false;
       const trimmed = val.trim();
@@ -59,19 +58,11 @@ function getSessionDisplayTime(result: RaceResult, isPractice?: boolean): string
       return true;
    };
 
-   if (isPractice) {
-      if (isValidTime(result.lapTime)) return result.lapTime!.trim();
-      if (isValidTime(result.q1)) return result.q1!.trim();
-      if (isValidTime(result.status)) return result.status!.trim();
-      return '—';
-   }
-
    // For Qualifying / Sprint Qualifying:
    // Drivers who make Q3 have q3; eliminated in Q2 have q2; eliminated in Q1 have q1
    if (isValidTime(result.q3)) return result.q3!.trim();
    if (isValidTime(result.q2)) return result.q2!.trim();
    if (isValidTime(result.q1)) return result.q1!.trim();
-   if (isValidTime(result.lapTime)) return result.lapTime!.trim();
    if (isValidTime(result.status)) return result.status!.trim();
    return '—';
 }
@@ -82,10 +73,9 @@ interface PodiumCardProps {
    position: 1 | 2 | 3;
    elevated?: boolean;
    isPointsSession?: boolean;
-   isPractice?: boolean;
 }
 
-const PodiumCard: React.FC<PodiumCardProps> = ({ result, position, elevated, isPointsSession, isPractice }) => {
+const PodiumCard: React.FC<PodiumCardProps> = ({ result, position, elevated, isPointsSession }) => {
    const [imgErr, setImgErr] = useState(false);
    const theme = resolveTheme(result.constructorName);
    const imgUrl = theme ? getDriverImage(theme, result.driverFirstName, result.driverLastName) : null;
@@ -155,7 +145,7 @@ const PodiumCard: React.FC<PodiumCardProps> = ({ result, position, elevated, isP
                   </>
                ) : (
                   <span className="font-mono font-bold text-[11px] sm:text-xs text-white/90 bg-black/40 px-1.5 py-0.5 rounded border border-white/10 backdrop-blur-sm">
-                     {getSessionDisplayTime(result, isPractice)}
+                     {getSessionDisplayTime(result)}
                   </span>
                )}
             </div>
@@ -185,15 +175,9 @@ const DriverGridRow: React.FC<{
    result: RaceResult;
    index: number;
    isPointsSession?: boolean;
-   isPractice?: boolean;
-}> = ({ result, index, isPointsSession, isPractice }) => {
+}> = ({ result, index, isPointsSession }) => {
    const theme = resolveTheme(result.constructorName);
-   const timeStr = getSessionDisplayTime(result, isPractice);
-   const showGap =
-      result.gap &&
-      result.gap !== '-' &&
-      result.gap !== 'LEADER' &&
-      !result.gap.toLowerCase().includes('lap');
+   const timeStr = getSessionDisplayTime(result);
 
    return (
       <div className="grid-row" style={{ animationDelay: `${index * 25}ms`, animationFillMode: 'both' }}>
@@ -248,23 +232,16 @@ const DriverGridRow: React.FC<{
                   )}
                </>
             ) : (
-               <div className="flex flex-col items-end">
-                  <span className="font-mono font-semibold text-xs text-f1-white leading-none">
-                     {timeStr}
-                  </span>
-                  {showGap && (
-                     <span className="text-[9px] font-mono text-f1-silver/60 mt-0.5">
-                        {result.gap}
-                     </span>
-                  )}
-               </div>
+               <span className="font-mono font-semibold text-xs text-f1-white leading-none">
+                  {timeStr}
+               </span>
             )}
          </div>
       </div>
    );
 };
 
-/* ─── Section: Recent Race / Sprint / Quali / Practice Results ─── */
+/* ─── Section: Recent Race / Sprint / Quali Results ─── */
 export interface LastRaceResultsProps {
    raceId: string | number;
    raceName: string;
@@ -277,9 +254,6 @@ export interface LastRaceResultsProps {
    raceResults?: RaceResult[];
    qualifyingResults?: RaceResult[];
    sprintQualifyingResults?: RaceResult[];
-   fp1Results?: RaceResult[];
-   fp2Results?: RaceResult[];
-   fp3Results?: RaceResult[];
 }
 
 const LastRaceResults: React.FC<LastRaceResultsProps> = ({
@@ -294,9 +268,6 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
    raceResults,
    qualifyingResults,
    sprintQualifyingResults,
-   fp1Results,
-   fp2Results,
-   fp3Results,
 }) => {
    const [viewMode, setViewMode] = useState<SessionResultType>(sessionType);
 
@@ -310,14 +281,10 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
    if (qualifyingResults && qualifyingResults.length > 0) availableSessions.push({ type: 'QUALIFYING', label: 'Qualifying' });
    if (sprintResults && sprintResults.length > 0) availableSessions.push({ type: 'SPRINT', label: 'Sprint' });
    if (sprintQualifyingResults && sprintQualifyingResults.length > 0) availableSessions.push({ type: 'SPRINT_QUALIFYING', label: 'Sprint Quali' });
-   if (hasValidPracticeResults(fp3Results)) availableSessions.push({ type: 'FP3', label: 'FP3' });
-   if (hasValidPracticeResults(fp2Results)) availableSessions.push({ type: 'FP2', label: 'FP2' });
-   if (hasValidPracticeResults(fp1Results)) availableSessions.push({ type: 'FP1', label: 'FP1' });
 
    const isSprint = viewMode === 'SPRINT';
    const isQualifying = viewMode === 'QUALIFYING';
    const isSprintQualifying = viewMode === 'SPRINT_QUALIFYING';
-   const isPractice = viewMode === 'FP1' || viewMode === 'FP2' || viewMode === 'FP3';
    const isPointsSession = viewMode === 'RACE' || viewMode === 'SPRINT';
 
    const activeResults =
@@ -332,18 +299,6 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
          : viewMode === 'SPRINT_QUALIFYING'
             ? sprintQualifyingResults && sprintQualifyingResults.length > 0
                ? sprintQualifyingResults
-               : results
-         : viewMode === 'FP1'
-            ? fp1Results && fp1Results.length > 0
-               ? fp1Results
-               : results
-         : viewMode === 'FP2'
-            ? fp2Results && fp2Results.length > 0
-               ? fp2Results
-               : results
-         : viewMode === 'FP3'
-            ? fp3Results && fp3Results.length > 0
-               ? fp3Results
                : results
          : raceResults && raceResults.length > 0
             ? raceResults
@@ -393,9 +348,7 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
             ? 'qualifying'
             : viewMode === 'SPRINT_QUALIFYING'
                ? 'sprint_qualifying'
-               : isPractice
-                  ? viewMode.toLowerCase()
-                  : 'race';
+               : 'race';
 
    return (
       <div className="space-y-3">
@@ -408,17 +361,13 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
                         ? 'bg-amber-400/15 border-amber-400/30 text-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.2)]'
                         : isQualifying || isSprintQualifying
                            ? 'bg-purple-500/15 border-purple-500/30 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.2)]'
-                           : isPractice
-                              ? 'bg-cyan-500/15 border-cyan-500/30 text-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.2)]'
-                              : 'bg-red-500/15 border-red-500/30 text-f1-red-light'
+                           : 'bg-red-500/15 border-red-500/30 text-f1-red-light'
                   }`}
                >
                   {isSprint ? (
                      <Zap className="w-4 h-4 fill-amber-400" />
                   ) : isQualifying || isSprintQualifying ? (
                      <Timer className="w-4 h-4 text-purple-400" />
-                  ) : isPractice ? (
-                     <Flag className="w-4 h-4 text-cyan-400" />
                   ) : (
                      <Medal className="w-4 h-4" />
                   )}
@@ -432,9 +381,7 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
                               ? 'Last Qualifying Results'
                               : isSprintQualifying
                                  ? 'Last Sprint Shootout Results'
-                                 : isPractice
-                                    ? `Last Practice Results (${viewMode})`
-                                    : 'Last Race Results'}
+                                 : 'Last Race Results'}
                         {resolvedDate && <span className="ml-1.5 text-f1-silver/40">• {resolvedDate}</span>}
                      </p>
                      {/* Session Type Pill Badge */}
@@ -446,9 +393,7 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
                                  ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
                                  : isSprintQualifying
                                     ? 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30'
-                                    : isPractice
-                                       ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30'
-                                       : 'bg-f1-red/15 text-f1-red-light border-f1-red/30'
+                                    : 'bg-f1-red/15 text-f1-red-light border-f1-red/30'
                         }`}
                      >
                         {isSprint ? (
@@ -465,11 +410,6 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
                            <>
                               <Timer className="w-2.5 h-2.5" />
                               SPRINT QUALI
-                           </>
-                        ) : isPractice ? (
-                           <>
-                              <Flag className="w-2.5 h-2.5" />
-                              {viewMode}
                            </>
                         ) : (
                            <>
@@ -500,9 +440,7 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
                                     ? 'bg-amber-400 text-black shadow-sm font-bold'
                                     : session.type === 'QUALIFYING' || session.type === 'SPRINT_QUALIFYING'
                                        ? 'bg-purple-500 text-white shadow-sm font-bold'
-                                       : session.type.startsWith('FP')
-                                          ? 'bg-cyan-500 text-black shadow-sm font-bold'
-                                          : 'bg-f1-red text-white shadow-sm font-bold'
+                                       : 'bg-f1-red text-white shadow-sm font-bold'
                                  : 'text-f1-silver/60 hover:text-white'
                            }`}
                         >
@@ -530,9 +468,9 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
 
          {/* Podium — P2 | P1 (elevated) | P3 */}
          <div className="flex items-end gap-1.5 sm:gap-3">
-            {p2 && <PodiumCard result={p2} position={2} isPointsSession={isPointsSession} isPractice={isPractice} />}
-            {p1 && <PodiumCard result={p1} position={1} elevated isPointsSession={isPointsSession} isPractice={isPractice} />}
-            {p3 && <PodiumCard result={p3} position={3} isPointsSession={isPointsSession} isPractice={isPractice} />}
+            {p2 && <PodiumCard result={p2} position={2} isPointsSession={isPointsSession} />}
+            {p1 && <PodiumCard result={p1} position={1} elevated isPointsSession={isPointsSession} />}
+            {p3 && <PodiumCard result={p3} position={3} isPointsSession={isPointsSession} />}
          </div>
 
          {/* P4–P10 grid */}
@@ -544,7 +482,6 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
                      result={result}
                      index={idx}
                      isPointsSession={isPointsSession}
-                     isPractice={isPractice}
                   />
                ))}
             </div>

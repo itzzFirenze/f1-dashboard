@@ -1,6 +1,5 @@
 import api from './api';
-import { practiceService, hasValidPracticeResults } from './practiceService';
-import type { ApiResponse, DashboardData, Race, RaceDetail, RaceResult, RecentSessionResult } from '../types';
+import type { ApiResponse, DashboardData, Race, RaceDetail, RecentSessionResult } from '../types';
 
 export const dashboardService = {
    getData: async () => {
@@ -176,53 +175,6 @@ const extractSessionDates = (detail: RaceDetail) => {
                      sprintQualifyingResults: nextDetail.sprintQualifyingResults,
                   };
                }
-
-               // If nextRace has practice results (e.g., race weekend in progress: Friday / Saturday practice)
-               const nextFp3 = hasValidPracticeResults(nextDetail.fp3Results)
-                  ? nextDetail.fp3Results
-                  : practiceService.getCachedPracticeResults(nextDetail.id, 'fp3');
-               const nextFp2 = hasValidPracticeResults(nextDetail.fp2Results)
-                  ? nextDetail.fp2Results
-                  : practiceService.getCachedPracticeResults(nextDetail.id, 'fp2');
-               const nextFp1 = hasValidPracticeResults(nextDetail.fp1Results)
-                  ? nextDetail.fp1Results
-                  : practiceService.getCachedPracticeResults(nextDetail.id, 'fp1');
-
-               const validNextFp3 = hasValidPracticeResults(nextFp3) ? nextFp3 : null;
-               const validNextFp2 = hasValidPracticeResults(nextFp2) ? nextFp2 : null;
-               const validNextFp1 = hasValidPracticeResults(nextFp1) ? nextFp1 : null;
-
-               const nextPracticeOptions: Array<{ type: 'FP1' | 'FP2' | 'FP3'; results: RaceResult[] | null | undefined }> = [
-                  { type: 'FP3', results: validNextFp3 },
-                  { type: 'FP2', results: validNextFp2 },
-                  { type: 'FP1', results: validNextFp1 },
-               ];
-               for (const { type, results: fpRes } of nextPracticeOptions) {
-                  if (fpRes && fpRes.length > 0) {
-                     return {
-                        id: nextDetail.id,
-                        raceId: nextDetail.id,
-                        round: nextDetail.round,
-                        season: nextDetail.season,
-                        name: nextDetail.name,
-                        circuitName: nextDetail.circuit?.name,
-                        country: nextDetail.circuit?.country,
-                        sessionType: type,
-                        sessionDate: raceDate,
-                        sessionTime: raceTime,
-                        raceDate,
-                        raceTime,
-                        results: fpRes,
-                        sprintResults: nextDetail.sprintResults || [],
-                        raceResults: nextDetail.results || [],
-                        qualifyingResults: nextDetail.qualifyingResults || [],
-                        sprintQualifyingResults: nextDetail.sprintQualifyingResults || [],
-                        fp1Results: validNextFp1 || undefined,
-                        fp2Results: validNextFp2 || undefined,
-                        fp3Results: validNextFp3 || undefined,
-                     };
-                  }
-               }
             }
          } catch (e) {
             console.error('Failed to fetch next race detail for latest results:', e);
@@ -332,53 +284,6 @@ const extractSessionDates = (detail: RaceDetail) => {
             qualifyingResults: lastCompletedDetail.qualifyingResults || [],
             sprintQualifyingResults: lastCompletedDetail.sprintQualifyingResults,
          };
-      }
-
-      // Fallback to the most recent practice session with results
-      const compFp3 = hasValidPracticeResults(lastCompletedDetail.fp3Results)
-         ? lastCompletedDetail.fp3Results
-         : practiceService.getCachedPracticeResults(lastCompletedDetail.id, 'fp3');
-      const compFp2 = hasValidPracticeResults(lastCompletedDetail.fp2Results)
-         ? lastCompletedDetail.fp2Results
-         : practiceService.getCachedPracticeResults(lastCompletedDetail.id, 'fp2');
-      const compFp1 = hasValidPracticeResults(lastCompletedDetail.fp1Results)
-         ? lastCompletedDetail.fp1Results
-         : practiceService.getCachedPracticeResults(lastCompletedDetail.id, 'fp1');
-
-      const validCompFp3 = hasValidPracticeResults(compFp3) ? compFp3 : null;
-      const validCompFp2 = hasValidPracticeResults(compFp2) ? compFp2 : null;
-      const validCompFp1 = hasValidPracticeResults(compFp1) ? compFp1 : null;
-
-      const practiceOptions: Array<{ type: 'FP1' | 'FP2' | 'FP3'; results: RaceResult[] | null | undefined }> = [
-         { type: 'FP3', results: validCompFp3 },
-         { type: 'FP2', results: validCompFp2 },
-         { type: 'FP1', results: validCompFp1 },
-      ];
-      for (const { type, results: fpResults } of practiceOptions) {
-         if (fpResults && fpResults.length > 0) {
-            return {
-               id: lastCompletedDetail.id,
-               raceId: lastCompletedDetail.id,
-               round: lastCompletedDetail.round,
-               season: lastCompletedDetail.season,
-               name: lastCompletedDetail.name,
-               circuitName: lastCompletedDetail.circuit?.name,
-               country: lastCompletedDetail.circuit?.country,
-               sessionType: type,
-               sessionDate: raceDate,
-               sessionTime: raceTime,
-               raceDate,
-               raceTime,
-               results: fpResults,
-               sprintResults: lastCompletedDetail.sprintResults || [],
-               raceResults: lastCompletedDetail.results || [],
-               qualifyingResults: lastCompletedDetail.qualifyingResults || [],
-               sprintQualifyingResults: lastCompletedDetail.sprintQualifyingResults || [],
-               fp1Results: validCompFp1 || undefined,
-               fp2Results: validCompFp2 || undefined,
-               fp3Results: validCompFp3 || undefined,
-            };
-         }
       }
 
       return null;

@@ -413,9 +413,6 @@ const DashboardPage: React.FC = () => {
                raceResults={lastRaceDetail.raceResults}
                qualifyingResults={lastRaceDetail.qualifyingResults}
                sprintQualifyingResults={lastRaceDetail.sprintQualifyingResults}
-               fp1Results={lastRaceDetail.fp1Results}
-               fp2Results={lastRaceDetail.fp2Results}
-               fp3Results={lastRaceDetail.fp3Results}
             />
          )}
 
