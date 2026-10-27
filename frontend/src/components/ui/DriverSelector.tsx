@@ -32,9 +32,11 @@ const DriverSelector: React.FC<DriverSelectorProps> = ({
       .filter(d => {
          const q = search.toLowerCase().trim();
          if (!q) return true;
+         const fullName = `${d.firstName} ${d.lastName}`.toLowerCase();
+         const nameParts = fullName.split(/\s+/).filter(Boolean);
          return (
-            d.firstName.toLowerCase().startsWith(q) ||
-            d.lastName.toLowerCase().startsWith(q) ||
+            nameParts.some(part => part.startsWith(q)) ||
+            fullName.startsWith(q) ||
             d.code.toLowerCase().startsWith(q)
          );
       })

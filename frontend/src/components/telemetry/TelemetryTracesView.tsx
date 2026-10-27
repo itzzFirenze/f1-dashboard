@@ -2,7 +2,35 @@ import React from 'react';
 import { Gauge, Timer } from 'lucide-react';
 import { ResponsiveLine } from '@nivo/line';
 import { useTooltip } from '@nivo/tooltip';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import type { TelemetryComparisonResult } from '../../services/telemetryAnalysisService';
+
+// ─── Mobile scroll helpers ──────────────────────────────────────────────────
+
+/**
+ * On mobile, gives the chart a fixed minimum width inside a horizontally
+ * scrollable wrapper so it isn't squeezed. On desktop it behaves as before.
+ */
+const ScrollableChart: React.FC<{
+   isMobile: boolean;
+   minWidth: number;
+   heightClass: string;
+   children: React.ReactNode;
+}> = ({ isMobile, minWidth, heightClass, children }) => (
+   <div className={isMobile ? 'overflow-x-auto -mx-2 px-2 scrollbar-thin' : undefined}>
+      <div
+         className={`${heightClass} relative ${isMobile ? '' : '!overflow-visible'}`}
+         style={{ minWidth: isMobile ? minWidth : '100%' }}
+      >
+         {children}
+      </div>
+   </div>
+);
+
+const SwipeHint: React.FC<{ show: boolean }> = ({ show }) =>
+   show ? (
+      <span className="text-[10px] font-mono text-white/40 flex items-center gap-1">Swipe &rarr;</span>
+   ) : null;
 
 // ─── Custom Tooltips ────────────────────────────────────────────────────────
 
@@ -174,6 +202,8 @@ export const TelemetryTracesView: React.FC<TelemetryTracesViewProps> = ({
    throttleLineData,
    brakeLineData,
 }) => {
+   const isMobile = useIsMobile();
+
    return (
       <div className="space-y-6">
          {/* ── Speed Trace ── */}
@@ -186,6 +216,7 @@ export const TelemetryTracesView: React.FC<TelemetryTracesViewProps> = ({
                   </h3>
                </div>
                <div className="flex items-center gap-4 text-xs font-mono">
+                  <SwipeHint show={isMobile} />
                   <span className="flex items-center gap-1.5">
                      <span className="w-4 h-0.5 rounded" style={{ backgroundColor: comparison.driverA.displayColor }} />
                      {comparison.driverA.code}
@@ -205,7 +236,7 @@ export const TelemetryTracesView: React.FC<TelemetryTracesViewProps> = ({
                   </span>
                </div>
             </div>
-            <div className="h-60 !overflow-visible relative">
+            <ScrollableChart isMobile={isMobile} minWidth={640} heightClass="h-60">
                <ResponsiveLine
                   data={speedLineData}
                   margin={{ top: 25, right: 30, bottom: 40, left: 50 }}
@@ -239,23 +270,26 @@ export const TelemetryTracesView: React.FC<TelemetryTracesViewProps> = ({
                   axisLeft={{ tickValues: 5 }}
                   theme={nivoTheme}
                />
-            </div>
+            </ScrollableChart>
          </div>
 
          {/* ── Delta Time Gap ── */}
          <div className="telemetry-card p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
                <div className="flex items-center gap-2">
                   <Timer className="w-4 h-4 text-emerald-400" />
                   <h3 className="text-xs font-mono font-bold text-f1-silver/80 uppercase tracking-widest">
                      Cumulative Time Gap Δt (seconds)
                   </h3>
                </div>
-               <span className="text-[11px] font-mono text-f1-silver/60">
-                  Negative = <strong style={{ color: comparison.driverA.displayColor }}>{comparison.driverA.code}</strong> ahead
-               </span>
+               <div className="flex items-center gap-3">
+                  <SwipeHint show={isMobile} />
+                  <span className="text-[11px] font-mono text-f1-silver/60">
+                     Negative = <strong style={{ color: comparison.driverA.displayColor }}>{comparison.driverA.code}</strong> ahead
+                  </span>
+               </div>
             </div>
-            <div className="h-48 !overflow-visible relative">
+            <ScrollableChart isMobile={isMobile} minWidth={560} heightClass="h-48">
                <ResponsiveLine
                   data={deltaLineData}
                   margin={{ top: 20, right: 30, bottom: 40, left: 50 }}
@@ -290,14 +324,17 @@ export const TelemetryTracesView: React.FC<TelemetryTracesViewProps> = ({
                   axisLeft={{ tickValues: 5 }}
                   theme={nivoTheme}
                />
-            </div>
+            </ScrollableChart>
          </div>
 
          {/* ── Throttle & Brake side-by-side ── */}
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div className="telemetry-card chart-card p-5 !overflow-visible relative z-10">
-               <h4 className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider mb-4">Throttle Application (%)</h4>
-               <div className="h-48 !overflow-visible relative">
+               <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider">Throttle Application (%)</h4>
+                  <SwipeHint show={isMobile} />
+               </div>
+               <ScrollableChart isMobile={isMobile} minWidth={520} heightClass="h-48">
                   <ResponsiveLine
                      data={throttleLineData}
                      margin={{ top: 20, right: 30, bottom: 40, left: 45 }}
@@ -330,12 +367,15 @@ export const TelemetryTracesView: React.FC<TelemetryTracesViewProps> = ({
                      axisLeft={{ tickValues: 5 }}
                      theme={nivoTheme}
                   />
-               </div>
+               </ScrollableChart>
             </div>
 
             <div className="telemetry-card chart-card p-5 !overflow-visible relative z-10">
-               <h4 className="text-xs font-mono font-bold text-rose-400 uppercase tracking-wider mb-4">Braking Pressure (%)</h4>
-               <div className="h-48 !overflow-visible relative">
+               <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-xs font-mono font-bold text-rose-400 uppercase tracking-wider">Braking Pressure (%)</h4>
+                  <SwipeHint show={isMobile} />
+               </div>
+               <ScrollableChart isMobile={isMobile} minWidth={520} heightClass="h-48">
                   <ResponsiveLine
                      data={brakeLineData}
                      margin={{ top: 20, right: 30, bottom: 40, left: 45 }}
@@ -367,7 +407,7 @@ export const TelemetryTracesView: React.FC<TelemetryTracesViewProps> = ({
                      axisLeft={{ tickValues: 5 }}
                      theme={nivoTheme}
                   />
-               </div>
+               </ScrollableChart>
             </div>
          </div>
       </div>

@@ -7,7 +7,7 @@ import SearchInput from '../components/ui/SearchInput';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import EmptyState from '../components/ui/EmptyState';
-import { resolveTheme } from '../config/teamThemes';
+import { resolveTheme, stripTeamSuffix } from '../config/teamThemes';
 import type { Constructor } from '../types';
 
 const ConstructorsPage: React.FC = () => {
@@ -130,7 +130,7 @@ const ConstructorsPage: React.FC = () => {
                               >
                                  <img
                                     src={logoSrc}
-                                    alt={team.name}
+                                    alt={stripTeamSuffix(team.name)}
                                     className="w-full h-full object-contain"
                                     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                                  />
@@ -143,7 +143,7 @@ const ConstructorsPage: React.FC = () => {
                                     Constructor /{team.nationality?.slice(0, 3).toUpperCase()}
                                  </div>
                                  <h3 className="text-xs sm:text-xl font-black font-display text-f1-white truncate mt-0.5 group-hover:text-f1-red-light transition-colors">
-                                    {team.name}
+                                    {stripTeamSuffix(team.name)}
                                  </h3>
                                  {team.wins > 0 && (
                                     <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5 sm:mt-1">

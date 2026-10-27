@@ -50,9 +50,12 @@ public class RecordsService {
             .map(d -> {
                List<RaceResult> dResults = results.stream()
                      .filter(r -> r.getDriver() != null && r.getDriver().getId().equals(d.getId())).toList();
+               // When season-scoped, only include drivers who actually raced that season
+               if (season != null && dResults.isEmpty()) return null;
                long wins = dResults.stream().filter(r -> r.getPosition() != null && r.getPosition() == 1).count();
                return createDriverRecord(d, wins, wins + " Wins", dResults, season);
             })
+            .filter(r -> r != null)
             .sorted(Comparator.comparingDouble(RecordsDto.DriverRecord::getValue).reversed())
             .limit(10).toList());
 
@@ -61,9 +64,12 @@ public class RecordsService {
             .map(d -> {
                List<RaceResult> dResults = results.stream()
                      .filter(r -> r.getDriver() != null && r.getDriver().getId().equals(d.getId())).toList();
+               // When season-scoped, only include drivers who actually raced that season
+               if (season != null && dResults.isEmpty()) return null;
                long podiums = dResults.stream().filter(r -> r.getPosition() != null && r.getPosition() <= 3).count();
                return createDriverRecord(d, podiums, podiums + " Podiums", dResults, season);
             })
+            .filter(r -> r != null)
             .sorted(Comparator.comparingDouble(RecordsDto.DriverRecord::getValue).reversed())
             .limit(10).toList());
 
@@ -74,12 +80,15 @@ public class RecordsService {
                      .filter(r -> r.getDriver() != null && r.getDriver().getId().equals(d.getId())).toList();
                List<RaceResult> dSprintResults = sprintResults.stream()
                      .filter(r -> r.getDriver() != null && r.getDriver().getId().equals(d.getId())).toList();
+               // When season-scoped, only include drivers who actually raced that season
+               if (season != null && dResults.isEmpty() && dSprintResults.isEmpty()) return null;
                double racePoints = dResults.stream().mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0).sum();
                double sprintPoints = dSprintResults.stream().mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0)
                      .sum();
                double points = racePoints + sprintPoints;
                return createDriverRecord(d, points, String.format("%.0f Pts", points), dResults, season);
             })
+            .filter(r -> r != null)
             .sorted(Comparator.comparingDouble(RecordsDto.DriverRecord::getValue).reversed())
             .limit(10).toList());
 
@@ -88,11 +97,14 @@ public class RecordsService {
             .map(d -> {
                List<RaceResult> dResults = results.stream()
                      .filter(r -> r.getDriver() != null && r.getDriver().getId().equals(d.getId())).toList();
+               // When season-scoped, only include drivers who actually raced that season
+               if (season != null && dResults.isEmpty()) return null;
                long races = dResults.size();
                long wins = dResults.stream().filter(r -> r.getPosition() != null && r.getPosition() == 1).count();
                double rate = races > 0 ? ((double) wins / races) * 100 : 0;
                return createDriverRecord(d, rate, String.format("%.1f%% (%d/%d)", rate, wins, races), dResults, season);
             })
+            .filter(r -> r != null)
             .filter(r -> r.getValue() > 0) // only drivers with at least 1 win
             .sorted(Comparator.comparingDouble(RecordsDto.DriverRecord::getValue).reversed())
             .limit(10).toList());
@@ -100,37 +112,48 @@ public class RecordsService {
       // 5. Most Wins (Constructor)
       dto.setMostWinsConstructor(constructors.stream()
             .map(c -> {
-               long wins = results.stream().filter(r -> r.getConstructor() != null
-                     && r.getConstructor().getId().equals(c.getId()) && r.getPosition() != null && r.getPosition() == 1)
-                     .count();
+               List<RaceResult> cResults = results.stream().filter(r -> r.getConstructor() != null
+                     && r.getConstructor().getId().equals(c.getId())).toList();
+               // When season-scoped, only include constructors who actually raced that season
+               if (season != null && cResults.isEmpty()) return null;
+               long wins = cResults.stream().filter(r -> r.getPosition() != null && r.getPosition() == 1).count();
                return createConstructorRecord(c, wins, wins + " Wins");
             })
+            .filter(r -> r != null)
             .sorted(Comparator.comparingDouble(RecordsDto.ConstructorRecord::getValue).reversed())
             .limit(10).toList());
 
       // 6. Most Podiums (Constructor)
       dto.setMostPodiumsConstructor(constructors.stream()
             .map(c -> {
-               long podiums = results.stream().filter(r -> r.getConstructor() != null
-                     && r.getConstructor().getId().equals(c.getId()) && r.getPosition() != null && r.getPosition() <= 3)
-                     .count();
+               List<RaceResult> cResults = results.stream().filter(r -> r.getConstructor() != null
+                     && r.getConstructor().getId().equals(c.getId())).toList();
+               // When season-scoped, only include constructors who actually raced that season
+               if (season != null && cResults.isEmpty()) return null;
+               long podiums = cResults.stream().filter(r -> r.getPosition() != null && r.getPosition() <= 3).count();
                return createConstructorRecord(c, podiums, podiums + " Podiums");
             })
+            .filter(r -> r != null)
             .sorted(Comparator.comparingDouble(RecordsDto.ConstructorRecord::getValue).reversed())
             .limit(10).toList());
 
       // 7. Most Points (Constructor)
       dto.setMostPointsConstructor(constructors.stream()
             .map(c -> {
-               double racePoints = results.stream()
-                     .filter(r -> r.getConstructor() != null && r.getConstructor().getId().equals(c.getId()))
+               List<RaceResult> cResults = results.stream()
+                     .filter(r -> r.getConstructor() != null && r.getConstructor().getId().equals(c.getId())).toList();
+               List<RaceResult> cSprintResults = sprintResults.stream()
+                     .filter(r -> r.getConstructor() != null && r.getConstructor().getId().equals(c.getId())).toList();
+               // When season-scoped, only include constructors who actually raced that season
+               if (season != null && cResults.isEmpty() && cSprintResults.isEmpty()) return null;
+               double racePoints = cResults.stream()
                      .mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0).sum();
-               double sprintPoints = sprintResults.stream()
-                     .filter(r -> r.getConstructor() != null && r.getConstructor().getId().equals(c.getId()))
+               double sprintPoints = cSprintResults.stream()
                      .mapToDouble(r -> r.getPoints() != null ? r.getPoints() : 0).sum();
                double points = racePoints + sprintPoints;
                return createConstructorRecord(c, points, String.format("%.0f Pts", points));
             })
+            .filter(r -> r != null)
             .sorted(Comparator.comparingDouble(RecordsDto.ConstructorRecord::getValue).reversed())
             .limit(10).toList());
 

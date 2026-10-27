@@ -7,6 +7,7 @@ import SearchInput from '../components/ui/SearchInput';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import EmptyState from '../components/ui/EmptyState';
+import { stripTeamSuffix } from '../config/teamThemes';
 import type { Driver } from '../types';
 
 const PositionBadge: React.FC<{ position: number }> = ({ position }) => {
@@ -42,13 +43,12 @@ const DriversPage: React.FC = () => {
 
       return allDrivers.filter((driver) => {
          const fullName = `${driver.firstName} ${driver.lastName}`.toLowerCase();
-         const firstName = driver.firstName.toLowerCase();
-         const lastName = driver.lastName.toLowerCase();
+         const nameParts = fullName.split(/\s+/).filter(Boolean);
          const code = driver.code.toLowerCase();
          const numberStr = String(driver.number);
 
-         // First name, last name, or full name starts with search term
-         if (firstName.startsWith(term) || lastName.startsWith(term) || fullName.startsWith(term)) {
+         // Match first letters of first name, middle name, or last name, or full name prefix
+         if (nameParts.some((part) => part.startsWith(term)) || fullName.startsWith(term)) {
             return true;
          }
 
@@ -169,14 +169,14 @@ const DriversPage: React.FC = () => {
                                        <p className="font-display font-bold text-xs sm:text-sm md:text-base text-f1-white group-hover:text-f1-red-light transition-colors truncate">
                                           {driver.firstName} <span className="font-black">{driver.lastName}</span>
                                        </p>
-                                       <p className="text-[10px] sm:text-xs font-mono text-f1-silver/60 sm:hidden truncate">{driver.constructorName}</p>
+                                       <p className="text-[10px] sm:text-xs font-mono text-f1-silver/60 sm:hidden truncate">{stripTeamSuffix(driver.constructorName)}</p>
                                     </div>
                                  </Link>
                               </td>
                               <td className="px-4 py-4 hidden sm:table-cell">
                                  <div className="flex items-center gap-2">
                                     <div className="w-1 h-4 rounded-full shrink-0" style={{ backgroundColor: driver.constructorColor }} />
-                                    <span className="text-f1-silver/80 text-sm font-mono truncate">{driver.constructorName}</span>
+                                    <span className="text-f1-silver/80 text-sm font-mono truncate">{stripTeamSuffix(driver.constructorName)}</span>
                                  </div>
                               </td>
                               <td className="px-4 py-4 text-f1-silver/70 text-sm font-mono hidden md:table-cell">

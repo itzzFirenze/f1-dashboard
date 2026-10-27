@@ -8,6 +8,7 @@ import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { stripTeamSuffix } from '../config/teamThemes';
 import type { ConsistencyData } from '../types';
 
 const heatmapTheme = {
@@ -95,7 +96,7 @@ const ConsistencyPage: React.FC = () => {
       if (!data) return [];
       const groups: Record<string, { id: string; data: { x: number; y: number; driver: string; color: string }[] }> = {};
       data.drivers.forEach(d => {
-         const team = d.driver.constructorName || 'Unknown';
+         const team = stripTeamSuffix(d.driver.constructorName || 'Unknown');
          if (!groups[team]) {
             groups[team] = { id: team, data: [] };
          }
@@ -163,7 +164,7 @@ const ConsistencyPage: React.FC = () => {
                strong.textContent = driver;
                (strong as HTMLElement).style.color = color;
             }
-            if (span) span.textContent = `Avg Finish: P${x} · StdDev: ${y}`;
+            if (span) span.textContent = `Avg P${x} · Variability: ${y} (lower is better)`;
          }
       });
    };
@@ -371,7 +372,7 @@ const ConsistencyPage: React.FC = () => {
                            legendPosition: 'middle',
                         }}
                         axisLeft={{
-                           legend: 'Std Dev (Volatility)',
+                           legend: 'Position Variability (lower = more consistent)',
                            legendOffset: -46,
                            legendPosition: 'middle',
                         }}
@@ -402,13 +403,13 @@ const ConsistencyPage: React.FC = () => {
                {/* Team Legend */}
                <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 pt-4 border-t border-white/[0.04]">
                   {teamLegend.map(team => (
-                     <div key={team.name} className="flex items-center gap-1.5">
+                     <div key={stripTeamSuffix(team.name)} className="flex items-center gap-1.5">
                         <span
                            className="w-2.5 h-2.5 rounded-full shrink-0"
                            style={{ backgroundColor: team.color }}
                         />
                         <span className="text-[11px] font-mono text-f1-silver/60 truncate max-w-[120px]">
-                           {team.name}
+                           {stripTeamSuffix(team.name)}
                         </span>
                      </div>
                   ))}
@@ -420,14 +421,14 @@ const ConsistencyPage: React.FC = () => {
                      <ArrowDownLeft className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                      <div>
                         <p className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wide">Consistent &amp; Fast</p>
-                        <p className="text-[11px] font-mono text-f1-silver/50 mt-0.5">Low avg position, low volatility</p>
+                        <p className="text-[11px] font-mono text-f1-silver/50 mt-0.5">Low avg finish position, low variability</p>
                      </div>
                   </div>
                   <div className="rounded-xl p-3.5 bg-red-500/[0.06] border border-red-500/20 flex items-start gap-2">
                      <ArrowUpRight className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                      <div>
                         <p className="text-xs font-mono font-bold text-red-400 uppercase tracking-wide">Volatile &amp; Slow</p>
-                        <p className="text-[11px] font-mono text-f1-silver/50 mt-0.5">High avg position, high volatility</p>
+                        <p className="text-[11px] font-mono text-f1-silver/50 mt-0.5">High avg finish position, high variability</p>
                      </div>
                   </div>
                </div>

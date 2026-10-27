@@ -6,35 +6,43 @@ import { analyticsService } from '../services/analyticsService';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
+import { useIsMobile } from '../hooks/useIsMobile';
 import type { TimelineData, TimelineEvent } from '../types';
 
 /** Compact telemetry stat block */
-const TelemetryStat: React.FC<{ label: string; value: number | string; colorHex: string; icon: React.ElementType; tag: string }> = ({
-   label, value, colorHex, icon: Icon, tag
-}) => (
-   <div className="telemetry-card p-4 relative overflow-hidden">
+const TelemetryStat: React.FC<{
+   label: string;
+   value: number | string;
+   colorHex: string;
+   icon: React.ElementType;
+}> = ({ label, value, colorHex, icon: Icon }) => (
+   <div className="telemetry-card px-3 py-2.5 relative overflow-hidden">
       <div
          className="absolute top-0 inset-x-0 h-[2px] opacity-75"
          style={{ background: `linear-gradient(90deg, transparent, ${colorHex}, transparent)` }}
       />
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-stretch justify-between gap-3">
          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center border border-white/[0.06]"
+            className="w-10 rounded-md flex items-center justify-center border border-white/[0.06] shrink-0"
             style={{ backgroundColor: `${colorHex}15` }}
          >
-            <Icon className="w-3.5 h-3.5" style={{ color: colorHex }} />
+            <Icon className="w-5 h-5" style={{ color: colorHex }} />
          </div>
-         <span className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded bg-white/[0.04] text-f1-silver/50 border border-white/[0.06]">
-            {tag}
-         </span>
+         <div className="flex flex-col items-end justify-center min-w-0">
+            <div className="text-xl sm:text-2xl font-black font-display text-f1-white leading-none">
+               {value}
+            </div>
+            <p className="text-[10px] font-mono text-f1-silver/50 tracking-widest uppercase mt-1.5 text-end">
+               {label}
+            </p>
+         </div>
       </div>
-      <div className="text-2xl sm:text-3xl font-black font-display text-f1-white leading-none">{value}</div>
-      <p className="text-[10px] font-mono text-f1-silver/50 tracking-widest uppercase mt-1.5">{label}</p>
    </div>
 );
 
 const SeasonTimelinePage: React.FC = () => {
    const [season, setSeason] = useState<number>(2026);
+   const isMobile = useIsMobile();
    const [data, setData] = useState<TimelineData | null>(null);
    const [loading, setLoading] = useState(true);
    const [filter, setFilter] = useState<'all' | 'completed' | 'upcoming'>('all');
@@ -111,54 +119,77 @@ const SeasonTimelinePage: React.FC = () => {
 
          {/* ─── Season Summary Telemetry Grid ─── */}
          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <TelemetryStat label="Races Completed" value={seasonStats.completed} colorHex="#10b981" icon={Calendar} tag="DONE" />
-            <TelemetryStat label="Races Remaining" value={seasonStats.upcoming} colorHex="#f59e0b" icon={Clock} tag="NEXT" />
-            <TelemetryStat label="Lead Changes" value={seasonStats.leadChanges} colorHex="#a855f7" icon={Zap} tag="SWING" />
-            <TelemetryStat label="Unique Winners" value={seasonStats.uniqueWinners} colorHex="#38bdf8" icon={Trophy} tag="SPREAD" />
+            <TelemetryStat label="Races Completed" value={seasonStats.completed} colorHex="#10b981" icon={Calendar} />
+            <TelemetryStat label="Races Remaining" value={seasonStats.upcoming} colorHex="#f59e0b" icon={Clock} />
+            <TelemetryStat label="Lead Changes" value={seasonStats.leadChanges} colorHex="#a855f7" icon={Zap} />
+            <TelemetryStat label="Unique Winners" value={seasonStats.uniqueWinners} colorHex="#38bdf8" icon={Trophy} />
          </div>
 
          {/* ─── Gap Evolution Chart ─── */}
          {gapChartData.length > 0 && gapChartData[0].data.length > 0 && (
-            <div className="telemetry-card p-6 relative overflow-visible">
+            <div className="telemetry-card p-4 sm:p-6 relative overflow-visible">
                <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
-               <div className="flex items-center justify-between mb-6">
+               <div className="flex items-center justify-between flex-wrap gap-2 mb-4 sm:mb-6">
                   <h2 className="text-xs font-mono font-bold text-f1-silver/70 tracking-[0.2em] uppercase flex items-center gap-2.5">
-                     <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-f1-red/15">
+                     <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-f1-red/15 shrink-0">
                         <TrendingUp className="w-4 h-4 text-f1-red-light" />
                      </div>
                      Championship Gap Evolution — P1 vs P2
                   </h2>
-                  <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white/[0.04] text-f1-silver/60 border border-white/[0.06]">
-                     LIVE TRACE
-                  </span>
+                  {isMobile && gapChartData[0].data.length > 6 && (
+                     <span className="text-[10px] font-mono text-f1-silver/40 flex items-center gap-1">
+                        Swipe &rarr;
+                     </span>
+                  )}
                </div>
-               <div style={{ height: 280 }}>
-                  <ResponsiveLine
-                     data={gapChartData}
-                     margin={{ top: 10, right: 20, bottom: 40, left: 60 }}
-                     xScale={{ type: 'point' }}
-                     yScale={{ type: 'linear', min: 0, max: 'auto' }}
-                     curve="monotoneX"
-                     colors={['#E10600']}
-                     enableArea={true}
-                     areaBaselineValue={0}
-                     areaOpacity={0.15}
-                     pointSize={8}
-                     pointColor="#0a0a12"
-                     pointBorderWidth={2}
-                     pointBorderColor="#E10600"
-                     enableSlices="x"
-                     crosshairType="x"
-                     layers={['grid', 'markers', 'axes', 'areas', 'crosshair', 'lines', 'points', RightAnchoredSlices, 'legends']}
-                     theme={{
-                        text: { fill: '#9ca3af', fontFamily: 'monospace', fontSize: 11 },
-                        axis: { ticks: { text: { fill: '#9ca3af' } }, legend: { text: { fill: '#9ca3af' } } },
-                        grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
-                        crosshair: { line: { stroke: '#E10600' } },
+
+               <div className={isMobile ? 'overflow-x-auto -mx-2 px-2 scrollbar-thin' : undefined}>
+                  <div
+                     style={{
+                        minWidth: isMobile ? Math.max(gapChartData[0].data.length * 48, 340) : '100%',
+                        height: isMobile ? 260 : 280,
                      }}
-                     axisBottom={{ tickRotation: -45 }}
-                     axisLeft={{ legend: 'Points Gap', legendPosition: 'middle', legendOffset: -50 }}
-                  />
+                  >
+                     <ResponsiveLine
+                        data={gapChartData}
+                        margin={isMobile
+                           ? { top: 10, right: 20, bottom: 42, left: 44 }
+                           : { top: 10, right: 20, bottom: 40, left: 60 }}
+                        xScale={{ type: 'point' }}
+                        yScale={{ type: 'linear', min: 0, max: 'auto' }}
+                        curve="monotoneX"
+                        colors={['#E10600']}
+                        lineWidth={isMobile ? 2.5 : 2}
+                        enableArea={true}
+                        areaBaselineValue={0}
+                        areaOpacity={0.15}
+                        pointSize={isMobile ? 6 : 8}
+                        pointColor="#0a0a12"
+                        pointBorderWidth={2}
+                        pointBorderColor="#E10600"
+                        enableSlices="x"
+                        crosshairType="x"
+                        layers={['grid', 'markers', 'axes', 'areas', 'crosshair', 'lines', 'points', RightAnchoredSlices, 'legends']}
+                        theme={{
+                           text: { fill: '#9ca3af', fontFamily: 'monospace', fontSize: 11 },
+                           axis: { ticks: { text: { fill: '#9ca3af' } }, legend: { text: { fill: '#9ca3af' } } },
+                           grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
+                           crosshair: { line: { stroke: '#E10600' } },
+                        }}
+                        axisBottom={{
+                           tickRotation: isMobile ? 0 : -45,
+                           tickSize: 4,
+                           tickPadding: 6,
+                        }}
+                        axisLeft={{
+                           tickSize: 4,
+                           tickPadding: 4,
+                           legend: isMobile ? undefined : 'Points Gap',
+                           legendPosition: 'middle',
+                           legendOffset: -50,
+                        }}
+                     />
+                  </div>
                </div>
             </div>
          )}

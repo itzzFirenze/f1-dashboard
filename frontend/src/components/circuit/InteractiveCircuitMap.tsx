@@ -336,19 +336,17 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                      <button
                         type="button"
                         onClick={() => setShowActiveAero((prev) => !prev)}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 border cursor-pointer ${
-                           showActiveAero
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 border cursor-pointer ${showActiveAero
                               ? 'bg-cyan-400/20 border-cyan-400/50 text-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.25)]'
                               : 'bg-white/[0.02] border-white/[0.06] text-f1-silver/60 hover:text-white hover:bg-white/[0.06]'
-                        }`}
+                           }`}
                         title={showActiveAero ? 'Hide Active Aero Straight Zones' : 'Show Active Aero Straight Zones'}
                      >
                         <Wind className={`w-3 h-3 ${showActiveAero ? 'text-cyan-300' : 'text-f1-silver/50'}`} />
                         <span>Active Aero</span>
                         <span
-                           className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
-                              showActiveAero ? 'bg-cyan-400 shadow-[0_0_6px_#22d3ee]' : 'bg-white/20'
-                           }`}
+                           className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${showActiveAero ? 'bg-cyan-400 shadow-[0_0_6px_#22d3ee]' : 'bg-white/20'
+                              }`}
                         />
                      </button>
 
@@ -356,19 +354,17 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                      <button
                         type="button"
                         onClick={() => setShowPitLane((prev) => !prev)}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 border cursor-pointer ${
-                           showPitLane
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 border cursor-pointer ${showPitLane
                               ? 'bg-amber-400/20 border-amber-400/50 text-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.25)]'
                               : 'bg-white/[0.02] border-white/[0.06] text-f1-silver/60 hover:text-white hover:bg-white/[0.06]'
-                        }`}
+                           }`}
                         title={showPitLane ? 'Hide Pit Lane Overlay' : 'Show Pit Lane Overlay'}
                      >
                         <GitBranch className={`w-3 h-3 ${showPitLane ? 'text-amber-300' : 'text-f1-silver/50'}`} />
                         <span>Pit Lane</span>
                         <span
-                           className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
-                              showPitLane ? 'bg-amber-400 shadow-[0_0_6px_#fbbf24]' : 'bg-white/20'
-                           }`}
+                           className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${showPitLane ? 'bg-amber-400 shadow-[0_0_6px_#fbbf24]' : 'bg-white/20'
+                              }`}
                         />
                      </button>
                   </div>
@@ -528,10 +524,6 @@ const InteractiveCircuitMap: React.FC<InteractiveCircuitMapProps> = ({ circuit }
                   <Stat icon={<Zap className="h-3.5 w-3.5 text-yellow-300" />} colorHex="#f59e0b" label="Turns" value={circuit.corners} />
                   <Stat icon={<Wind className="h-3.5 w-3.5 text-cyan-400" />} colorHex="#22d3ee" label="Aero" value={circuit.activeAeroZones.length} />
                   <Stat icon={<Timer className="h-3.5 w-3.5 text-purple-400" />} colorHex="#a855f7" label="Top Spd" value={`${circuit.speedTrap.historicalTopSpeedKmh} km/h`} />
-               </div>
-
-               <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[10px] text-f1-silver/40 font-mono uppercase tracking-wider">
-                  <span>Speed Trap: {circuit.speedTrap.location}</span>
                </div>
             </div>
 

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { driverService } from '../services/driverService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
-import { resolveTheme, getDriverImage } from '../config/teamThemes';
+import { resolveTheme, getDriverImage, stripTeamSuffix } from '../config/teamThemes';
 import { raceService } from '../services/raceService';
 import BackButton from '../components/ui/BackButton';
 import QuickStatCard from '../components/ui/QuickStatCard';
@@ -271,7 +271,7 @@ const DriverDetailPage: React.FC = () => {
                   {/* Driver info */}
                   <div className="pb-4 z-10 pr-[135px] sm:pr-[240px]">
                      <p className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-[0.2em] mb-1" style={{ color: theme.bgTo }}>
-                        #{driver.number} · {driver.constructorName}
+                        #{driver.number} · {stripTeamSuffix(driver.constructorName)}
                      </p>
                      <h1 className="text-2xl sm:text-4xl font-display font-black tracking-tight text-white drop-shadow-lg leading-tight">
                         {driver.firstName}
@@ -337,7 +337,7 @@ const DriverDetailPage: React.FC = () => {
                   className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: theme.primary, boxShadow: `0 0 8px ${theme.primary}` }}
                />
-               <span className="text-f1-silver text-xs font-mono uppercase tracking-wider">{driver.constructorName}</span>
+               <span className="text-f1-silver text-xs font-mono uppercase tracking-wider">{stripTeamSuffix(driver.constructorName)}</span>
                <span className="text-white/30 text-xs font-mono">|</span>
                <span className="text-f1-silver/70 text-xs font-mono uppercase tracking-wider">Car #{driver.number}</span>
                <span className="ml-auto text-2xl font-display font-black text-f1-light-gray/20 tracking-wider">{driver.code}</span>
@@ -382,7 +382,7 @@ const DriverDetailPage: React.FC = () => {
                            {theme.teamLogoUrl && !logoError ? (
                               <img
                                  src={theme.teamLogoUrl}
-                                 alt={driver.constructorName}
+                                 alt={stripTeamSuffix(driver.constructorName)}
                                  className="w-full h-full object-contain p-1.5"
                                  onError={() => setLogoError(true)}
                               />
@@ -392,7 +392,7 @@ const DriverDetailPage: React.FC = () => {
                         </div>
                         <div>
                            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50">Constructor Affiliation</p>
-                           <p className="text-lg font-bold text-f1-white group-hover:text-[var(--team-color)] transition-colors">{driver.constructorName}</p>
+                           <p className="text-lg font-bold text-f1-white group-hover:text-[var(--team-color)] transition-colors">{stripTeamSuffix(driver.constructorName)}</p>
                         </div>
                      </div>
                      <div className="flex items-center gap-2">

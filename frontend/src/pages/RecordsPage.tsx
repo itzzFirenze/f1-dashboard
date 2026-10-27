@@ -5,7 +5,7 @@ import { recordsService } from '../services/recordsService';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
-import { resolveTheme, getDriverImage } from '../config/teamThemes';
+import { resolveTheme, getDriverImageAnyTeam, stripTeamSuffix } from '../config/teamThemes';
 import type { RecordsData, DriverRecord, ConstructorRecord } from '../types';
 
 type RecordCategory = 'driver-wins' | 'driver-podiums' | 'driver-points' | 'driver-winrate' | 'constructor-wins' | 'constructor-podiums' | 'constructor-points';
@@ -22,17 +22,17 @@ const CATEGORIES: { key: RecordCategory; label: string; icon: React.ElementType;
 
 const getRecordImage = (record: DriverRecord | ConstructorRecord): string | undefined => {
    const isDriver = 'driverCode' in record;
-   const constructorName = isDriver
-      ? (record as DriverRecord).constructorName
-      : (record as ConstructorRecord).constructorName;
-   const theme = resolveTheme(constructorName);
 
    if (isDriver) {
       const dr = record as DriverRecord;
       const [firstName, ...rest] = dr.driverName.split(' ');
       const lastName = rest.join(' ');
-      return getDriverImage(theme, firstName, lastName) ?? undefined;
+      // Search across ALL teams - historical records may show drivers under a different/past team
+      return getDriverImageAnyTeam(firstName, lastName) ?? undefined;
    }
+
+   const constructorName = (record as ConstructorRecord).constructorName;
+   const theme = resolveTheme(constructorName);
    return theme.teamLogoUrl ?? undefined;
 };
 
@@ -121,7 +121,7 @@ const RecordsPage: React.FC = () => {
          if ('driverCode' in r) {
             return { id: (r as DriverRecord).driverCode, value: r.value, color: (r as DriverRecord).constructorColor || '#e11d48' };
          }
-         return { id: (r as ConstructorRecord).constructorName, value: r.value, color: (r as ConstructorRecord).constructorColor || '#e11d48' };
+         return { id: stripTeamSuffix((r as ConstructorRecord).constructorName), value: r.value, color: (r as ConstructorRecord).constructorColor || '#e11d48' };
       }).reverse();
    }, [activeRecords]);
 
@@ -214,8 +214,8 @@ const RecordsPage: React.FC = () => {
                   const isGold = podiumIdx === 0;
                   const isSilver = podiumIdx === 1;
                   const medalColor = isGold ? '#FFD700' : isSilver ? '#C0C0C0' : '#CD7F32';
-                  const name = 'driverCode' in record ? (record as DriverRecord).driverName : (record as ConstructorRecord).constructorName;
-                  const code = 'driverCode' in record ? (record as DriverRecord).driverCode : (record as ConstructorRecord).constructorName;
+                  const name = 'driverCode' in record ? (record as DriverRecord).driverName : stripTeamSuffix((record as ConstructorRecord).constructorName);
+                  const code = 'driverCode' in record ? (record as DriverRecord).driverCode : stripTeamSuffix((record as ConstructorRecord).constructorName);
                   const sub = 'driverCode' in record ? (record as DriverRecord).constructorName : '';
                   const color = 'constructorColor' in record ? record.constructorColor : '#666';
 
@@ -264,16 +264,16 @@ const RecordsPage: React.FC = () => {
                               />
                               <div className="flex-1 min-w-0">
                                  <h3 className="text-sm sm:text-lg font-display font-black text-f1-white truncate">{name}</h3>
-                                 {sub && (
+                                 {sub && stripTeamSuffix(sub) !== "" && (
                                     <p className="text-[10px] sm:text-xs font-mono font-medium truncate mt-0.5" style={{ color }}>
-                                       {sub}
+                                       {stripTeamSuffix(sub)}
                                     </p>
                                  )}
                               </div>
                            </div>
 
-                           <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-white/[0.06] flex items-baseline justify-between gap-2">
-                              <span className="text-[9px] sm:text-[10px] font-mono tracking-widest text-f1-silver/50 uppercase truncate">
+                           <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-white/[0.06] flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
+                              <span className="text-[9px] sm:text-[10px] font-mono tracking-widest text-f1-silver/50 uppercase">
                                  Record Value
                               </span>
                               <span className="text-lg sm:text-2xl font-display font-black shrink-0" style={{ color: medalColor }}>
@@ -373,8 +373,8 @@ const RecordsPage: React.FC = () => {
                         const dr = isDriver ? record as DriverRecord : null;
                         const cr = !isDriver ? record as ConstructorRecord : null;
                         const color = dr?.constructorColor || cr?.constructorColor || '#666';
-                        const name = dr ? dr.driverName : cr?.constructorName || '';
-                        const fallbackText = dr ? dr.driverCode : (cr?.constructorName || '').substring(0, 3).toUpperCase();
+                        const name = dr ? dr.driverName : stripTeamSuffix(cr?.constructorName || '');
+                        const fallbackText = dr ? dr.driverCode : stripTeamSuffix(cr?.constructorName || '').substring(0, 3).toUpperCase();
 
                         return (
                            <tr key={idx} className="border-b border-white/[0.03] hover:bg-white/[0.03] transition-colors">
@@ -397,7 +397,7 @@ const RecordsPage: React.FC = () => {
                                  </div>
                               </td>
                               {isDriverCategory && (
-                                 <td className="py-2.5 px-2 text-f1-silver/60 text-xs font-mono hidden sm:table-cell">{dr?.constructorName || ''}</td>
+                                 <td className="py-2.5 px-2 text-f1-silver/60 text-xs font-mono hidden sm:table-cell">{stripTeamSuffix(dr?.constructorName || "")}</td>
                               )}
                               <td className="py-2.5 pr-1 pl-2 sm:px-2 text-right font-mono font-bold text-xs sm:text-sm text-f1-white shrink-0">{record.displayValue}</td>
                            </tr>

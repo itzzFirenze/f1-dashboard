@@ -8,7 +8,7 @@ import {
 import { constructorService } from '../services/constructorService';
 import { raceService } from '../services/raceService';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
-import { resolveTheme, getDriverImage } from '../config/teamThemes';
+import { resolveTheme, getDriverImage, stripTeamSuffix } from '../config/teamThemes';
 import BackButton from '../components/ui/BackButton';
 import QuickStatCard from '../components/ui/QuickStatCard';
 import SectionHeader from '../components/ui/SectionHeader';
@@ -269,13 +269,13 @@ const ConstructorDetailPage: React.FC = () => {
                      {!logoError && (team.logoUrl ?? theme.teamLogoUrl) ? (
                         <img
                            src={team.logoUrl ?? theme.teamLogoUrl}
-                           alt={team.name}
+                           alt={stripTeamSuffix(team.name)}
                            className="h-6 sm:h-9 w-auto object-contain mb-1.5 sm:mb-2 drop-shadow-lg"
                            onError={() => setLogoError(true)}
                         />
                      ) : null}
                      <h1 className="text-2xl sm:text-4xl font-display font-black tracking-tight text-white drop-shadow-lg uppercase leading-tight">
-                        {team.name}
+                        {stripTeamSuffix(team.name)}
                      </h1>
                      <div className="flex items-center gap-3 mt-1.5 text-white/60 text-[10px] sm:text-xs font-mono uppercase tracking-wider">
                         <span>{team.nationality}</span>
@@ -294,7 +294,7 @@ const ConstructorDetailPage: React.FC = () => {
                   {!carError && (
                      <img
                         src={theme.carImageUrl}
-                        alt={`${team.name} 2026 car`}
+                        alt={`${stripTeamSuffix(team.name)} 2026 car`}
                         className="h-20 sm:h-56 max-w-[300px] sm:max-w-[500px] object-contain object-right-bottom self-end sm:self-auto relative z-10 drop-shadow-2xl select-none shrink-0 ml-auto sm:ml-0"
                         onError={() => setCarError(true)}
                      />

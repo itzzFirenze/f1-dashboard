@@ -139,6 +139,15 @@ export const TEAM_THEMES: Record<string, TeamTheme> = {
    },
 };
 
+/** Strip common "F1 Team" suffix from a constructor/team name for display */
+export function stripTeamSuffix(teamName: string): string {
+   return teamName
+      .replace(/\s+F1\s+Team$/i, '')
+      .replace(/\s+Formula\s+1\s+Team$/i, '')
+      .replace(/\s+Formula\s+One\s+Team$/i, '')
+      .trim();
+}
+
 /** Normalise a constructor name to a theme key */
 export function getTeamKey(teamName: string): string {
    const n = teamName.toLowerCase();
@@ -171,6 +180,27 @@ export function resolveTheme(constructorName: string): TeamTheme {
    return TEAM_THEMES[getTeamKey(constructorName)];
 }
 
+/**
+ * Get driver image URL by searching across ALL team themes (not just current team).
+ * This handles drivers who appear in historical records under a different/old team.
+ * Returns null if not found in any theme.
+ */
+export function getDriverImageAnyTeam(firstName: string, lastName: string): string | null {
+   const slug = getDriverSlug(firstName, lastName);
+   const cleanLast = lastName.toLowerCase().replace(/[^a-z]/g, '');
+
+   for (const theme of Object.values(TEAM_THEMES)) {
+      if (!theme.driverImages) continue;
+      if (theme.driverImages[slug]) return theme.driverImages[slug];
+      for (const [key, url] of Object.entries(theme.driverImages)) {
+         if (key.endsWith(`_${cleanLast}`) || key.includes(cleanLast)) {
+            return url;
+         }
+      }
+   }
+   return null;
+}
+
 /** Get driver image URL, returns null if not configured */
 export function getDriverImage(theme: TeamTheme, firstName: string, lastName: string): string | null {
    if (!theme || !theme.driverImages) return null;
@@ -184,5 +214,7 @@ export function getDriverImage(theme: TeamTheme, firstName: string, lastName: st
          return url;
       }
    }
-   return null;
+
+   // Fallback: search all teams (handles historical cross-team appearances)
+   return getDriverImageAnyTeam(firstName, lastName);
 }

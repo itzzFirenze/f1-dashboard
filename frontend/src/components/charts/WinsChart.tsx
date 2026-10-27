@@ -3,6 +3,7 @@ import {
    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import { Trophy } from 'lucide-react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import type { Driver } from '../../types';
 
 interface WinsChartProps {
@@ -11,6 +12,8 @@ interface WinsChartProps {
 
 /** Bar chart showing wins per driver. */
 const WinsChart: React.FC<WinsChartProps> = ({ drivers }) => {
+   const isMobile = useIsMobile();
+
    const data = drivers
       .filter((d) => d.wins > 0)
       .sort((a, b) => b.wins - a.wins)
@@ -38,34 +41,49 @@ const WinsChart: React.FC<WinsChartProps> = ({ drivers }) => {
    return (
       <div className="telemetry-card p-6 relative overflow-hidden">
          <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
-         <div className="flex items-center gap-2.5 mb-6">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-f1-red/10">
-               <Trophy className="w-4 h-4 text-f1-red-light" />
+         <div className="flex items-center justify-between gap-2 mb-6">
+            <div className="flex items-center gap-2.5">
+               <div className="w-8 h-8 rounded-lg flex items-center justify-center border border-white/[0.06] bg-f1-red/10">
+                  <Trophy className="w-4 h-4 text-f1-red-light" />
+               </div>
+               <h3 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Wins per Driver</h3>
             </div>
-            <h3 className="text-xs font-mono font-medium text-f1-silver/70 tracking-wider uppercase">Wins per Driver</h3>
+            {isMobile && data.length > 6 && (
+               <span className="text-[10px] font-mono text-f1-silver/40 flex items-center gap-1">Swipe &rarr;</span>
+            )}
          </div>
-         <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-               <XAxis dataKey="name" stroke="#9B9BAD" fontSize={11} fontFamily="monospace" />
-               <YAxis stroke="#9B9BAD" fontSize={11} fontFamily="monospace" allowDecimals={false} />
-               <Tooltip
-                  itemStyle={{ color: '#F5F5F5', fontFamily: 'monospace', fontSize: 12 }}
-                  labelStyle={{ fontFamily: 'monospace', fontSize: 11, color: '#9B9BAD' }}
-                  contentStyle={{
-                     backgroundColor: '#0d0d14',
-                     border: '1px solid rgba(255,255,255,0.08)',
-                     borderRadius: '12px',
-                     color: '#F5F5F5',
-                  }}
-               />
-               <Bar dataKey="wins" radius={[6, 6, 0, 0]}>
-                  {data.map((entry, index) => (
-                     <Cell key={index} fill={entry.color} />
-                  ))}
-               </Bar>
-            </BarChart>
-         </ResponsiveContainer>
+         <div className={isMobile ? 'overflow-x-auto -mx-2 px-2 scrollbar-thin' : undefined}>
+            <div style={{ minWidth: isMobile ? data.length * 44 : '100%', height: 300 }}>
+               <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                     <XAxis
+                        dataKey="name"
+                        stroke="#9B9BAD"
+                        fontSize={11}
+                        fontFamily="monospace"
+                        interval={0}
+                     />
+                     <YAxis stroke="#9B9BAD" fontSize={11} fontFamily="monospace" allowDecimals={false} />
+                     <Tooltip
+                        itemStyle={{ color: '#F5F5F5', fontFamily: 'monospace', fontSize: 12 }}
+                        labelStyle={{ fontFamily: 'monospace', fontSize: 11, color: '#9B9BAD' }}
+                        contentStyle={{
+                           backgroundColor: '#0d0d14',
+                           border: '1px solid rgba(255,255,255,0.08)',
+                           borderRadius: '12px',
+                           color: '#F5F5F5',
+                        }}
+                     />
+                     <Bar dataKey="wins" radius={[6, 6, 0, 0]}>
+                        {data.map((entry, index) => (
+                           <Cell key={index} fill={entry.color} />
+                        ))}
+                     </Bar>
+                  </BarChart>
+               </ResponsiveContainer>
+            </div>
+         </div>
       </div>
    );
 };

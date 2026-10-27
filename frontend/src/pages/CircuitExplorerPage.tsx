@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowUpRight, Compass, Flag, Radio, Ruler, Search, Timer, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Compass, Flag, Ruler, Search, Timer, Zap } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import InteractiveCircuitMap from '../components/circuit/InteractiveCircuitMap';
 import CircuitTrackThumbnail from '../components/circuit/CircuitTrackThumbnail';
@@ -82,10 +82,6 @@ const CircuitExplorerPage: React.FC = () => {
                         </span>
                      </button>
 
-                     <div className="flex items-center gap-2 text-[11px] sm:text-xs font-mono text-f1-silver/50 uppercase tracking-widest bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06] self-start sm:self-auto">
-                        <Radio className="w-3.5 h-3.5 text-f1-red-light shrink-0" />
-                        <span className="truncate">{selectedCircuit.name} • {selectedCircuit.country}</span>
-                     </div>
                   </div>
 
                   {/* Interactive Map & Telemetry Stage */}
