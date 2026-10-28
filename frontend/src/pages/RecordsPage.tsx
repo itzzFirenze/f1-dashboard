@@ -318,7 +318,7 @@ const RecordsPage: React.FC = () => {
                      keys={['value']}
                      indexBy="id"
                      layout="horizontal"
-                     margin={{ top: 10, right: 56, bottom: 40, left: 80 }}
+                     margin={{ top: 10, right: 56, bottom: 40, left: 83 }}
                      padding={0.3}
                      colors={({ data }) => (data as { color?: string }).color || '#e11d48'}
                      theme={{

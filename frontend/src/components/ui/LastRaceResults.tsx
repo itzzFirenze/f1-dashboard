@@ -296,13 +296,13 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
             ? qualifyingResults && qualifyingResults.length > 0
                ? qualifyingResults
                : results
-         : viewMode === 'SPRINT_QUALIFYING'
-            ? sprintQualifyingResults && sprintQualifyingResults.length > 0
-               ? sprintQualifyingResults
-               : results
-         : raceResults && raceResults.length > 0
-            ? raceResults
-            : results;
+            : viewMode === 'SPRINT_QUALIFYING'
+               ? sprintQualifyingResults && sprintQualifyingResults.length > 0
+                  ? sprintQualifyingResults
+                  : results
+               : raceResults && raceResults.length > 0
+                  ? raceResults
+                  : results;
 
    // Compute distinct date based on active view mode
    const activeDate = isSprint
@@ -353,96 +353,92 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
    return (
       <div className="space-y-3">
          {/* Section header */}
-         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-               <div
-                  className={`p-1.5 rounded-lg border shrink-0 transition-colors ${
-                     isSprint
+         <div className="space-y-2">
+            {/* Row 1: title + Results link (always visible) */}
+            <div className="flex items-start sm:items-center justify-between gap-3">
+               <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div
+                     className={`p-1.5 rounded-lg border shrink-0 transition-colors ${isSprint
                         ? 'bg-amber-400/15 border-amber-400/30 text-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.2)]'
                         : isQualifying || isSprintQualifying
                            ? 'bg-purple-500/15 border-purple-500/30 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.2)]'
                            : 'bg-red-500/15 border-red-500/30 text-f1-red-light'
-                  }`}
-               >
-                  {isSprint ? (
-                     <Zap className="w-4 h-4 fill-amber-400" />
-                  ) : isQualifying || isSprintQualifying ? (
-                     <Timer className="w-4 h-4 text-purple-400" />
-                  ) : (
-                     <Medal className="w-4 h-4" />
-                  )}
-               </div>
-               <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                     <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50">
-                        {isSprint
-                           ? 'Last Sprint Results'
-                           : isQualifying
-                              ? 'Last Qualifying Results'
-                              : isSprintQualifying
-                                 ? 'Last Sprint Shootout Results'
-                                 : 'Last Race Results'}
-                        {resolvedDate && <span className="ml-1.5 text-f1-silver/40">• {resolvedDate}</span>}
-                     </p>
-                     {/* Session Type Pill Badge */}
-                     <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-wider uppercase border ${
-                           isSprint
+                        }`}
+                  >
+                     {isSprint ? (
+                        <Zap className="w-4 h-4 fill-amber-400" />
+                     ) : isQualifying || isSprintQualifying ? (
+                        <Timer className="w-4 h-4 text-purple-400" />
+                     ) : (
+                        <Medal className="w-4 h-4" />
+                     )}
+                  </div>
+                  <div className="min-w-0">
+                     <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50">
+                           {isSprint
+                              ? 'Last Sprint Results'
+                              : isQualifying
+                                 ? 'Last Qualifying Results'
+                                 : isSprintQualifying
+                                    ? 'Last Sprint Shootout Results'
+                                    : 'Last Race Results'}
+                           {resolvedDate && <span className="ml-1.5 text-f1-silver/40">• {resolvedDate}</span>}
+                        </p>
+                        {/* Session Type Pill Badge — unchanged */}
+                        <span
+                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold tracking-wider uppercase border ${isSprint
                               ? 'bg-amber-400/15 text-amber-400 border-amber-400/30'
                               : isQualifying
                                  ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
                                  : isSprintQualifying
                                     ? 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30'
                                     : 'bg-f1-red/15 text-f1-red-light border-f1-red/30'
-                        }`}
-                     >
-                        {isSprint ? (
-                           <>
-                              <Zap className="w-2.5 h-2.5 fill-current" />
-                              SPRINT
-                           </>
-                        ) : isQualifying ? (
-                           <>
-                              <Timer className="w-2.5 h-2.5" />
-                              QUALIFYING
-                           </>
-                        ) : isSprintQualifying ? (
-                           <>
-                              <Timer className="w-2.5 h-2.5" />
-                              SPRINT QUALI
-                           </>
-                        ) : (
-                           <>
-                              <Flag className="w-2.5 h-2.5" />
-                              GRAND PRIX
-                           </>
-                        )}
-                     </span>
+                              }`}
+                        >
+                           {isSprint ? (
+                              <><Zap className="w-2.5 h-2.5 fill-current" />SPRINT</>
+                           ) : isQualifying ? (
+                              <><Timer className="w-2.5 h-2.5" />QUALIFYING</>
+                           ) : isSprintQualifying ? (
+                              <><Timer className="w-2.5 h-2.5" />SPRINT QUALI</>
+                           ) : (
+                              <><Flag className="w-2.5 h-2.5" />GRAND PRIX</>
+                           )}
+                        </span>
+                     </div>
+                     <h3 className="text-base sm:text-lg font-display font-black text-f1-white leading-tight truncate mt-0.5">
+                        {raceName}
+                     </h3>
                   </div>
-                  <h3 className="text-base sm:text-lg font-display font-black text-f1-white leading-tight truncate mt-0.5">
-                     {raceName}
-                  </h3>
                </div>
+
+               <Link
+                  to={`/races/${raceId}?tab=${destinationTab}`}
+                  className="flex items-center gap-1 text-xs font-mono text-f1-silver/60 hover:text-f1-red-light transition-colors bg-white/[0.04] hover:bg-white/[0.07] px-2.5 sm:px-3 py-1.5 rounded-lg border border-white/[0.06] group shrink-0"
+               >
+                  <span>Results</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+               </Link>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-               {/* Quick toggle if multiple sessions exist for this round */}
-               {availableSessions.length > 1 && (
-                  <div className="inline-flex items-center bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.08]">
+            {/* Row 2: session tabs — full width, scrollable on small screens */}
+            {availableSessions.length > 1 && (
+               <div className="flex sm:justify-end">
+                  <div className="inline-flex items-center bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.08] w-full sm:w-auto overflow-x-auto no-scrollbar">
                      {availableSessions.map((session) => (
                         <button
                            key={session.type}
                            type="button"
                            onClick={() => setViewMode(session.type)}
-                           className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold transition-all flex items-center gap-1 ${
-                              viewMode === session.type
-                                 ? session.type === 'SPRINT'
-                                    ? 'bg-amber-400 text-black shadow-sm font-bold'
-                                    : session.type === 'QUALIFYING' || session.type === 'SPRINT_QUALIFYING'
-                                       ? 'bg-purple-500 text-white shadow-sm font-bold'
-                                       : 'bg-f1-red text-white shadow-sm font-bold'
-                                 : 'text-f1-silver/60 hover:text-white'
-                           }`}
+                           className={`flex-1 sm:flex-none justify-center whitespace-nowrap px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-mono font-semibold transition-all flex items-center gap-1 ${viewMode === session.type
+                              ? session.type === 'SPRINT'
+                                 ? 'bg-amber-400 text-black shadow-sm font-bold'
+                                 : session.type === 'QUALIFYING' || session.type === 'SPRINT_QUALIFYING'
+                                    ? 'bg-purple-500 text-white shadow-sm font-bold'
+                                    : 'bg-f1-red text-white shadow-sm font-bold'
+                              : 'text-f1-silver/60 hover:text-white'
+                              }`}
                         >
                            {session.type === 'SPRINT' && <Zap className="w-3 h-3 fill-current" />}
                            {(session.type === 'QUALIFYING' || session.type === 'SPRINT_QUALIFYING') && (
@@ -453,17 +449,8 @@ const LastRaceResults: React.FC<LastRaceResultsProps> = ({
                         </button>
                      ))}
                   </div>
-               )}
-
-               <Link
-                  to={`/races/${raceId}?tab=${destinationTab}`}
-                  className="flex items-center gap-1 text-xs font-mono text-f1-silver/60 hover:text-f1-red-light transition-colors bg-white/[0.04] hover:bg-white/[0.07] px-3 py-1.5 rounded-lg border border-white/[0.06] group shrink-0"
-               >
-                  <span className="hidden xs:inline">Full Results</span>
-                  <span className="xs:hidden">Results</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-               </Link>
-            </div>
+               </div>
+            )}
          </div>
 
          {/* Podium — P2 | P1 (elevated) | P3 */}

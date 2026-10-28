@@ -8,6 +8,7 @@ import { analyticsService } from '../services/analyticsService';
 import DriverSelector from '../components/ui/DriverSelector';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
+import { FlipTooltip, TipRow } from '../components/ui/Fliptooltip';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
 import { useIsMobile } from '../hooks/useIsMobile';
 import type { Driver, DriverComparisonData } from '../types';
@@ -222,6 +223,14 @@ const DriverComparisonPage: React.FC = () => {
                               grid: { line: { stroke: '#333' } },
                               tooltip: { container: { background: '#1a1a2e', color: '#fff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' } },
                            }}
+                           sliceTooltip={({ index, data: items }) => (
+                              <FlipTooltip>
+                                 <div style={{ marginBottom: 4, opacity: 0.7 }}>{index}</div>
+                                 {items.map((it) => (
+                                    <TipRow key={it.id} color={it.color} label={String(it.id)} value={it.formattedValue} />
+                                 ))}
+                              </FlipTooltip>
+                           )}
                            legends={[
                               {
                                  anchor: 'top-left',
@@ -335,6 +344,15 @@ const DriverComparisonPage: React.FC = () => {
                                  crosshair: { line: { stroke: '#e10600' } },
                                  tooltip: { container: { background: '#1a1a2e', color: '#fff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' } },
                               }}
+                              tooltip={({ point }) => (
+                                 <FlipTooltip>
+                                    <TipRow
+                                       color={point.seriesColor}
+                                       label={`${point.seriesId} · ${point.data.xFormatted}`}
+                                       value={`${point.data.yFormatted} pts`}
+                                    />
+                                 </FlipTooltip>
+                              )}
                               legends={isMobile ? [] : [
                                  {
                                     anchor: 'top-right',
@@ -411,6 +429,15 @@ const DriverComparisonPage: React.FC = () => {
                                  axis: { ticks: { text: { fill: '#9ca3af', fontFamily: 'ui-monospace, monospace' } } },
                                  tooltip: { container: { background: '#1a1a2e', color: '#fff', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' } },
                               }}
+                              pointTooltip={({ point }) => (
+                                 <FlipTooltip>
+                                    <TipRow
+                                       color={point.serie.color}
+                                       label={`${point.serie.id} · ${point.data.x}`}
+                                       value={`P${point.data.y}`}
+                                    />
+                                 </FlipTooltip>
+                              )}
                            />
                         </div>
                      </div>

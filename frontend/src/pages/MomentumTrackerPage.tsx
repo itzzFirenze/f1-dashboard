@@ -8,9 +8,12 @@ import DriverSelector from '../components/ui/DriverSelector';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
+import { FlipTooltip, TipRow } from '../components/ui/Fliptooltip';
 import type { Driver, MomentumData } from '../types';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const MomentumTrackerPage: React.FC = () => {
+   const isMobile = useIsMobile();
    const [season, setSeason] = useState<number>(2026);
    const [drivers, setDrivers] = useState<Driver[]>([]);
    const [selected, setSelected] = useState<Driver | null>(null);
@@ -99,7 +102,7 @@ const MomentumTrackerPage: React.FC = () => {
       : '0.0';
 
    const recentRacesDesc = data ? [...data.recentRaces].reverse() : [];
-   const chartMinWidth = waterfallData.length * 36;
+   const chartMinWidth = isMobile ? Math.max(waterfallData.length * 36, 340) : undefined;
 
    // Gauge arc math
    const gaugeRadius = 70;
@@ -231,12 +234,12 @@ const MomentumTrackerPage: React.FC = () => {
 
                {/* ─── Waterfall Chart — Position Deltas ─── */}
                {waterfallData.length > 0 && (
-                  <div className="telemetry-card p-6 relative overflow-hidden">
-                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent" />
+                  <div className="telemetry-card p-6 relative overflow-visible">
+                     <div className="absolute top-0 inset-x-0 h-[2px] opacity-75 bg-gradient-to-r from-transparent via-f1-red to-transparent rounded-t-2xl" />
                      <h3 className="text-[10px] font-mono uppercase tracking-[0.2em] text-f1-silver/50 mb-4">
                         Position Gains / Losses (Grid → Finish)
                      </h3>
-                     <div className="overflow-x-auto pb-2">
+                     <div className={isMobile ? 'overflow-x-auto pb-2 scrollbar-thin' : undefined}>
                         <div className="h-64" style={{ minWidth: chartMinWidth }}>
                            <ResponsiveBar
                               data={waterfallData}
@@ -266,6 +269,15 @@ const MomentumTrackerPage: React.FC = () => {
                                  grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
                                  tooltip: { container: { background: '#0d0d14', color: '#fff', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'ui-monospace, monospace', fontSize: 12 } },
                               }}
+                              tooltip={({ indexValue, value, color }) => (
+                                 <FlipTooltip>
+                                    <TipRow
+                                       color={color}
+                                       label={String(indexValue)}
+                                       value={value > 0 ? `+${value}` : `${value}`}
+                                    />
+                                 </FlipTooltip>
+                              )}
                            />
                         </div>
                      </div>
@@ -291,7 +303,7 @@ const MomentumTrackerPage: React.FC = () => {
                            </span>
                         </div>
                      </div>
-                     <div className="overflow-x-auto pb-2">
+                     <div className={isMobile ? 'overflow-x-auto pb-2 scrollbar-thin' : undefined}>
                         <div className="h-64" style={{ minWidth: chartMinWidth }}>
                            <ResponsiveLine
                               data={rollingLineData}
@@ -313,6 +325,15 @@ const MomentumTrackerPage: React.FC = () => {
                                  grid: { line: { stroke: 'rgba(255,255,255,0.06)' } },
                                  tooltip: { container: { background: '#0d0d14', color: '#fff', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'ui-monospace, monospace', fontSize: 12 } },
                               }}
+                              tooltip={({ point }) => (
+                                 <FlipTooltip>
+                                    <TipRow
+                                       color={point.seriesColor}
+                                       label={`${point.seriesId} · ${point.data.xFormatted}`}
+                                       value={point.data.yFormatted}
+                                    />
+                                 </FlipTooltip>
+                              )}
                            />
                         </div>
                      </div>
