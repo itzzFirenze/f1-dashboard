@@ -8,7 +8,7 @@ import DriverSelector from '../components/ui/DriverSelector';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
 import PageHeroTitle from '@/components/ui/PageHeroTitle';
-import { FlipTooltip, TipRow } from '../components/ui/Fliptooltip';
+import { FlipTooltip, TipRow } from '../components/ui/FlipTooltip';
 import type { Driver, MomentumData } from '../types';
 import { useIsMobile } from '../hooks/useIsMobile';
 
