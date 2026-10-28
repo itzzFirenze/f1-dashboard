@@ -88,7 +88,7 @@ const RaceDetailPage: React.FC = () => {
    const [stintsByDriverCode, setStintsByDriverCode] = useState<Record<string, OpenF1Stint[]>>({});
    const [pitsByDriverCode, setPitsByDriverCode] = useState<Record<string, OpenF1Pit[]>>({});
    const [intervalsByDriverCode, setIntervalsByDriverCode] = useState<Record<string, OpenF1Interval>>({});
-   const [loadingTelemetry, setLoadingTelemetry] = useState(false);
+   const [, setLoadingTelemetry] = useState(false);
    const { formatSession, resolvedTimeZone, tzAbbr, tzOffset } = useTimezone();
 
    useEffect(() => {
