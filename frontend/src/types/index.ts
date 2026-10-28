@@ -179,6 +179,7 @@ export interface RaceResult {
    q2: string | null;
    q3: string | null;
    time?: string | null;
+   fastestLapTime?: string | null;
 }
 
 /** Weather data */

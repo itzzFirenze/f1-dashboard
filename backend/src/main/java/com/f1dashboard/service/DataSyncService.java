@@ -639,6 +639,13 @@ public class DataSyncService {
                                  if (!fastestLapNode.isMissingNode() && fastestLapNode.path("rank").asInt() == 1) {
                                     fastestLap = true;
                                  }
+                                 String fastestLapTime = null;
+                                 if (!fastestLapNode.isMissingNode()) {
+                                    JsonNode flTimeNode = fastestLapNode.path("Time");
+                                    if (!flTimeNode.isMissingNode() && !flTimeNode.path("time").isMissingNode()) {
+                                       fastestLapTime = flTimeNode.path("time").asText(null);
+                                    }
+                                 }
 
                                  String raceTime = null;
                                  JsonNode timeNode = resNode.path("Time");
@@ -659,6 +666,7 @@ public class DataSyncService {
                                        .status(status)
                                        .gridPosition(grid)
                                        .fastestLap(fastestLap)
+                                       .fastestLapTime(fastestLapTime)
                                        .time(raceTime)
                                        .build();
 
@@ -778,6 +786,13 @@ public class DataSyncService {
                                  if (!fastestLapNode.isMissingNode() && fastestLapNode.path("rank").asInt() == 1) {
                                     fastestLap = true;
                                  }
+                                 String fastestLapTime = null;
+                                 if (!fastestLapNode.isMissingNode()) {
+                                    JsonNode flTimeNode = fastestLapNode.path("Time");
+                                    if (!flTimeNode.isMissingNode() && !flTimeNode.path("time").isMissingNode()) {
+                                       fastestLapTime = flTimeNode.path("time").asText(null);
+                                    }
+                                 }
 
                                  String sprintTime = null;
                                  JsonNode spTimeNode = resNode.path("Time");
@@ -798,6 +813,7 @@ public class DataSyncService {
                                        .status(status)
                                        .gridPosition(grid)
                                        .fastestLap(fastestLap)
+                                       .fastestLapTime(fastestLapTime)
                                        .time(sprintTime)
                                        .build();
 

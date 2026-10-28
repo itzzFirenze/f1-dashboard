@@ -49,6 +49,9 @@ public class RaceResult {
    @Column(name = "time_or_gap")
    private String time;
 
+   @Column(name = "fastest_lap_time")
+   private String fastestLapTime;
+
    @Column(name = "q1_time")
    private String q1Time;
 
