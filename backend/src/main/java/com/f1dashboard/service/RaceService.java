@@ -169,7 +169,7 @@ public class RaceService {
             r.getDriver().getConstructor() != null ? r.getDriver().getConstructor().getName() : null,
             r.getDriver().getConstructor() != null ? r.getDriver().getConstructor().getColor() : null,
             r.getPoints(), r.getStatus(), r.getFastestLap(), r.getGridPosition(),
-            r.getQ1Time(), r.getQ2Time(), r.getQ3Time());
+            r.getQ1Time(), r.getQ2Time(), r.getQ3Time(), r.getTime());
    }
 
    private WeatherDto toWeatherDto(WeatherData w) {

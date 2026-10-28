@@ -640,6 +640,15 @@ public class DataSyncService {
                                     fastestLap = true;
                                  }
 
+                                 String raceTime = null;
+                                 JsonNode timeNode = resNode.path("Time");
+                                 if (!timeNode.isMissingNode() && !timeNode.path("time").isMissingNode()) {
+                                    raceTime = timeNode.path("time").asText(null);
+                                 }
+                                 if ((raceTime == null || raceTime.isBlank()) && status != null && (status.startsWith("+") || status.toLowerCase().contains("lap"))) {
+                                    raceTime = status;
+                                 }
+
                                  RaceResult result = RaceResult.builder()
                                        .race(race)
                                        .driver(driver)
@@ -650,6 +659,7 @@ public class DataSyncService {
                                        .status(status)
                                        .gridPosition(grid)
                                        .fastestLap(fastestLap)
+                                       .time(raceTime)
                                        .build();
 
                                  raceResultRepository.save(result);
@@ -769,6 +779,15 @@ public class DataSyncService {
                                     fastestLap = true;
                                  }
 
+                                 String sprintTime = null;
+                                 JsonNode spTimeNode = resNode.path("Time");
+                                 if (!spTimeNode.isMissingNode() && !spTimeNode.path("time").isMissingNode()) {
+                                    sprintTime = spTimeNode.path("time").asText(null);
+                                 }
+                                 if ((sprintTime == null || sprintTime.isBlank()) && status != null && (status.startsWith("+") || status.toLowerCase().contains("lap"))) {
+                                    sprintTime = status;
+                                 }
+
                                  RaceResult result = RaceResult.builder()
                                        .race(race)
                                        .driver(driverOpt.get())
@@ -779,6 +798,7 @@ public class DataSyncService {
                                        .status(status)
                                        .gridPosition(grid)
                                        .fastestLap(fastestLap)
+                                       .time(sprintTime)
                                        .build();
 
                                  raceResultRepository.save(result);

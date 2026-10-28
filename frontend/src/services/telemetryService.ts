@@ -57,22 +57,6 @@ export interface OpenF1Pit {
    stop_duration?: number | null;
 }
 
-const getCarData = async (
-   sessionKey: number,
-   driverNumber: number,
-   startDate?: string,
-   endDate?: string
-): Promise<OpenF1CarData[]> => {
-   return enqueue(async () => {
-      let url = `/telemetry/car_data?session_key=${sessionKey}&driver_number=${driverNumber}`;
-      if (startDate) url += `&date>=${startDate}`;
-      if (endDate) url += `&date<${endDate}`;
-
-      const { data } = await api.get<OpenF1CarData[]>(url);
-      return data;
-   });
-};
-
 export interface OpenF1Lap {
    driver_number: number;
    lap_number: number;
@@ -95,11 +79,13 @@ export interface OpenF1Stint {
    tyre_age_at_start: number;
 }
 
-export interface OpenF1Pit {
+export interface OpenF1Interval {
    date: string;
-   lap_number: number;
    driver_number: number;
-   pit_duration: number | null;
+   gap_to_leader: number | string | null;
+   interval: number | string | null;
+   meeting_key: number;
+   session_key: number;
 }
 
 export interface OpenF1RaceControl {
@@ -130,10 +116,31 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
    return run;
 }
 
+const getCarData = async (
+   sessionKey: number,
+   driverNumber: number,
+   startDate?: string,
+   endDate?: string
+): Promise<OpenF1CarData[]> => {
+   return enqueue(async () => {
+      let url = `/telemetry/car_data?session_key=${sessionKey}&driver_number=${driverNumber}`;
+      if (startDate) url += `&date>=${startDate}`;
+      if (endDate) url += `&date<${endDate}`;
+
+      const { data } = await api.get<OpenF1CarData[]>(url);
+      return data;
+   });
+};
+
 export const telemetryService = {
 
-   getSessions: async (year: number, location?: string): Promise<OpenF1Session[]> => {
-      const params: Record<string, string | number> = { year, session_name: 'Race' };
+   getSessions: async (year: number, location?: string, sessionName?: string | null): Promise<OpenF1Session[]> => {
+      const params: Record<string, string | number> = { year };
+      if (sessionName !== null && sessionName !== undefined) {
+         params.session_name = sessionName;
+      } else if (sessionName === undefined) {
+         params.session_name = 'Race';
+      }
       if (location) params.location = location;
       const { data } = await api.get<OpenF1Session[]>('/telemetry/sessions', { params });
       return data;
@@ -162,6 +169,13 @@ export const telemetryService = {
 
    getPits: async (sessionKey: number): Promise<OpenF1Pit[]> => {
       const { data } = await api.get<OpenF1Pit[]>('/telemetry/pit', {
+         params: { session_key: sessionKey },
+      });
+      return data;
+   },
+
+   getIntervals: async (sessionKey: number): Promise<OpenF1Interval[]> => {
+      const { data } = await api.get<OpenF1Interval[]>('/telemetry/intervals', {
          params: { session_key: sessionKey },
       });
       return data;

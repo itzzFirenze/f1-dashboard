@@ -178,6 +178,7 @@ export interface RaceResult {
    q1: string | null;
    q2: string | null;
    q3: string | null;
+   time?: string | null;
 }
 
 /** Weather data */

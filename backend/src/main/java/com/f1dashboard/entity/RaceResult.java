@@ -46,6 +46,9 @@ public class RaceResult {
    private Boolean fastestLap;
    private Integer gridPosition;
 
+   @Column(name = "time_or_gap")
+   private String time;
+
    @Column(name = "q1_time")
    private String q1Time;
 
