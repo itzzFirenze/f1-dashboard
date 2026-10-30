@@ -48,6 +48,28 @@ const useIsMobile = () => {
    return isMobile;
 };
 
+/** Returns '#000' or '#fff', whichever contrasts more with the given hex background */
+const getReadableTextColor = (hex: string): string => {
+   const h = hex.replace('#', '');
+   const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h.slice(0, 6);
+   const [r, g, b] = [0, 2, 4].map((i) => {
+      const c = parseInt(full.slice(i, i + 2), 16) / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+   });
+   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+   // WCAG contrast ratio against white vs. black
+   const contrastWhite = 1.05 / (luminance + 0.05);
+   const contrastBlack = (luminance + 0.05) / 0.05;
+   return contrastBlack > contrastWhite ? '#000' : '#fff';
+};
+
+const formatChartValue = (v: number): string => {
+   if (v >= 1000) return `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k`;
+   // Max 2 decimals, trailing zeros dropped (11.11111 -> 11.11, 5 -> 5, 12.50 -> 12.5)
+   return `${parseFloat(v.toFixed(2))}`;
+};
+
 /** Small avatar/logo component with graceful fallback to initials/code on error or missing image */
 const RecordAvatar: React.FC<{
    record: DriverRecord | ConstructorRecord;
@@ -65,7 +87,7 @@ const RecordAvatar: React.FC<{
    return (
       <div
          className={`${dims} overflow-hidden flex items-center justify-center font-display font-black shrink-0 border border-white/[0.08] shadow-lg`}
-         style={{ backgroundColor: `${color}30` }}
+         style={{ backgroundColor: color }}
       >
          {showImg ? (
             <img
@@ -75,7 +97,10 @@ const RecordAvatar: React.FC<{
                onError={() => setImgError(true)}
             />
          ) : (
-            <span className={`font-mono text-white ${size === 'lg' ? 'text-lg' : 'text-[10px]'}`}>
+            <span
+               className={`font-mono ${size === 'lg' ? 'text-lg' : 'text-[10px]'}`}
+               style={{ color: getReadableTextColor(color) }}
+            >
                {fallbackText}
             </span>
          )}
@@ -114,6 +139,14 @@ const RecordsPage: React.FC = () => {
    }, [data, activeCategory]);
 
    const isDriverCategory = activeCategory.startsWith('driver');
+   const chartMargin = useMemo(() => {
+      if (isMobile) {
+         return isDriverCategory
+            ? { top: 10, right: 32, bottom: 40, left: 40 }   // 3-letter codes
+            : { top: 10, right: 32, bottom: 40, left: 83 };  // longer team names
+      }
+      return { top: 10, right: 56, bottom: 40, left: isDriverCategory ? 56 : 83 };
+   }, [isMobile, isDriverCategory]);
    const activeCatMeta = CATEGORIES.find(c => c.key === activeCategory)!;
 
    const barChartData = useMemo(() => {
@@ -318,22 +351,26 @@ const RecordsPage: React.FC = () => {
                      keys={['value']}
                      indexBy="id"
                      layout="horizontal"
-                     margin={{ top: 10, right: 56, bottom: 40, left: 83 }}
+                     margin={chartMargin}
                      padding={0.3}
                      colors={({ data }) => (data as { color?: string }).color || '#e11d48'}
+                     enableLabel
+                     labelSkipWidth={28}
+                     labelTextColor={(bar) => getReadableTextColor(String(bar.color))}
                      theme={{
                         text: { fill: '#fff' },
+                        labels: { text: { fontSize: 11, fontFamily: 'monospace', fontWeight: 700 } },
                         axis: { ticks: { text: { fill: '#fff', fontSize: 11, fontFamily: 'monospace', fontWeight: 600 } } },
                         grid: { line: { stroke: '#333' } },
                         tooltip: { container: { background: '#1a1a2e', color: '#fff', border: '1px solid #333' } },
                      }}
+                     valueFormat={(v) => formatChartValue(Number(v))}
                      axisBottom={{
                         legend: 'Value',
                         legendPosition: 'middle',
                         legendOffset: 32,
                         tickValues: isMobile ? 3 : 6,
-                        format: (v: number) =>
-                           v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : `${v}`,
+                        format: (v: number) => formatChartValue(v),
                      }}
                      animate={true}
                      motionConfig="gentle"
