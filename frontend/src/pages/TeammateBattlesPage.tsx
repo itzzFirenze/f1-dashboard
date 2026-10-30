@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Users, ChevronRight, X } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Users, ChevronRight, X, Search } from 'lucide-react'
 import PageHeroTitle from '../components/ui/PageHeroTitle';
 import SeasonSelector from '../components/ui/SeasonSelector';
 import { PageSkeleton } from '../components/ui/LoadingSkeleton';
@@ -15,6 +16,45 @@ const TeammateBattlesPage: React.FC = () => {
    const [battles, setBattles] = useState<TeammateBattle[]>([]);
    const [loading, setLoading] = useState(true);
    const [selectedTeamBattle, setSelectedTeamBattle] = useState<TeammateBattle | null>(null);
+   // const [query, setQuery] = useState('');
+   const [searchParams, setSearchParams] = useSearchParams();
+   const query = searchParams.get('q') ?? '';
+
+   const setQuery = (val: string) => {
+      setSearchParams((prev) => {
+         const next = new URLSearchParams(prev);
+         if (val) next.set('q', val); else next.delete('q');
+         return next;
+      }, { replace: true });
+   };
+
+   // Reset search when season changes (skip first render so a shared ?q= link still works)
+   const isFirstRender = useRef(true);
+   useEffect(() => {
+      if (isFirstRender.current) { isFirstRender.current = false; return; }
+      setQuery('');
+   }, [season]);
+
+   // Reset search when season changes
+   useEffect(() => { setQuery(''); }, [season]);
+
+   const filteredBattles = useMemo(() => {
+      const q = query.trim().toLowerCase();
+      if (!q) return battles;
+      return battles.filter((b) =>
+         [
+            b.constructor.name,
+            b.driver1.firstName,
+            b.driver1.lastName,
+            b.driver1.code,
+            b.driver2.firstName,
+            b.driver2.lastName,
+            b.driver2.code
+         ]
+            .filter(Boolean)
+            .some((s) => s.toLowerCase().includes(q))
+      );
+   }, [battles, query]);
 
    useEffect(() => {
       setLoading(true);
@@ -109,11 +149,24 @@ const TeammateBattlesPage: React.FC = () => {
                   </p>
                </div>
 
-               <SeasonSelector
-                  selectedSeason={season}
-                  onSelectSeason={(yr) => setSeason(yr || 2026)}
-                  label="Select Season"
-               />
+               <div className="flex flex-col gap-3 w-full md:w-auto md:items-end">
+                  <SeasonSelector
+                     selectedSeason={season}
+                     onSelectSeason={(yr) => setSeason(yr || 2026)}
+                     label="Select Season"
+                  />
+
+                  {/* Search Console */}
+                  <label className="relative block w-full md:w-80 shrink-0">
+                     <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-f1-silver/40" />
+                     <input
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Search team or driver..."
+                        className="w-full bg-white/[0.04] text-f1-white placeholder-f1-silver/40 text-xs font-mono pl-10 pr-3.5 py-3 rounded-xl border border-white/[0.08] focus:outline-none focus:border-f1-red/50 transition-all"
+                     />
+                  </label>
+               </div>
             </div>
          </div>
 
@@ -122,7 +175,7 @@ const TeammateBattlesPage: React.FC = () => {
          {/* ─── 10 Team Duel Cards Grid ─── */}
          {!loading && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-               {battles.map((battle) => {
+               {filteredBattles.map((battle) => {
                   const teamColor = battle.constructor.color || '#E10600';
                   const d1Color = teamColor;
                   const d2Color = '#94A3B8';
@@ -244,6 +297,13 @@ const TeammateBattlesPage: React.FC = () => {
                      </div>
                   );
                })}
+            </div>
+         )}
+
+         {/* ─── Empty state for search ─── */}
+         {!loading && battles.length > 0 && filteredBattles.length === 0 && (
+            <div className="text-center py-12 text-f1-silver/60 font-mono text-sm">
+               No teams or drivers match "{query}".
             </div>
          )}
 

@@ -296,6 +296,7 @@ const RaceDetailPage: React.FC = () => {
    if (hasSprintQuali || isSprintWeekend) tabs.push('sprint_qualifying');
 
    const isCompleted = race.status === 'COMPLETED';
+   const resultsFirst = isCompleted && hasAnyResults;
    const isQualiType = activeTab === 'qualifying' || activeTab === 'sprint_qualifying';
    const hasTyreData = !isQualiType && Object.keys(stintsByDriverCode).length > 0;
    const hasPitData = !isQualiType && (Object.keys(pitsByDriverCode).length > 0 || hasTyreData);
@@ -370,7 +371,7 @@ const RaceDetailPage: React.FC = () => {
    ];
 
    return (
-      <div className="space-y-5 sm:space-y-7 animate-fade-in">
+      <div className="flex flex-col gap-5 sm:gap-7 animate-fade-in">
          <BackButton />
 
          {/* ─── Race Header: Mission Control HUD ─── */}
@@ -423,7 +424,7 @@ const RaceDetailPage: React.FC = () => {
          </div>
 
          {/* ─── Top Grid: Weekend Schedule & Circuit Telemetry (Equal Height) ─── */}
-         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 items-stretch">
+         <div className={`grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 items-stretch ${resultsFirst ? 'order-2' : ''}`}>
             {/* Session Schedule */}
             <div className="telemetry-card p-4 sm:p-6 relative overflow-hidden h-full flex flex-col justify-between">
                <div
@@ -533,12 +534,14 @@ const RaceDetailPage: React.FC = () => {
 
          {/* ─── Track Meteorology (Weather) ─── */}
          {race.weather && (
-            <WeatherCard weather={race.weather} />
+            <div className={resultsFirst ? 'order-2' : ''}>
+               <WeatherCard weather={race.weather} />
+            </div>
          )}
 
          {/* ─── Race Details: Full Width Classification Results Card ─── */}
          {hasAnyResults && (
-            <div className="telemetry-card p-3 sm:p-6 relative overflow-hidden w-full">
+            <div className={`telemetry-card p-3 sm:p-6 relative overflow-hidden w-full ${resultsFirst ? 'order-1' : ''}`}>
                <div
                   className="absolute top-0 inset-x-0 h-[2px] opacity-75"
                   style={{ background: 'linear-gradient(90deg, transparent, #E10600, transparent)' }}

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowUpRight, Compass, Flag, Ruler, Search, Timer, Zap } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -10,6 +10,9 @@ import { circuits } from '../data/circuits';
 const CircuitExplorerPage: React.FC = () => {
    const navigate = useNavigate();
    const [searchParams, setSearchParams] = useSearchParams();
+
+   // Grid scroll position, saved right before opening a circuit
+   const savedScrollY = useRef(0);
 
    const circuitParam = searchParams.get('circuit');
    const fromParam = searchParams.get('from');
@@ -24,6 +27,7 @@ const CircuitExplorerPage: React.FC = () => {
    };
 
    const selectCircuit = (id: string) => {
+      savedScrollY.current = window.scrollY;
       setSearchParams((prev) => {
          const next = new URLSearchParams(prev);
          next.set('circuit', id);
@@ -58,9 +62,20 @@ const CircuitExplorerPage: React.FC = () => {
       return circuits.find((c) => c.name.toLowerCase() === decoded) ?? null;
    }, [circuitParam]);
 
+   // Runs after the old view has finished animating out, right before the new one shows
+   const handleExitComplete = () => {
+      if (selectedCircuit) {
+         // Grid -> detail: start at the top
+         window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      } else {
+         // Detail -> grid: return to where the user was
+         window.scrollTo({ top: savedScrollY.current, left: 0, behavior: 'auto' });
+      }
+   };
+
    return (
       <div className="w-full">
-         <AnimatePresence mode="wait">
+         <AnimatePresence mode="wait" onExitComplete={handleExitComplete}>
             {selectedCircuit ? (
                <motion.div
                   key="detail"

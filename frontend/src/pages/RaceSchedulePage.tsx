@@ -10,32 +10,23 @@ import EmptyState from '../components/ui/EmptyState';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import type { Race } from '../types';
 
+type StatusFilter = 'ALL' | 'COMPLETED' | 'UPCOMING';
+
 const RaceSchedulePage: React.FC = () => {
    const [searchParams, setSearchParams] = useSearchParams();
    const [search, setSearch] = useState('');
+
+   // Filter lives in the URL. No (or invalid) param => default to UPCOMING.
    const urlStatus = (searchParams.get('status') || '').toUpperCase();
-   const [statusFilter, setStatusFilter] = useState<string>(
-      ['COMPLETED', 'UPCOMING'].includes(urlStatus) ? urlStatus : ''
-   );
+   const statusFilter: StatusFilter =
+      urlStatus === 'ALL' || urlStatus === 'COMPLETED' || urlStatus === 'UPCOMING'
+         ? urlStatus
+         : 'UPCOMING';
 
-   React.useEffect(() => {
-      const currentParam = (searchParams.get('status') || '').toUpperCase();
-      if (['COMPLETED', 'UPCOMING'].includes(currentParam)) {
-         setStatusFilter(currentParam);
-      } else if (!currentParam) {
-         setStatusFilter('');
-      }
-   }, [searchParams]);
-
-   const handleStatusChange = (newStatus: string) => {
-      setStatusFilter(newStatus);
+   const handleStatusChange = (newStatus: StatusFilter) => {
       setSearchParams((prev) => {
          const next = new URLSearchParams(prev);
-         if (newStatus) {
-            next.set('status', newStatus);
-         } else {
-            next.delete('status');
-         }
+         next.set('status', newStatus);
          return next;
       });
    };
@@ -49,9 +40,16 @@ const RaceSchedulePage: React.FC = () => {
 
    const races = React.useMemo(() => {
       let filtered = allRaces;
-      if (statusFilter) {
+
+      if (statusFilter !== 'ALL') {
          filtered = filtered.filter((race) => race.status === statusFilter);
       }
+
+      // Completed: most recent race first
+      if (statusFilter === 'COMPLETED') {
+         filtered = [...filtered].sort((a, b) => b.round - a.round);
+      }
+
       const term = debouncedSearch.trim().toLowerCase();
       if (!term) return filtered;
       return filtered.filter(
@@ -94,7 +92,7 @@ const RaceSchedulePage: React.FC = () => {
                {/* Filter + Search Console */}
                <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center relative z-10 w-full lg:w-auto min-w-0">
                   <div className="flex gap-1 sm:gap-2 bg-white/[0.03] border border-white/[0.06] rounded-xl p-1 min-w-0">
-                     {(['', 'COMPLETED', 'UPCOMING'] as const).map((s) => (
+                     {(['ALL', 'COMPLETED', 'UPCOMING'] as const).map((s) => (
                         <button
                            key={s}
                            onClick={() => handleStatusChange(s)}
@@ -103,7 +101,7 @@ const RaceSchedulePage: React.FC = () => {
                               : 'text-f1-silver/60 hover:text-f1-white'
                               }`}
                         >
-                           {s || 'All'}
+                           {s === 'ALL' ? 'All' : s}
                         </button>
                      ))}
                   </div>
